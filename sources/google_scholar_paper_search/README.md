@@ -1,14 +1,15 @@
 # Google Scholar Paper Search
 
-A NeMo Agent Toolkit function that searches for academic papers using Google Scholar. You can choose between three backend providers:
+A NeMo Agent Toolkit function that searches for academic papers using Google Scholar. You can choose between four backend providers:
 
 | Provider | `provider` value | Env var | Sign-up |
 |----------|---------------|---------|---------|
 | **Serper** (default) | `serper` | `SERPER_API_KEY` | [serper.dev](https://serper.dev/) |
 | **SerpAPI** | `serpapi` | `SERPAPI_API_KEY` | [serpapi.com](https://serpapi.com/) |
 | **SearchAPI** | `searchapi` | `SEARCHAPI_API_KEY` | [searchapi.io](https://www.searchapi.io/) |
+| **Serply** | `serply` | `SERPLY_API_KEY` | [serply.io](https://serply.io/) |
 
-All three query Google Scholar and return the same normalized result shape (title, year, snippet, link, publication info, citations), so the agent-facing tool behavior is identical regardless of provider.
+All four query Google Scholar and return the same normalized result shape (title, year, snippet, link, publication info, citations), so the agent-facing tool behavior is identical regardless of provider. Serply's Scholar results do not include an abstract snippet, so `snippet` is empty for that provider; the publication info and citation count are still filled in.
 
 ## Prerequisites
 
@@ -24,6 +25,8 @@ SERPER_API_KEY="your-serper-api-key"
 SERPAPI_API_KEY="your-serpapi-api-key"  # pragma: allowlist secret
 # OR
 SEARCHAPI_API_KEY="your-searchapi-api-key"  # pragma: allowlist secret
+# OR
+SERPLY_API_KEY="your-serply-api-key"  # pragma: allowlist secret
 ```
 
 Alternatively, you can provide the API key directly in the configuration file (see below).
@@ -52,7 +55,7 @@ Add the `paper_search` function to the `functions` section of your workflow conf
 functions:
   paper_search_tool:
     _type: paper_search
-    provider: serper          # 'serper' (default), 'serpapi', or 'searchapi'
+    provider: serper          # 'serper' (default), 'serpapi', 'searchapi', or 'serply'
     max_results: 10
     timeout: 30
     serper_api_key: ${SERPER_API_KEY}
@@ -78,16 +81,27 @@ functions:
     searchapi_api_key: ${SEARCHAPI_API_KEY}
 ```
 
+To use Serply:
+
+```yaml
+functions:
+  paper_search_tool:
+    _type: paper_search
+    provider: serply
+    serply_api_key: ${SERPLY_API_KEY}
+```
+
 #### Configuration Options
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `provider` | string | `serper` | Backend provider: `serper`, `serpapi`, or `searchapi` |
+| `provider` | string | `serper` | Backend provider: `serper`, `serpapi`, `searchapi`, or `serply` |
 | `max_results` | integer | 10 | Maximum number of search results to return (capped at 50) |
 | `timeout` | integer | 30 | Timeout in seconds for search requests |
 | `serper_api_key` | string | None | Serper API key (required when `provider: serper`; also read from `SERPER_API_KEY` env var) |
 | `serpapi_api_key` | string | None | SerpAPI key (required when `provider: serpapi`; also read from `SERPAPI_API_KEY` env var) |
 | `searchapi_api_key` | string | None | SearchAPI key (required when `provider: searchapi`; also read from `SEARCHAPI_API_KEY` env var) |
+| `serply_api_key` | string | None | Serply key (required when `provider: serply`; also read from `SERPLY_API_KEY` env var) |
 
 ### Adding as a Tool to an Agent
 
@@ -171,7 +185,7 @@ The paper search function accepts the following arguments when called by an agen
 
 If you see an error about the API key not being found:
 
-- Verify the correct environment variable is set for your chosen `provider` (`SERPER_API_KEY`, `SERPAPI_API_KEY`, or `SEARCHAPI_API_KEY`)
+- Verify the correct environment variable is set for your chosen `provider` (`SERPER_API_KEY`, `SERPAPI_API_KEY`, `SEARCHAPI_API_KEY`, or `SERPLY_API_KEY`)
 - Alternatively, ensure the matching key field is specified in the configuration file
 - Make sure the `provider` field matches the key you provided
 

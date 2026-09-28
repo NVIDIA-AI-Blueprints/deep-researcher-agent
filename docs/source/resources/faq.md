@@ -70,7 +70,7 @@ prompted to follow the recorded order.
 - **Nimble Web Search** — General web search via Nimble (requires `NIMBLE_API_KEY`)
 - **DuckDuckGo News Search** — Recent news search (no API key)
 - **Polymarket Prediction Markets** — Events and market-implied probabilities (no API key)
-- **Google Scholar Paper Search** — Academic search through Serper, SerpAPI, or SearchAPI (requires the selected provider's key)
+- **Google Scholar Paper Search** — Academic search through Serper, SerpAPI, SearchAPI, or Serply (requires the selected provider's key)
 - **Knowledge Layer** — Document retrieval through LlamaIndex, Foundational RAG, OpenSearch, or Azure AI Search
 
 Refer to [Tools and Sources](../customization/tools-and-sources.md).

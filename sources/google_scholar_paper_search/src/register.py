@@ -40,12 +40,13 @@ class PaperSearchToolConfig(FunctionBaseConfig, name="paper_search"):
 
     Tool that searches for academic papers using Google Scholar. The
     ``provider`` field selects the backend API: ``serper`` (default),
-    ``serpapi``, or ``searchapi``. Each provider requires its own API key.
+    ``serpapi``, ``searchapi``, or ``serply``. Each provider requires its own
+    API key.
     """
 
     provider: PaperSearchProvider = Field(
         default=PaperSearchProvider.SERPER,
-        description="Google Scholar backend: 'serper', 'serpapi', or 'searchapi'",
+        description="Google Scholar backend: 'serper', 'serpapi', 'searchapi', or 'serply'",
     )
     timeout: int = Field(
         default=30,
@@ -67,6 +68,10 @@ class PaperSearchToolConfig(FunctionBaseConfig, name="paper_search"):
         default=None,
         description="API key for SearchAPI (required when provider='searchapi')",
     )
+    serply_api_key: SecretStr | None = Field(
+        default=None,
+        description="API key for Serply (required when provider='serply')",
+    )
 
 
 # Maps each provider to (env var name, config attr name, sign-up URL)
@@ -74,6 +79,7 @@ _PROVIDER_KEY_INFO = {
     PaperSearchProvider.SERPER: ("SERPER_API_KEY", "serper_api_key", "https://serper.dev/"),
     PaperSearchProvider.SERPAPI: ("SERPAPI_API_KEY", "serpapi_api_key", "https://serpapi.com/"),
     PaperSearchProvider.SEARCHAPI: ("SEARCHAPI_API_KEY", "searchapi_api_key", "https://www.searchapi.io/"),
+    PaperSearchProvider.SERPLY: ("SERPLY_API_KEY", "serply_api_key", "https://serply.io/"),
 }
 
 
@@ -137,6 +143,7 @@ async def paper_search(tool_config: PaperSearchToolConfig, builder: Builder):
         serper_api_key=api_key if provider is PaperSearchProvider.SERPER else None,
         serpapi_api_key=api_key if provider is PaperSearchProvider.SERPAPI else None,
         searchapi_api_key=api_key if provider is PaperSearchProvider.SEARCHAPI else None,
+        serply_api_key=api_key if provider is PaperSearchProvider.SERPLY else None,
         timeout=tool_config.timeout,
         max_results=tool_config.max_results,
     )

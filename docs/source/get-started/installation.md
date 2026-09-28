@@ -149,6 +149,7 @@ Then edit `deploy/.env` and fill in your keys.
 | `SERPER_API_KEY` | [Serper](https://serper.dev/) | Google Scholar paper search with `provider: serper` (the default) |
 | `SERPAPI_API_KEY` | [SerpAPI](https://serpapi.com/) | Google Scholar paper search with `provider: serpapi` |
 | `SEARCHAPI_API_KEY` | [SearchAPI](https://www.searchapi.io/) | Google Scholar paper search with `provider: searchapi` |
+| `SERPLY_API_KEY` | [Serply](https://serply.io/) | Google Scholar paper search with `provider: serply` |
 
 At minimum, you need `NVIDIA_API_KEY` for LLM inference and a credential for the web provider selected by your config.
 Paper search requires one provider-specific key. It is commented out in the standard CLI and web profiles, while

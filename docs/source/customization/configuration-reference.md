@@ -253,7 +253,7 @@ functions:
 ### `paper_search`
 
 Academic paper search through Google Scholar using [Serper](https://serper.dev/),
-[SerpAPI](https://serpapi.com/), or [SearchAPI](https://www.searchapi.io/). All three providers are normalized to the
+[SerpAPI](https://serpapi.com/), [SearchAPI](https://www.searchapi.io/), or [Serply](https://serply.io/). All four providers are normalized to the
 same agent-facing result shape. Serper is the default.
 
 ```yaml
@@ -267,11 +267,12 @@ functions:
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `provider` | `str` | `serper` | Google Scholar backend: `serper`, `serpapi`, or `searchapi`. |
+| `provider` | `str` | `serper` | Google Scholar backend: `serper`, `serpapi`, `searchapi`, or `serply`. |
 | `max_results` | `int` | `10` | Maximum number of paper results. |
 | `serper_api_key` | `str` | `None` | Serper key for `provider: serper`. The tool also reads `SERPER_API_KEY`. |
 | `serpapi_api_key` | `str` | `None` | SerpAPI key for `provider: serpapi`. The tool also reads `SERPAPI_API_KEY`. |
 | `searchapi_api_key` | `str` | `None` | SearchAPI key for `provider: searchapi`. The tool also reads `SEARCHAPI_API_KEY`. |
+| `serply_api_key` | `str` | `None` | Serply key for `provider: serply`. The tool also reads `SERPLY_API_KEY`. |
 | `timeout` | `int` | `30` | Timeout in seconds for search requests. |
 
 ### `knowledge_retrieval`

@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Paper search tool using Google Scholar via Serper, SerpAPI, or SearchAPI.
+"""Paper search tool using Google Scholar via Serper, SerpAPI, SearchAPI, or Serply.
 
 This module contains the NAT-independent PaperSearchTool class. The provider
 is selected at construction time; each provider's raw response is normalized
@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 SERPER_API_URL = "https://google.serper.dev/scholar"
 SERPAPI_API_URL = "https://serpapi.com/search"
 SEARCHAPI_API_URL = "https://www.searchapi.io/api/v1/search"
+SERPLY_API_URL = "https://api.serply.io/v1/scholar"
 
 # Matches a 4-digit publication year (1500-2099). The window is wide enough to
 # cover pre-1900 scholarly works while excluding arXiv-style identifiers, and
@@ -47,6 +48,7 @@ class PaperSearchProvider(StrEnum):
     SERPER = "serper"
     SERPAPI = "serpapi"
     SEARCHAPI = "searchapi"
+    SERPLY = "serply"
 
 
 class PaperSearchTool:
@@ -73,6 +75,12 @@ class PaperSearchTool:
         ...     provider="searchapi",
         ...     searchapi_api_key="your-key",  # pragma: allowlist secret
         ... )
+        >>>
+        >>> # Serply
+        >>> tool = PaperSearchTool(
+        ...     provider="serply",
+        ...     serply_api_key="your-key",  # pragma: allowlist secret
+        ... )
         >>> result = await tool.search("machine learning transformers")
     """
 
@@ -83,6 +91,7 @@ class PaperSearchTool:
         provider: str | PaperSearchProvider = PaperSearchProvider.SERPER,
         serpapi_api_key: str | None = None,
         searchapi_api_key: str | None = None,
+        serply_api_key: str | None = None,
         timeout: int = 30,
         max_results: int = 10,
     ) -> None:
@@ -92,10 +101,11 @@ class PaperSearchTool:
             serper_api_key: API key for Serper. Kept as the first positional
                 argument for backward compatibility; required when
                 ``provider="serper"``.
-            provider: Which backend to use — ``"serper"``, ``"serpapi"``, or
-                ``"searchapi"``. Defaults to ``"serper"``.
+            provider: Which backend to use — ``"serper"``, ``"serpapi"``,
+                ``"searchapi"``, or ``"serply"``. Defaults to ``"serper"``.
             serpapi_api_key: API key for SerpAPI (required when provider is serpapi).
             searchapi_api_key: API key for SearchAPI (required when provider is searchapi).
+            serply_api_key: API key for Serply (required when provider is serply).
             timeout: Timeout in seconds for search requests (default 30).
             max_results: Maximum number of search results to return (default 10).
         """
@@ -103,6 +113,7 @@ class PaperSearchTool:
         self.serper_api_key = serper_api_key
         self.serpapi_api_key = serpapi_api_key
         self.searchapi_api_key = searchapi_api_key
+        self.serply_api_key = serply_api_key
         self.timeout = timeout
         self.max_results = max_results
 
@@ -114,6 +125,8 @@ class PaperSearchTool:
             return self.serpapi_api_key
         if self.provider is PaperSearchProvider.SEARCHAPI:
             return self.searchapi_api_key
+        if self.provider is PaperSearchProvider.SERPLY:
+            return self.serply_api_key
         return None  # pragma: no cover - exhausted by enum
 
     # ── Public API ──
@@ -162,6 +175,8 @@ class PaperSearchTool:
                 results = await self._search_serpapi(query, year, self.max_results)
             elif self.provider is PaperSearchProvider.SEARCHAPI:
                 results = await self._search_searchapi(query, year, self.max_results)
+            elif self.provider is PaperSearchProvider.SERPLY:
+                results = await self._search_serply(query, year, self.max_results)
             else:  # pragma: no cover - exhausted by enum
                 raise ValueError(f"Unsupported provider: {self.provider}")
             return self.format_results(results)
@@ -226,12 +241,12 @@ class PaperSearchTool:
     def _extract_year(publication_info: Any) -> str:
         """Extract the publication year from a publication summary string.
 
-        SerpAPI and SearchAPI embed the year inside the publication summary
+        SerpAPI, SearchAPI, and Serply embed the year inside the publication summary
         (e.g. ``"JL Harper - ..., 1977 - cabdirect.org"``). The publication
         year is the final year token before the trailing source suffix, not the
         first one: ``"... (1919-1933 …, 1926 - JSTOR"`` yields ``1926``, not
         ``1919``. Serper returns a clean ``year`` field, so this is only used
-        for the other two providers.
+        for the other providers.
         """
         if not isinstance(publication_info, str):
             return "Unknown Year"
@@ -488,6 +503,105 @@ class PaperSearchTool:
                     "link": paper.get("link", ""),
                     "publicationInfo": pub_info,
                     "citedBy": cited_by.get("total", 0),
+                }
+            )
+        return normalized
+
+    # ── Serply (GET, X-Api-Key header, start offset) ──
+    async def _fetch_serply_page(
+        self,
+        query: str,
+        num: int,
+        offset: int,
+        start_year: str | None,
+        end_year: str | None,
+    ) -> dict[str, Any]:
+        params: dict[str, Any] = {
+            "q": query,
+            "num": min(num, 20),
+            "start": offset,
+        }
+
+        if start_year:
+            params["as_ylo"] = start_year
+        if end_year:
+            params["as_yhi"] = end_year
+
+        headers = {
+            "X-Api-Key": self.serply_api_key or "",
+            "User-Agent": "aiq",
+        }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                SERPLY_API_URL,
+                params=params,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=self.timeout),
+            ) as response:
+                if response.status != 200:
+                    raise RuntimeError(f"Serply API error: HTTP {response.status}")
+                return await response.json()
+
+    async def _search_serply(
+        self,
+        query: str,
+        year: str | None = None,
+        limit: int = 10,
+    ) -> list[dict[str, Any]]:
+        start_year, end_year = self._parse_year_range(year)
+        limit = min(limit, 50)
+
+        page_size = 10
+        total_pages = math.ceil(limit / page_size)
+
+        tasks = []
+        for page in range(total_pages):
+            current_limit = min(page_size, limit - (page * page_size))
+            if current_limit <= 0:
+                break
+            tasks.append(
+                self._fetch_serply_page(
+                    query,
+                    current_limit,
+                    page * page_size,
+                    start_year,
+                    end_year,
+                )
+            )
+
+        page_results = await asyncio.gather(*tasks)
+        raw = []
+        for result in page_results:
+            raw.extend(result.get("articles", []))
+        return self._normalize_serply(raw)[:limit]
+
+    @staticmethod
+    def _normalize_serply(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Normalize Serply ``articles`` into the shared result shape.
+
+        Serply puts the publication summary (authors, venue, year, host) in
+        ``author.names`` and reports citations as a ``"Cited by N"`` string
+        under ``extras.citations.count``. Its Scholar results carry no abstract
+        snippet: ``description`` repeats the publication summary, so it is
+        only used as the snippet when it adds something new.
+        """
+        normalized = []
+        for paper in results:
+            author = paper.get("author", {}) or {}
+            summary = (author.get("names", "") or "").replace("\xa0", " ")
+            description = (paper.get("description", "") or "").replace("\xa0", " ")
+            extras = paper.get("extras", {}) or {}
+            citations = extras.get("citations", {}) or {}
+            cited_match = re.search(r"\d+", str(citations.get("count", "")).replace(",", ""))
+            normalized.append(
+                {
+                    "title": paper.get("title", "Unknown Title"),
+                    "year": PaperSearchTool._extract_year(summary),
+                    "snippet": "" if description == summary else description,
+                    "link": paper.get("link", ""),
+                    "publicationInfo": summary,
+                    "citedBy": int(cited_match.group()) if cited_match else 0,
                 }
             )
         return normalized

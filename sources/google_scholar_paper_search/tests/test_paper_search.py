@@ -80,6 +80,13 @@ class TestPaperSearchToolInit:
         assert tool.provider is PaperSearchProvider.SEARCHAPI
         assert tool.searchapi_api_key == "searchapi-key"  # pragma: allowlist secret
 
+    def test_init_with_serply_provider(self):
+        """Test initialization with serply provider."""
+        tool = PaperSearchTool(provider="serply", serply_api_key="serply-key")
+
+        assert tool.provider is PaperSearchProvider.SERPLY
+        assert tool.serply_api_key == "serply-key"  # pragma: allowlist secret
+
     def test_init_provider_from_enum(self):
         """Test that provider accepts the enum directly."""
         tool = PaperSearchTool(provider=PaperSearchProvider.SERPAPI, serpapi_api_key="key")
@@ -208,6 +215,7 @@ class TestSearch:
             PaperSearchProvider.SERPER,
             PaperSearchProvider.SERPAPI,
             PaperSearchProvider.SEARCHAPI,
+            PaperSearchProvider.SERPLY,
         ],
     )
     @pytest.mark.asyncio
@@ -580,6 +588,56 @@ class TestNormalizeSearchapi:
         assert PaperSearchTool._normalize_searchapi([]) == []  # noqa: SLF001
 
 
+class TestNormalizeSerply:
+    """Tests for _normalize_serply static method."""
+
+    def test_normalize_full_result(self, sample_serply_response):
+        """Test normalizing a complete Serply result."""
+        raw = sample_serply_response["articles"]
+        normalized = PaperSearchTool._normalize_serply(raw)  # noqa: SLF001
+
+        assert len(normalized) == 2
+        first = normalized[0]
+        assert first["title"] == "Attention Is All You Need"
+        assert first["year"] == "2017"
+        assert first["link"] == "https://arxiv.org/abs/1706.03762"
+        assert "2017" in first["publicationInfo"]
+        assert "\u00a0" not in first["publicationInfo"]
+        assert first["citedBy"] == 50000
+
+    def test_normalize_drops_description_that_repeats_summary(self, sample_serply_response):
+        """A description identical to the publication summary is not used as a snippet."""
+        normalized = PaperSearchTool._normalize_serply(  # noqa: SLF001
+            sample_serply_response["articles"]
+        )
+
+        assert normalized[0]["snippet"] == ""
+        assert normalized[1]["snippet"] == "We introduce a new language model..."
+
+    def test_normalize_parses_citation_count_with_separators(self, sample_serply_response):
+        """Citation counts like 'Cited by 40,000' parse to an int."""
+        normalized = PaperSearchTool._normalize_serply(  # noqa: SLF001
+            sample_serply_response["articles"]
+        )
+
+        assert normalized[1]["citedBy"] == 40000
+        assert normalized[1]["year"] == "2018"
+
+    def test_normalize_missing_fields(self):
+        """Test normalizing results with missing fields uses defaults."""
+        raw = [{"title": "Only Title"}]
+        normalized = PaperSearchTool._normalize_serply(raw)  # noqa: SLF001
+
+        assert normalized[0]["title"] == "Only Title"
+        assert normalized[0]["year"] == "Unknown Year"
+        assert normalized[0]["snippet"] == ""
+        assert normalized[0]["citedBy"] == 0
+
+    def test_normalize_empty_list(self):
+        """Test normalizing an empty list."""
+        assert PaperSearchTool._normalize_serply([]) == []  # noqa: SLF001
+
+
 class TestSearchSerpapi:
     """Tests for _search_serpapi internal method."""
 
@@ -704,6 +762,61 @@ class TestSearchSearchapi:
         assert result[0]["citedBy"] == 50000
 
 
+class TestSearchSerply:
+    """Tests for _search_serply internal method."""
+
+    @pytest.mark.asyncio
+    async def test_year_parsing_single_year(self, serply_tool):
+        """Test year parsing passes start/end to fetch."""
+        with patch.object(
+            serply_tool,
+            "_fetch_serply_page",
+            new_callable=AsyncMock,
+            return_value={"articles": []},
+        ) as mock_fetch:
+            await serply_tool._search_serply(  # noqa: SLF001
+                "query", year="2023", limit=10
+            )
+
+        mock_fetch.assert_called_once()
+        call_args = mock_fetch.call_args
+        assert call_args[0][3] == "2023"  # start_year
+        assert call_args[0][4] == "2023"  # end_year
+
+    @pytest.mark.asyncio
+    async def test_pagination_uses_zero_based_offsets(self, serply_tool):
+        """Test that Serply pages by result offset, like SerpAPI."""
+        with patch.object(
+            serply_tool,
+            "_fetch_serply_page",
+            new_callable=AsyncMock,
+            return_value={"articles": [{"title": "Paper"}]},
+        ) as mock_fetch:
+            await serply_tool._search_serply(  # noqa: SLF001
+                "query", limit=25
+            )
+
+        offsets = [call.args[2] for call in mock_fetch.call_args_list]
+        assert offsets == [0, 10, 20]
+
+    @pytest.mark.asyncio
+    async def test_normalizes_results(self, serply_tool, sample_serply_response):
+        """Test that raw Serply results are normalized."""
+        with patch.object(
+            serply_tool,
+            "_fetch_serply_page",
+            new_callable=AsyncMock,
+            return_value=sample_serply_response,
+        ):
+            result = await serply_tool._search_serply(  # noqa: SLF001
+                "query", limit=10
+            )
+
+        assert len(result) == 2
+        assert result[0]["title"] == "Attention Is All You Need"
+        assert result[0]["citedBy"] == 50000
+
+
 class TestFetchSerpapiPage:
     """Tests for _fetch_serpapi_page internal method."""
 
@@ -819,6 +932,76 @@ class TestFetchSearchapiPage:
         assert params["api_key"] == "test-searchapi-key"  # pragma: allowlist secret
 
 
+class TestFetchSerplyPage:
+    """Tests for _fetch_serply_page internal method."""
+
+    @pytest.mark.asyncio
+    async def test_fetch_builds_correct_request(self, serply_tool):
+        """Test that fetch sends the key as a header, never as a query param."""
+        mock_response = MagicMock()
+        mock_response.status = 200
+        mock_response.json = AsyncMock(return_value={"articles": []})
+
+        mock_session = MagicMock()
+        mock_context = MagicMock(
+            __aenter__=AsyncMock(return_value=mock_response),
+            __aexit__=AsyncMock(),
+        )
+        mock_session.get = MagicMock(return_value=mock_context)
+
+        with patch("aiohttp.ClientSession") as mock_client:
+            mock_client.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+            mock_client.return_value.__aexit__ = AsyncMock()
+
+            await serply_tool._fetch_serply_page(  # noqa: SLF001
+                query="test query",
+                num=30,
+                offset=10,
+                start_year="2020",
+                end_year="2023",
+            )
+
+        mock_session.get.assert_called_once()
+        call_args = mock_session.get.call_args
+        assert call_args[0][0] == "https://api.serply.io/v1/scholar"
+        params = call_args[1]["params"]
+        headers = call_args[1]["headers"]
+
+        assert params["q"] == "test query"
+        assert params["num"] == 20
+        assert params["start"] == 10
+        assert params["as_ylo"] == "2020"
+        assert params["as_yhi"] == "2023"
+        assert "api_key" not in params
+        assert headers["X-Api-Key"] == "test-serply-key"  # pragma: allowlist secret
+
+    @pytest.mark.asyncio
+    async def test_fetch_raises_on_http_error(self, serply_tool):
+        """Test that a non-200 response raises."""
+        mock_response = MagicMock()
+        mock_response.status = 401
+
+        mock_session = MagicMock()
+        mock_context = MagicMock(
+            __aenter__=AsyncMock(return_value=mock_response),
+            __aexit__=AsyncMock(return_value=False),
+        )
+        mock_session.get = MagicMock(return_value=mock_context)
+
+        with patch("aiohttp.ClientSession") as mock_client:
+            mock_client.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+            mock_client.return_value.__aexit__ = AsyncMock(return_value=False)
+
+            with pytest.raises(RuntimeError, match="HTTP 401"):
+                await serply_tool._fetch_serply_page(  # noqa: SLF001
+                    query="q",
+                    num=10,
+                    offset=0,
+                    start_year=None,
+                    end_year=None,
+                )
+
+
 class TestProviderDispatch:
     """Tests for provider-based dispatch in search()."""
 
@@ -884,6 +1067,43 @@ class TestProviderDispatch:
         mock_serpapi.assert_not_called()
 
     @pytest.mark.asyncio
+    async def test_search_dispatches_to_serply(self, serply_tool):
+        """Test that search() dispatches to _search_serply."""
+        with (
+            patch.object(
+                serply_tool,
+                "_search_serply",
+                new_callable=AsyncMock,
+                return_value=[],
+            ) as mock_serply,
+            patch.object(
+                serply_tool,
+                "_search_serper",
+                new_callable=AsyncMock,
+            ) as mock_serper,
+        ):
+            await serply_tool.search("test query")
+
+        mock_serply.assert_called_once()
+        mock_serper.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_search_serply_success(self, serply_tool, sample_serply_response):
+        """Test successful search via Serply produces formatted output."""
+        with patch.object(
+            serply_tool,
+            "_search_serply",
+            new_callable=AsyncMock,
+            return_value=PaperSearchTool._normalize_serply(  # noqa: SLF001
+                sample_serply_response["articles"]
+            ),
+        ):
+            result = await serply_tool.search("transformers")
+
+        assert "Attention Is All You Need" in result
+        assert "BERT" in result
+
+    @pytest.mark.asyncio
     async def test_search_serpapi_success(self, serpapi_tool, sample_serpapi_response):
         """Test successful search via SerpAPI produces formatted output."""
         with patch.object(
@@ -939,6 +1159,7 @@ class TestRegisterMissingKeyStub:
             (PaperSearchProvider.SERPER, "SERPER_API_KEY"),
             (PaperSearchProvider.SERPAPI, "SERPAPI_API_KEY"),
             (PaperSearchProvider.SEARCHAPI, "SEARCHAPI_API_KEY"),
+            (PaperSearchProvider.SERPLY, "SERPLY_API_KEY"),
         ],
     )
     @pytest.mark.asyncio
