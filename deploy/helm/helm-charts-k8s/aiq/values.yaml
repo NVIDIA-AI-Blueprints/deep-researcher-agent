@@ -217,5 +217,17 @@ apps: {}
   #         paths:
   #           - path: /
   #             pathType: Prefix
+  #   # Optional: supply a custom app config via an inline or existing ConfigMap.
+  #   # When enabled the chart mounts it and sets CONFIG_FILE=<mountPath>/<fileName>,
+  #   # which takes precedence over any env.CONFIG_FILE. Default off keeps behavior unchanged.
+  #   # Set exactly one of content or existingConfigMap; the chart fails to render otherwise.
+  #   # Inline content also adds a checksum annotation so helm upgrade rolls the pods;
+  #   # an existingConfigMap is yours to edit, so restart the workload yourself after changing it.
+  #   config:
+  #     enabled: false
+  #     existingConfigMap: ""  # reference an existing ConfigMap instead of rendering one
+  #     content: ""            # inline YAML rendered into a ConfigMap (use helm --set-file to pass a whole file)
+  #     fileName: config.yml   # key in the ConfigMap and mounted filename
+  #     mountPath: /app/custom-configs  # must NOT be /app/configs (baked into the image)
   #
   # All defaults (service.type, serviceAccount, autoscaling, etc.) are inherited!

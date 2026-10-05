@@ -186,6 +186,8 @@ Open [http://localhost:3000](http://localhost:3000) to access the web UI.
 
 ## Configuration
 
+### Select a built-in config
+
 The backend loads a workflow config at startup. Switch configs with `--set`:
 
 | Config file | Description |
@@ -202,6 +204,98 @@ helm upgrade --install aiq aiq2-web-2.2.0.tgz -n ns-aiq \
 ```
 
 For source chart deployments, use `deployment-k8s/` instead of the `.tgz` file (refer to [Deploy](#deploy)).
+
+### Provide a custom config
+
+Custom config is off by default. Enable it via `aiq.apps.backend.config` to
+supply your own workflow YAML instead of one of the baked-in configs -- for
+example, to point at a self-hosted NIM (see
+[Swapping models](../customization/swapping-models.md)). When enabled, the
+chart mounts your config at `/app/custom-configs/config.yml` and automatically
+sets `CONFIG_FILE` to that path, overriding any `env.CONFIG_FILE` you also
+set.
+
+Start from a complete shipped config. A workflow config needs `general`,
+`llms`, `functions`, and `workflow` sections; a fragment that only redefines an
+LLM will not boot. Copy the profile you want and edit it:
+
+```bash
+cp configs/config_web_default_llamaindex.yml my-config.yml
+```
+
+| Field | Description |
+|-------|-------------|
+| `enabled` | Set `true` to mount a custom config and override `CONFIG_FILE`. Default `false`. |
+| `content` | Inline YAML rendered into a chart-managed ConfigMap. |
+| `existingConfigMap` | Name of a ConfigMap you created yourself, keyed by `fileName`. |
+| `fileName` | Key in the ConfigMap and the mounted filename. Default `config.yml`. |
+| `mountPath` | Directory the config is mounted into. Default `/app/custom-configs`. |
+
+The chart rejects invalid combinations at render time rather than producing a
+Deployment that crash-loops:
+
+- `enabled: true` with neither `content` nor `existingConfigMap` set.
+- Both `content` and `existingConfigMap` set -- pick one.
+- `mountPath: /app/configs`, which would hide the image's baked-in configs.
+
+**Option A -- Inline (chart renders the ConfigMap):**
+
+Pass the whole file with `--set-file` instead of pasting YAML into a values
+file:
+
+```bash
+helm upgrade --install aiq aiq2-web-2.2.0.tgz -n ns-aiq \
+  --wait --timeout 10m \
+  --set aiq.apps.backend.config.enabled=true \
+  --set-file aiq.apps.backend.config.content=my-config.yml
+```
+
+The chart hashes the rendered content into a `checksum/app-config` pod
+annotation, so a later `helm upgrade` with an edited `my-config.yml` restarts
+the backend and the new workflow takes effect.
+
+**Option B -- Existing ConfigMap:**
+
+Create the ConfigMap yourself first, keyed by the `fileName` you configure
+(`config.yml` by default):
+
+```bash
+kubectl create configmap aiq-custom-config \
+  --from-file=config.yml=my-config.yml -n ns-aiq
+```
+
+Then reference it in your values file:
+
+```yaml
+# aiq-custom-config-values.yaml
+aiq:
+  apps:
+    backend:
+      config:
+        enabled: true
+        existingConfigMap: aiq-custom-config
+```
+
+```bash
+helm upgrade --install aiq aiq2-web-2.2.0.tgz -n ns-aiq \
+  --wait --timeout 10m \
+  -f aiq-custom-config-values.yaml
+```
+
+A ready-to-edit version of this overlay ships at
+`deploy/helm/examples/custom-config-values.yaml`.
+
+GitOps users can manage the `aiq-custom-config` ConfigMap out-of-band (for
+example, with Kustomize or a separate manifest) and just reference its name
+here.
+
+```{note}
+The backend reads `CONFIG_FILE` once at startup, and the chart cannot see
+inside a ConfigMap it does not render. After editing an `existingConfigMap`,
+restart the backend yourself:
+
+    kubectl rollout restart deployment/aiq-backend -n ns-aiq
+```
 
 ## FRAG Integration
 

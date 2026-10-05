@@ -99,6 +99,20 @@ aiq:
         AIQ_MAX_ACTIVE_DEEP_RESEARCH_JOBS_PER_PRINCIPAL: '5'
         AIQ_MAX_ACTIVE_DEEP_RESEARCH_JOBS_GLOBAL: '50'
         AIQ_MAX_DEEP_RESEARCH_SUBMISSIONS_PER_MINUTE: '20'
+      # Supply a custom AI-Q backend config without rebuilding the image.
+      # Disabled by default: the baked-in config selected via env.CONFIG_FILE is used.
+      config:
+        enabled: false  # Set true to mount a custom config; CONFIG_FILE then points at it (overrides env.CONFIG_FILE above)
+        # Exactly one of `content` or `existingConfigMap` is required when enabled:
+        # Option A (inline): the chart renders a ConfigMap from `content` below.
+        # Option B (existing): set `existingConfigMap` to a ConfigMap you created
+        #   yourself and leave `content` empty; no ConfigMap is rendered.
+        existingConfigMap: ""  # Name of a pre-existing ConfigMap to mount instead of rendering one
+        content: ""  # Inline YAML config, rendered into a ConfigMap; pass a whole file with helm --set-file
+        fileName: config.yml  # Key in the ConfigMap and the filename mounted into the container
+        mountPath: /app/custom-configs  # Mount location; must NOT be /app/configs (baked into the image)
+        # Inline content is checksummed into the pod template, so helm upgrade rolls the backend.
+        # An existingConfigMap is yours: after editing it, run kubectl rollout restart yourself.
       labels:
         component: backend
       route:

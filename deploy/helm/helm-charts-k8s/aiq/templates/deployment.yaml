@@ -4,6 +4,22 @@
 {{- $defaults := $.Values.appDefaults | default dict }}
 {{- $replicaCount := $appConfig.replicaCount | default $appConfig.replicas | default $defaults.replicaCount | default 1 }}
 {{- $autoscaling := $appConfig.autoscaling | default $defaults.autoscaling | default dict }}
+{{- /* Custom app config (mounted from a ConfigMap) - validate before rendering */ -}}
+{{- $customConfig := $appConfig.config | default dict }}
+{{- $customConfigEnabled := $customConfig.enabled | default false }}
+{{- $customConfigMountPath := $customConfig.mountPath | default "/app/custom-configs" }}
+{{- $customConfigFileName := $customConfig.fileName | default "config.yml" }}
+{{- if $customConfigEnabled }}
+{{- if and (not $customConfig.content) (not $customConfig.existingConfigMap) }}
+{{- fail (printf "apps.%s.config.enabled is true but neither config.content nor config.existingConfigMap is set. Provide inline YAML in config.content, or the name of a ConfigMap you created in config.existingConfigMap." $appName) }}
+{{- end }}
+{{- if and $customConfig.content $customConfig.existingConfigMap }}
+{{- fail (printf "apps.%s.config sets both config.content and config.existingConfigMap. Set exactly one: inline YAML in config.content, or an existing ConfigMap in config.existingConfigMap." $appName) }}
+{{- end }}
+{{- if eq (clean $customConfigMountPath) "/app/configs" }}
+{{- fail (printf "apps.%s.config.mountPath must not be /app/configs; that directory holds the configs baked into the image and mounting over it hides them. Use a separate path such as /app/custom-configs." $appName) }}
+{{- end }}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -56,7 +72,14 @@ spec:
         {{- $annotationKey := printf "admission.datadoghq.com/%s-lib.version" $language }}
         {{- $datadogAnnotations = dict $annotationKey $version }}
       {{- end }}
-      {{- $allAnnotations := mustMerge (deepCopy $appAnnotations) (deepCopy $defaultAnnotations) (deepCopy $datadogAnnotations) }}
+      {{- /* Roll the pods when chart-rendered config content changes. An
+             existingConfigMap is owned by the user, so its content is not
+             visible here and a manual restart is required after editing it. */ -}}
+      {{- $configAnnotations := dict }}
+      {{- if and $customConfigEnabled $customConfig.content }}
+      {{- $configAnnotations = dict "checksum/app-config" ($customConfig.content | sha256sum) }}
+      {{- end }}
+      {{- $allAnnotations := mustMerge (deepCopy $appAnnotations) (deepCopy $defaultAnnotations) (deepCopy $datadogAnnotations) (deepCopy $configAnnotations) }}
       {{- if $allAnnotations }}
       annotations:
         {{- toYaml $allAnnotations | nindent 8 }}
@@ -171,7 +194,7 @@ spec:
         {{- if hasKey $appConfig "mountSharedSecrets" }}
         {{- $mountSharedSecrets = $appConfig.mountSharedSecrets }}
         {{- end }}
-        {{- if or $appConfig.env $appConfig.extraEnv $appConfig.secretEnv (and $mountSharedSecrets $.Values.secretEnvAsEnv) }}
+        {{- if or $appConfig.env $appConfig.extraEnv $appConfig.secretEnv (and $mountSharedSecrets $.Values.secretEnvAsEnv) $customConfigEnabled }}
         env:
         {{- /* Auto-generate common env vars */ -}}
         {{- $autoEnv := dict }}
@@ -181,14 +204,20 @@ spec:
         {{- if and (not (and $appConfig.env (hasKey $appConfig.env "PORT"))) $appConfig.port }}
         {{- $_ := set $autoEnv "PORT" (toString $appConfig.port) }}
         {{- end }}
+        {{- /* A custom mounted config takes precedence: point CONFIG_FILE at it */ -}}
+        {{- if $customConfigEnabled }}
+        {{- $_ := set $autoEnv "CONFIG_FILE" (printf "%s/%s" $customConfigMountPath $customConfigFileName) }}
+        {{- end }}
         {{- range $key, $value := $autoEnv }}
         - name: {{ $key }}
           value: {{ $value | quote }}
         {{- end }}
-        {{- /* User-specified env vars */ -}}
+        {{- /* User-specified env vars (CONFIG_FILE is dropped when a custom config is mounted) */ -}}
         {{- range $key, $value := $appConfig.env }}
+        {{- if not (and $customConfigEnabled (eq $key "CONFIG_FILE")) }}
         - name: {{ $key }}
           value: {{ $value | quote }}
+        {{- end }}
         {{- end }}
         {{- with $appConfig.extraEnv }}
         {{- toYaml . | nindent 8 }}
@@ -233,11 +262,16 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- end }}
-        {{- if or $appConfig.volumeMounts (and $.Values.fusionConfig $.Values.fusionConfig.enabled) }}
+        {{- if or $appConfig.volumeMounts (and $.Values.fusionConfig $.Values.fusionConfig.enabled) $customConfigEnabled }}
         volumeMounts:
         {{- if and $.Values.fusionConfig $.Values.fusionConfig.enabled }}
         - name: {{ $.Values.fusionConfig.volumeName | default "config" }}
           mountPath: {{ $.Values.fusionConfig.mountPath | default "/app/config" }}
+          readOnly: true
+        {{- end }}
+        {{- if $customConfigEnabled }}
+        - name: app-config
+          mountPath: {{ $customConfigMountPath }}
           readOnly: true
         {{- end }}
         {{- with $appConfig.volumeMounts }}
@@ -253,12 +287,17 @@ spec:
       {{- with $appConfig.sidecars }}
       {{- toYaml . | nindent 6 }}
       {{- end }}
-      {{- if or $appConfig.volumes (and $.Values.fusionConfig $.Values.fusionConfig.enabled) }}
+      {{- if or $appConfig.volumes (and $.Values.fusionConfig $.Values.fusionConfig.enabled) $customConfigEnabled }}
       volumes:
       {{- if and $.Values.fusionConfig $.Values.fusionConfig.enabled }}
       - name: {{ $.Values.fusionConfig.volumeName | default "config" }}
         configMap:
           name: {{ $.Values.fusionConfig.configMapName | default (printf "%s-config" (include "aiq.fullname" $ | lower)) }}
+      {{- end }}
+      {{- if $customConfigEnabled }}
+      - name: app-config
+        configMap:
+          name: {{ $customConfig.existingConfigMap | default (printf "%s-config" (include "aiq.appFullname" (list $ $appName))) }}
       {{- end }}
       {{- with $appConfig.volumes }}
         {{- toYaml . | nindent 6 }}

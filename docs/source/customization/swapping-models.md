@@ -103,6 +103,22 @@ llms:
 **Hosted Endpoint Availability:** The default profiles use Nemotron 3.5 Lightning for intent and shallow research, and Nemotron 3 Ultra for clarification and every deep-research role. Shared hosted endpoints can have limited availability during high demand (HTTP 429 or 503 responses), and the API Catalog Lightning serving profile has a separate [shallow citation-output limitation](../resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog). For production deployments requiring consistent throughput, refer to the [self-hosting guidance](../resources/troubleshooting.md#nemotron-hosted-endpoint-availability).
 ```
 
+**Apply the config change:** how you get the edited config in front of the
+running backend depends on the deployment method:
+
+| Method | How to apply |
+|--------|-------------|
+| CLI | Edit the `configs/*.yml` file passed to `--config_file`. |
+| Docker Compose | Edit the `configs/*.yml` file (bind-mounted read-only into the container); select it with `BACKEND_CONFIG`. |
+| Helm / Kubernetes | Supply the edited config as a custom ConfigMap or inline via `aiq.apps.backend.config`; see [Kubernetes → Configuration](../deployment/kubernetes.md#configuration). |
+
+```{note}
+In Kubernetes, `base_url` must be an in-cluster address (for example,
+`http://<nim-service>.<namespace>.svc.cluster.local:8000/v1`), not
+`http://localhost:8080/v1` -- the backend pod cannot reach a NIM running
+outside the cluster network via `localhost`.
+```
+
 You can mix hosted and local NIMs in the same config -- for example, use a hosted endpoint for shallow research and a local downloadable Ultra NIM for deep research:
 
 ```yaml

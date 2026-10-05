@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import hashlib
 import re
 import subprocess
 import tarfile
@@ -30,6 +31,7 @@ PACKAGED_CHILD_CHART_PATH = CHART_PATH / "charts" / "aiq-0.0.5.tgz"
 HELM_README_PATH = REPO_ROOT / "deploy" / "helm" / "README.md"
 KUBERNETES_DOCS_PATH = REPO_ROOT / "docs" / "source" / "deployment" / "kubernetes.md"
 OPENSEARCH_VALUES_PATH = REPO_ROOT / "deploy" / "helm" / "examples" / "aws-opensearch-serverless-values.yaml"
+CUSTOM_CONFIG_EXAMPLE_PATH = REPO_ROOT / "deploy" / "helm" / "examples" / "custom-config-values.yaml"
 PYPROJECT_PATH = REPO_ROOT / "pyproject.toml"
 EXPECTED_RELEASE_VERSION = "2.2.0"
 EXPECTED_CHILD_CHART_VERSION = "0.0.5"
@@ -43,6 +45,18 @@ def render_chart(*extra_args: str, namespace: str = "ns-aiq") -> list[dict[str, 
         text=True,
     )
     return [doc for doc in yaml.safe_load_all(result.stdout) if doc]
+
+
+def render_chart_error(*extra_args: str, namespace: str = "ns-aiq") -> str:
+    """Render the chart expecting failure and return the helm stderr output."""
+    result = subprocess.run(
+        ["helm", "template", "aiq", str(CHART_PATH), "-n", namespace, *extra_args],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0, "expected helm template to fail"
+    return result.stderr
 
 
 def walk_values(value: Any):
@@ -339,3 +353,283 @@ def test_shared_dask_scheduler_excludes_inline_shared_secrets():
 
     assert "TEST_SHARED_SECRET" not in scheduler_env_names
     assert worker_env["TEST_SHARED_SECRET"] == "test-only"  # pragma: allowlist secret
+
+
+def _backend_deployment(manifests: list[dict[str, Any]]) -> dict[str, Any]:
+    """Return the ``aiq-backend`` Deployment manifest from rendered chart output."""
+    return next(
+        manifest
+        for manifest in manifests
+        if manifest.get("kind") == "Deployment" and manifest["metadata"]["name"] == "aiq-backend"
+    )
+
+
+def _backend_env(manifests: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return the backend container's ``env`` list from rendered chart output."""
+    return _backend_deployment(manifests)["spec"]["template"]["spec"]["containers"][0].get("env", [])
+
+
+def test_backend_config_inline_renders_configmap_and_mounts(tmp_path: Path):
+    """Inline ``config.content`` renders a ConfigMap, mounts it, and sets CONFIG_FILE."""
+    values_file = tmp_path / "inline-config.yaml"
+    values_file.write_text(
+        """
+aiq:
+  apps:
+    backend:
+      config:
+        enabled: true
+        content: |
+          general:
+            x: 1
+""",
+        encoding="utf-8",
+    )
+
+    manifests = render_chart("-f", str(values_file))
+
+    configmap = next(
+        manifest
+        for manifest in manifests
+        if manifest.get("kind") == "ConfigMap" and manifest["metadata"]["name"] == "aiq-backend-config"
+    )
+    assert configmap["data"]["config.yml"] == "general:\n  x: 1\n"
+
+    backend_deployment = _backend_deployment(manifests)
+    pod_spec = backend_deployment["spec"]["template"]["spec"]
+
+    app_config_volume = next(volume for volume in pod_spec["volumes"] if volume["name"] == "app-config")
+    assert app_config_volume["configMap"]["name"] == "aiq-backend-config"
+
+    container = pod_spec["containers"][0]
+    app_config_mount = next(mount for mount in container["volumeMounts"] if mount["name"] == "app-config")
+    assert app_config_mount["mountPath"] == "/app/custom-configs"
+    assert app_config_mount["readOnly"] is True
+
+    env = {item["name"]: item.get("value") for item in container.get("env", [])}
+    assert env["CONFIG_FILE"] == "/app/custom-configs/config.yml"
+
+    # The backend reads CONFIG_FILE once at startup, so a content change must roll the pods.
+    annotations = backend_deployment["spec"]["template"]["metadata"]["annotations"]
+    assert annotations["checksum/app-config"] == hashlib.sha256(b"general:\n  x: 1\n").hexdigest()
+
+
+def test_backend_config_inline_change_rolls_pods(tmp_path: Path):
+    """Editing inline ``config.content`` changes the pod-template checksum annotation."""
+
+    def checksum(model_name: str) -> str:
+        values_file = tmp_path / f"inline-{model_name}.yaml"
+        values_file.write_text(
+            f"""
+aiq:
+  apps:
+    backend:
+      config:
+        enabled: true
+        content: |
+          llms:
+            default_llm:
+              model_name: {model_name}
+""",
+            encoding="utf-8",
+        )
+        manifests = render_chart("-f", str(values_file))
+        return _backend_deployment(manifests)["spec"]["template"]["metadata"]["annotations"]["checksum/app-config"]
+
+    assert checksum("model-a") != checksum("model-b")
+
+
+def test_backend_config_existing_configmap_reference(tmp_path: Path):
+    """``config.existingConfigMap`` mounts the referenced CM and renders none of its own."""
+    values_file = tmp_path / "existing-config.yaml"
+    values_file.write_text(
+        """
+aiq:
+  apps:
+    backend:
+      config:
+        enabled: true
+        existingConfigMap: my-cm
+""",
+        encoding="utf-8",
+    )
+
+    manifests = render_chart("-f", str(values_file))
+
+    rendered_configmaps = {
+        manifest["metadata"]["name"] for manifest in manifests if manifest.get("kind") == "ConfigMap"
+    }
+    assert "aiq-backend-config" not in rendered_configmaps
+
+    backend_deployment = _backend_deployment(manifests)
+    pod_spec = backend_deployment["spec"]["template"]["spec"]
+
+    app_config_volume = next(volume for volume in pod_spec["volumes"] if volume["name"] == "app-config")
+    assert app_config_volume["configMap"]["name"] == "my-cm"
+
+    container = pod_spec["containers"][0]
+    app_config_mount = next(mount for mount in container["volumeMounts"] if mount["name"] == "app-config")
+    assert app_config_mount["mountPath"] == "/app/custom-configs"
+
+    env = {item["name"]: item.get("value") for item in container.get("env", [])}
+    assert env["CONFIG_FILE"] == "/app/custom-configs/config.yml"
+
+    # The chart cannot see the content of a user-owned ConfigMap, so it adds no checksum
+    # annotation; editing that ConfigMap requires a manual restart.
+    annotations = backend_deployment["spec"]["template"]["metadata"].get("annotations", {})
+    assert "checksum/app-config" not in annotations
+
+
+def test_backend_config_honors_custom_mount_path_and_file_name(tmp_path: Path):
+    """``mountPath`` and ``fileName`` drive the ConfigMap key, the mount, and CONFIG_FILE."""
+    values_file = tmp_path / "custom-paths.yaml"
+    values_file.write_text(
+        """
+aiq:
+  apps:
+    backend:
+      config:
+        enabled: true
+        fileName: my-workflow.yml
+        mountPath: /app/overrides
+        content: |
+          general:
+            x: 1
+""",
+        encoding="utf-8",
+    )
+
+    manifests = render_chart("-f", str(values_file))
+
+    configmap = next(
+        manifest
+        for manifest in manifests
+        if manifest.get("kind") == "ConfigMap" and manifest["metadata"]["name"] == "aiq-backend-config"
+    )
+    assert set(configmap["data"]) == {"my-workflow.yml"}
+
+    container = _backend_deployment(manifests)["spec"]["template"]["spec"]["containers"][0]
+    app_config_mount = next(mount for mount in container["volumeMounts"] if mount["name"] == "app-config")
+    assert app_config_mount["mountPath"] == "/app/overrides"
+
+    env = {item["name"]: item.get("value") for item in container.get("env", [])}
+    assert env["CONFIG_FILE"] == "/app/overrides/my-workflow.yml"
+
+
+def test_backend_config_rejects_enabled_without_a_source():
+    """``config.enabled`` without content or existingConfigMap would mount a ConfigMap that is never created."""
+    stderr = render_chart_error("--set", "aiq.apps.backend.config.enabled=true")
+
+    assert "apps.backend.config.enabled is true but neither config.content nor config.existingConfigMap is set" in (
+        stderr
+    )
+
+
+def test_backend_config_rejects_both_content_and_existing_configmap():
+    """Supplying both sources is ambiguous, so the chart fails instead of silently picking one."""
+    stderr = render_chart_error(
+        "--set",
+        "aiq.apps.backend.config.enabled=true",
+        "--set-string",
+        "aiq.apps.backend.config.content=general: {}",
+        "--set-string",
+        "aiq.apps.backend.config.existingConfigMap=my-cm",
+    )
+
+    assert "apps.backend.config sets both config.content and config.existingConfigMap" in stderr
+
+
+def test_backend_config_rejects_mounting_over_baked_in_configs():
+    """``/app/configs`` holds the image's own configs; mounting over it hides them."""
+    for mount_path in ("/app/configs", "/app/configs/"):
+        stderr = render_chart_error(
+            "--set",
+            "aiq.apps.backend.config.enabled=true",
+            "--set-string",
+            "aiq.apps.backend.config.content=general: {}",
+            "--set-string",
+            f"aiq.apps.backend.config.mountPath={mount_path}",
+        )
+
+        assert "apps.backend.config.mountPath must not be /app/configs" in stderr
+
+
+def test_custom_config_example_mounts_the_documented_configmap():
+    """The shipped example overlay renders and mounts the ConfigMap its comments tell users to create."""
+    manifests = render_chart("-f", str(CUSTOM_CONFIG_EXAMPLE_PATH))
+
+    rendered_configmaps = {
+        manifest["metadata"]["name"] for manifest in manifests if manifest.get("kind") == "ConfigMap"
+    }
+    assert "aiq-backend-config" not in rendered_configmaps
+
+    pod_spec = _backend_deployment(manifests)["spec"]["template"]["spec"]
+    app_config_volume = next(volume for volume in pod_spec["volumes"] if volume["name"] == "app-config")
+    assert app_config_volume["configMap"]["name"] == "my-custom-aiq-config"
+
+    env = {item["name"]: item.get("value") for item in pod_spec["containers"][0].get("env", [])}
+    assert env["CONFIG_FILE"] == "/app/custom-configs/config.yml"
+
+
+def test_backend_config_accepts_a_complete_shipped_config_via_set_file():
+    """A whole shipped config passed with --set-file survives the round trip into the ConfigMap."""
+    shipped_config_path = REPO_ROOT / "configs" / "config_web_default_llamaindex.yml"
+    manifests = render_chart(
+        "--set",
+        "aiq.apps.backend.config.enabled=true",
+        "--set-file",
+        f"aiq.apps.backend.config.content={shipped_config_path}",
+    )
+
+    configmap = next(
+        manifest
+        for manifest in manifests
+        if manifest.get("kind") == "ConfigMap" and manifest["metadata"]["name"] == "aiq-backend-config"
+    )
+    mounted_config = yaml.safe_load(configmap["data"]["config.yml"])
+    shipped_config = yaml.safe_load(shipped_config_path.read_text(encoding="utf-8"))
+    assert mounted_config == shipped_config
+
+    env = {item["name"]: item.get("value") for item in _backend_env(manifests)}
+    assert env["CONFIG_FILE"] == "/app/custom-configs/config.yml"
+
+
+def test_backend_config_disabled_by_default():
+    """With no custom config, no app-config volume/mount is added and CONFIG_FILE is the baked default."""
+    manifests = render_chart()
+
+    backend_deployment = _backend_deployment(manifests)
+    pod_spec = backend_deployment["spec"]["template"]["spec"]
+
+    volume_names = {volume["name"] for volume in pod_spec.get("volumes", [])}
+    assert "app-config" not in volume_names
+
+    mount_names = {mount["name"] for mount in pod_spec["containers"][0].get("volumeMounts", [])}
+    assert "app-config" not in mount_names
+
+    env = {item["name"]: item.get("value") for item in pod_spec["containers"][0].get("env", [])}
+    assert env["CONFIG_FILE"] == "configs/config_web_default_llamaindex.yml"
+
+
+def test_backend_config_overrides_baked_config_file(tmp_path: Path):
+    """Enabling a custom config emits exactly one CONFIG_FILE pointing at the mount."""
+    values_file = tmp_path / "override-config.yaml"
+    values_file.write_text(
+        """
+aiq:
+  apps:
+    backend:
+      config:
+        enabled: true
+        content: |
+          general:
+            x: 1
+""",
+        encoding="utf-8",
+    )
+
+    manifests = render_chart("-f", str(values_file))
+
+    config_file_entries = [item for item in _backend_env(manifests) if item["name"] == "CONFIG_FILE"]
+    assert len(config_file_entries) == 1
+    assert config_file_entries[0]["value"] == "/app/custom-configs/config.yml"

@@ -1,0 +1,50 @@
+# Example values for AI-Q with a custom backend config supplied via Helm.
+#
+# By default the backend uses one of the config YAMLs baked into the image
+# (selected with env.CONFIG_FILE). This overlay shows how to supply your own
+# config instead - useful for self-hosted / downloadable NIMs or local
+# inference - without rebuilding the image.
+#
+# When config.enabled is true the chart mounts your config and sets
+# CONFIG_FILE=<mountPath>/<fileName>, which takes precedence over the baked-in
+# env.CONFIG_FILE (no need to clear it yourself).
+#
+# Set exactly one of `content` or `existingConfigMap`; the chart fails to
+# render if both or neither are set.
+#
+#   A) existingConfigMap (this file): you create the ConfigMap, the chart
+#      mounts it. Best for a full config, because a complete AI-Q config is a
+#      few hundred lines and reads better as a file than as inline YAML.
+#   B) content: inline YAML that the chart renders into a ConfigMap. Feed it a
+#      whole file with `--set-file` rather than pasting YAML into values (see
+#      the docs link below).
+#
+# Start from a complete shipped config rather than writing one from scratch -
+# a partial config (for example, only an `llms:` block) will not boot. Copy the
+# profile you want out of the repository and edit the parts you need:
+#
+#   cp configs/config_web_default_llamaindex.yml my-config.yml
+#   $EDITOR my-config.yml
+#
+# Then create the ConfigMap this overlay expects and install:
+#
+#   kubectl create configmap my-custom-aiq-config -n ns-aiq \
+#     --from-file=config.yml=my-config.yml
+#   helm install aiq deployment-k8s/ -n ns-aiq -f examples/custom-config-values.yaml
+#
+# The backend reads CONFIG_FILE once at startup. The chart cannot see inside a
+# ConfigMap you own, so after editing it, restart the backend yourself:
+#
+#   kubectl rollout restart deployment/aiq-backend -n ns-aiq
+#
+# See docs/source/deployment/kubernetes.md for the inline (`--set-file`)
+# alternative, which does roll the pods automatically on change.
+
+aiq:
+  apps:
+    backend:
+      config:
+        enabled: true
+        fileName: config.yml
+        mountPath: /app/custom-configs
+        existingConfigMap: my-custom-aiq-config

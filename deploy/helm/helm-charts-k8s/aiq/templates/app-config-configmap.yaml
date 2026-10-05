@@ -1,0 +1,19 @@
+{{- /* Renders the custom app config only for the inline (`config.content`) case.
+       With `config.existingConfigMap` the user owns the ConfigMap.
+       Validation of the `config` block lives in deployment.yaml. */ -}}
+{{- range $appName, $appConfig := .Values.apps }}
+{{- $customConfig := $appConfig.config | default dict }}
+{{- if and $appConfig.enabled $customConfig.enabled $customConfig.content (not $customConfig.existingConfigMap) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aiq.appFullname" (list $ $appName) }}-config
+  namespace: {{ include "aiq.namespace" $ }}
+  labels:
+    {{- include "aiq.appLabels" (list $ $appName $appConfig) | nindent 4 }}
+data:
+  {{ $customConfig.fileName | default "config.yml" }}: |
+    {{- $customConfig.content | nindent 4 }}
+{{- end }}
+{{- end }}
