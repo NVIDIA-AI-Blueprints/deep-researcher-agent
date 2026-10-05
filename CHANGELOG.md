@@ -6,7 +6,7 @@ Published NVIDIA NGC artifacts:
 
 - Backend container: [`nvcr.io/nvidia/blueprint/aiq-agent:2.2.0`](https://catalog.ngc.nvidia.com/orgs/nvidia/blueprint/containers/aiq-agent/2.2.0)
 - Frontend container: [`nvcr.io/nvidia/blueprint/aiq-frontend:2.2.0`](https://catalog.ngc.nvidia.com/orgs/nvidia/blueprint/containers/aiq-frontend/2.2.0)
-- Helm chart: [`nvidia/blueprint/deep-researcher-web:2.2.0`](https://catalog.ngc.nvidia.com/orgs/nvidia/blueprint/helm-charts/aiq2-web/2.2.0)
+- Helm chart: [`nvidia/blueprint/aiq2-web:2.2.0`](https://catalog.ngc.nvidia.com/orgs/nvidia/blueprint/helm-charts/aiq2-web/2.2.0)
 
 **Research and reports**
 

@@ -51,8 +51,8 @@ def test_release_version_matches_default_compose_images():
     expected_frontend_image = f"nvcr.io/nvidia/blueprint/aiq-frontend:{package_version}"
     for release_path in (COMPOSE_PATH, COMPOSE_README_PATH, DOCS_COMPOSE_PATH):
         release_text = release_path.read_text(encoding="utf-8")
-        backend_images = set(re.findall(r"nvcr\.io/nvidia/blueprint/deep-researcher-agent:[\w.-]+", release_text))
-        frontend_images = set(re.findall(r"nvcr\.io/nvidia/blueprint/deep-researcher-frontend:[\w.-]+", release_text))
+        backend_images = set(re.findall(r"nvcr\.io/nvidia/blueprint/aiq-agent:[\w.-]+", release_text))
+        frontend_images = set(re.findall(r"nvcr\.io/nvidia/blueprint/aiq-frontend:[\w.-]+", release_text))
         assert backend_images == {expected_backend_image}
         assert frontend_images == {expected_frontend_image}
 

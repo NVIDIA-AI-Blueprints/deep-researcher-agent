@@ -19,9 +19,9 @@ Deep Researcher Agent v2.2.0 is published on NVIDIA NGC. Use the exact versioned
 
 | Artifact | Type | Versioned reference |
 |----------|------|---------------------|
-| [`deep-researcher-agent`](https://catalog.ngc.nvidia.com/orgs/nvidia/blueprint/containers/aiq-agent/2.2.0) | Container image | `nvcr.io/nvidia/blueprint/aiq-agent:2.2.0` |
-| [`deep-researcher-frontend`](https://catalog.ngc.nvidia.com/orgs/nvidia/blueprint/containers/aiq-frontend/2.2.0) | Container image | `nvcr.io/nvidia/blueprint/aiq-frontend:2.2.0` |
-| [`deep-researcher-web`](https://catalog.ngc.nvidia.com/orgs/nvidia/blueprint/helm-charts/aiq2-web/2.2.0) | Helm chart | `nvidia/blueprint/deep-researcher-web:2.2.0` |
+| [`aiq-agent`](https://catalog.ngc.nvidia.com/orgs/nvidia/blueprint/containers/aiq-agent/2.2.0) | Container image | `nvcr.io/nvidia/blueprint/aiq-agent:2.2.0` |
+| [`aiq-frontend`](https://catalog.ngc.nvidia.com/orgs/nvidia/blueprint/containers/aiq-frontend/2.2.0) | Container image | `nvcr.io/nvidia/blueprint/aiq-frontend:2.2.0` |
+| [`aiq2-web`](https://catalog.ngc.nvidia.com/orgs/nvidia/blueprint/helm-charts/aiq2-web/2.2.0) | Helm chart | `nvidia/blueprint/aiq2-web:2.2.0` |
 
 ## Architecture Overview
 
