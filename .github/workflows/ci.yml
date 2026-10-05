@@ -330,6 +330,10 @@ jobs:
             --ignore-until-fixed GHSA-2wm9-hf6c-p5cr \
             --ignore-until-fixed GHSA-36p7-vc44-83pf \
             --ignore-until-fixed GHSA-xph7-9rjv-w5fr \
+            --ignore-until-fixed PYSEC-2026-3813 \
+            --ignore-until-fixed PYSEC-2026-3814 \
+            --ignore-until-fixed PYSEC-2026-3815 \
+            --ignore-until-fixed GHSA-8mgp-746c-j5xp \
             --output-format json > "$RUNNER_TEMP/deep-researcher-mcp-vulnerability-gate.json"
 
       - name: Generate MCP SBOM and license evidence

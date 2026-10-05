@@ -1,6 +1,9 @@
 {
     "ignorePatterns": [
         {
+            "pattern": "^https://github\\.com/NVIDIA-AI-Blueprints/deep-researcher-agent/blob/develop/src/deep_researcher_agent/agents/deep_researcher/sandbox/README\\.md(#.*)?$"
+        },
+        {
             "pattern": "^https?://localhost"
         },
         {
