@@ -699,7 +699,10 @@ class TestAuthMiddlewareInternal:
         with (
             patch.dict(
                 os.environ,
-                {"DEEP_RESEARCHER_TRACE_USER_IDENTITY_MODE": "id", "DEEP_RESEARCHER_TRACE_USER_IDENTITY_HMAC_SECRET": ""},
+                {
+                    "DEEP_RESEARCHER_TRACE_USER_IDENTITY_MODE": "id",
+                    "DEEP_RESEARCHER_TRACE_USER_IDENTITY_HMAC_SECRET": "",
+                },
                 clear=False,
             ),
             patch.dict(sys.modules, {"ddtrace": ddtrace_module}, clear=False),

@@ -130,7 +130,9 @@ def _compile_script(code: str) -> tuple[Any | None, Any | None]:
     if tree.body and isinstance(tree.body[-1], ast.Expr):
         statements = ast.Module(body=tree.body[:-1], type_ignores=[])
         expression = ast.Expression(body=tree.body[-1].value)
-        return compile(statements, "<deep-researcher-python>", "exec"), compile(expression, "<deep-researcher-python>", "eval")
+        return compile(statements, "<deep-researcher-python>", "exec"), compile(
+            expression, "<deep-researcher-python>", "eval"
+        )
     return compile(tree, "<deep-researcher-python>", "exec"), None
 
 

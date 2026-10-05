@@ -126,7 +126,8 @@ def _validate_base_url(url: str) -> str:
 def _show_query_target(api_path: str) -> None:
     """Disclose the destination before transmitting user-provided query text."""
     print(
-        f"Sending user query text to configured Deep Researcher Agent backend: {_validate_base_url(DEEP_RESEARCHER_SERVER_URL)}{api_path}",
+        f"Sending user query text to configured Deep Researcher Agent backend: "
+        f"{_validate_base_url(DEEP_RESEARCHER_SERVER_URL)}{api_path}",
         file=sys.stderr,
     )
 

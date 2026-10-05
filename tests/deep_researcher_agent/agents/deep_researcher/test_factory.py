@@ -351,8 +351,13 @@ def test_graph_uses_researcher_config_key_for_researcher_skills():
 
     with (
         patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=fake_graph),
-        patch("deep_researcher_agent.agents.deep_researcher.factory.create_agent", return_value=MagicMock()) as create_researcher,
-        patch("deep_researcher_agent.agents.deep_researcher.factory.create_summarization_middleware", return_value=MagicMock()),
+        patch(
+            "deep_researcher_agent.agents.deep_researcher.factory.create_agent", return_value=MagicMock()
+        ) as create_researcher,
+        patch(
+            "deep_researcher_agent.agents.deep_researcher.factory.create_summarization_middleware",
+            return_value=MagicMock(),
+        ),
     ):
         build_deep_research_graph(
             llm_provider=_llm_provider(),
@@ -383,12 +388,17 @@ def test_graph_wires_filesystem_tool_call_guard_cross_cutting():
     fake_graph.with_config.return_value = fake_graph
 
     with (
-        patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=fake_graph) as create_graph,
+        patch(
+            "deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=fake_graph
+        ) as create_graph,
         patch(
             "deep_researcher_agent.agents.deep_researcher.factory.create_agent",
             return_value=MagicMock(),
         ) as create_researcher,
-        patch("deep_researcher_agent.agents.deep_researcher.factory.create_summarization_middleware", return_value=MagicMock()),
+        patch(
+            "deep_researcher_agent.agents.deep_researcher.factory.create_summarization_middleware",
+            return_value=MagicMock(),
+        ),
     ):
         build_deep_research_graph(
             llm_provider=_llm_provider(),
@@ -446,7 +456,10 @@ def test_graph_default_limits_are_shared_with_state_budget_ledger():
     with (
         patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=fake_graph),
         patch("deep_researcher_agent.agents.deep_researcher.factory.create_agent", return_value=MagicMock()),
-        patch("deep_researcher_agent.agents.deep_researcher.factory.create_summarization_middleware", return_value=MagicMock()),
+        patch(
+            "deep_researcher_agent.agents.deep_researcher.factory.create_summarization_middleware",
+            return_value=MagicMock(),
+        ),
         patch(
             "deep_researcher_agent.agents.deep_researcher.factory.build_research_batch_tool",
             return_value=fake_batch_tool,

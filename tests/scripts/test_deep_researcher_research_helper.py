@@ -87,11 +87,15 @@ def test_poll_returns_immediately_on_interrupted(deep_researcher: ModuleType, mo
     assert calls["sleep"] == 0
 
 
-def test_research_poll_exits_failure_on_interrupted(deep_researcher: ModuleType, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_research_poll_exits_failure_on_interrupted(
+    deep_researcher: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
     report_calls = {"count": 0}
 
     monkeypatch.setattr(deep_researcher, "get_job_status", lambda _job_id: {"status": "interrupted"})
-    monkeypatch.setattr(deep_researcher, "get_report", lambda _job_id: report_calls.__setitem__("count", report_calls["count"] + 1))
+    monkeypatch.setattr(
+        deep_researcher, "get_report", lambda _job_id: report_calls.__setitem__("count", report_calls["count"] + 1)
+    )
     monkeypatch.setattr(deep_researcher.time, "sleep", lambda _seconds: None)
 
     with pytest.raises(SystemExit) as excinfo:
@@ -115,7 +119,9 @@ def test_escalation_detected_from_embedded_content(deep_researcher: ModuleType) 
     assert deep_researcher._detect_deep_research_escalation({"choices": []}, content) == _VALID_JOB_ID
 
 
-def test_command_chat_emits_deep_research_running(deep_researcher: ModuleType, monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+def test_command_chat_emits_deep_research_running(
+    deep_researcher: ModuleType, monkeypatch: pytest.MonkeyPatch, capsys
+) -> None:
     result = {"type": "job_escalation", "kind": "deep_research", "job_id": _VALID_JOB_ID}
     monkeypatch.setattr(deep_researcher, "chat_request", lambda _query: result)
 
@@ -125,7 +131,9 @@ def test_command_chat_emits_deep_research_running(deep_researcher: ModuleType, m
     assert out == {"status": "deep_research_running", "job_id": _VALID_JOB_ID}
 
 
-def test_legacy_job_id_format_still_detected(deep_researcher: ModuleType, monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+def test_legacy_job_id_format_still_detected(
+    deep_researcher: ModuleType, monkeypatch: pytest.MonkeyPatch, capsys
+) -> None:
     content = f"Deep research started. Job ID: {_VALID_JOB_ID}"
     result = {"choices": [{"message": {"content": content}}]}
     monkeypatch.setattr(deep_researcher, "chat_request", lambda _query: result)
@@ -136,7 +144,9 @@ def test_legacy_job_id_format_still_detected(deep_researcher: ModuleType, monkey
     assert out == {"status": "deep_research_running", "job_id": _VALID_JOB_ID}
 
 
-def test_malformed_legacy_job_id_falls_through_to_raw(deep_researcher: ModuleType, monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+def test_malformed_legacy_job_id_falls_through_to_raw(
+    deep_researcher: ModuleType, monkeypatch: pytest.MonkeyPatch, capsys
+) -> None:
     # 36 chars of [0-9a-f-] so _CHAT_JOB_ID_RE matches, but not a valid UUID layout.
     bogus = "a" * 36
     content = f"Deep research started. Job ID: {bogus}"
@@ -175,7 +185,9 @@ def test_missing_or_invalid_job_id_is_not_escalation(deep_researcher: ModuleType
     assert deep_researcher._detect_deep_research_escalation(non_string, "") is None
 
 
-def test_non_escalation_result_falls_through_to_raw(deep_researcher: ModuleType, monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+def test_non_escalation_result_falls_through_to_raw(
+    deep_researcher: ModuleType, monkeypatch: pytest.MonkeyPatch, capsys
+) -> None:
     result = {"choices": [{"message": {"content": "a plain shallow answer"}}]}
     monkeypatch.setattr(deep_researcher, "chat_request", lambda _query: result)
 

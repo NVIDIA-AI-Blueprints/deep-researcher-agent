@@ -150,12 +150,16 @@ class ServerSettings:
         if not host:
             raise ValueError("DEEP_RESEARCHER_MCP_HOST must not be empty")
 
-        port = _parse_int(values.get("DEEP_RESEARCHER_MCP_PORT"), name="DEEP_RESEARCHER_MCP_PORT", default=9001, minimum=1)
+        port = _parse_int(
+            values.get("DEEP_RESEARCHER_MCP_PORT"), name="DEEP_RESEARCHER_MCP_PORT", default=9001, minimum=1
+        )
         if port > 65535:
             raise ValueError("DEEP_RESEARCHER_MCP_PORT must be at most 65535")
 
         path = _normalize_mcp_path(values.get("DEEP_RESEARCHER_MCP_PATH", "/mcp"))
-        workers = _parse_int(values.get("DEEP_RESEARCHER_MCP_WORKERS"), name="DEEP_RESEARCHER_MCP_WORKERS", default=1, minimum=1)
+        workers = _parse_int(
+            values.get("DEEP_RESEARCHER_MCP_WORKERS"), name="DEEP_RESEARCHER_MCP_WORKERS", default=1, minimum=1
+        )
 
         raw_log_level = values.get("DEEP_RESEARCHER_MCP_LOG_LEVEL", "INFO").strip().upper()
         if raw_log_level not in _LOG_LEVELS:
@@ -247,7 +251,9 @@ def _normalize_mcp_path(value: str) -> str:
     if not path.startswith("/") or path == "/":
         raise ValueError("DEEP_RESEARCHER_MCP_PATH must be an absolute non-root URL path")
     if any(character in path for character in "?#{}"):
-        raise ValueError("DEEP_RESEARCHER_MCP_PATH must be a literal path without parameters, a query string, or a fragment")
+        raise ValueError(
+            "DEEP_RESEARCHER_MCP_PATH must be a literal path without parameters, a query string, or a fragment"
+        )
     path = path.rstrip("/")
     if not path:
         raise ValueError("DEEP_RESEARCHER_MCP_PATH must be an absolute non-root URL path")
@@ -298,7 +304,8 @@ def _mcp_instructions(inline_wait_seconds: float) -> str:
         "poll_query is status-only and does not return the final report body. Deep jobs use a fixed "
         "180-second polling cadence. Found jobs may include best-effort todos progress hints; return non-empty "
         "todos to the user during polling. todos=[] is normal and not an error. Do not run separate web or paper "
-        "research for the same question while waiting; the queued Deep Researcher Agent job is already doing that work. If the "
+        "research for the same question while waiting; "
+        "the queued Deep Researcher Agent job is already doing that work. If the "
         "client supports background monitors or subagents, delegate only the polling loop and resume when the "
         "final report is ready. No Authorization header or token tool argument is required. Every request uses "
         "the shared anonymous principal, so a returned job_id is an opaque bearer capability rather than a "

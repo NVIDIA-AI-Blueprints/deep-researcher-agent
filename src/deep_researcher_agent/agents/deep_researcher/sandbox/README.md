@@ -410,7 +410,7 @@ Every sandbox execution and transfer traverses the OpenShell SDK, Gateway, and
 authenticated Gateway-Supervisor relay; Deep Researcher Agent does not directly address a container or
 pod. The Gateway is OpenShell's control plane, while the Supervisor is the local
 security boundary that launches restricted child processes and applies the active
-policy. See [How OpenShell Works](https://docs.nvidia.com/openshell/about/how-it-works)
+policy. See [How OpenShell Works](https://docs.nvidia.com/openshell/latest/about/architecture)
 for the OpenShell-owned portion of this sequence.
 
 #### What Deep Researcher Agent policy verification proves
@@ -504,7 +504,7 @@ in force. Once the upstream adapter provides equivalent guards, drop the shim an
 
 Modal uses the same job scope, lazy single-flight creation, serialized operations,
 artifact pipeline, and terminal handling described in
-[Shared Deep Researcher Agent provider lifecycle](#shared-ai-q-provider-lifecycle). Its provider-specific
+[Shared Deep Researcher Agent provider lifecycle](#shared-deep-researcher-agent-provider-lifecycle). Its provider-specific
 behavior is:
 
 - the first provider-backed operation attempts a fresh, job-named `modal.Sandbox`;

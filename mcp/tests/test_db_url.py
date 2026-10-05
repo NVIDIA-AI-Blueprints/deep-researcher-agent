@@ -23,7 +23,9 @@ def test_normalize_postgres_url(value: str, expected: str) -> None:
     assert normalize_postgres_url(value, label="test URL") == expected
 
 
-@pytest.mark.parametrize("value", ["sqlite:///tmp/checkpoints.db", "https://db.example/deep-researcher", "db.example/deep-researcher", ""])
+@pytest.mark.parametrize(
+    "value", ["sqlite:///tmp/checkpoints.db", "https://db.example/deep-researcher", "db.example/deep-researcher", ""]
+)
 def test_normalize_postgres_url_rejects_non_postgres_values(value: str) -> None:
     with pytest.raises(ValueError, match="must be a Postgres DSN"):
         normalize_postgres_url(value, label="test URL")
@@ -33,9 +35,15 @@ def test_normalize_postgres_url_rejects_non_postgres_values(value: str) -> None:
     ("value", "expected"),
     [
         ("postgresql://db.example/deep_researcher_mcp_test", "postgresql://db.example/deep_researcher_mcp_test"),
-        ("postgresql+asyncpg://db.example/DEEP_RESEARCHER_MCP_TEST", "postgresql://db.example/DEEP_RESEARCHER_MCP_TEST"),
+        (
+            "postgresql+asyncpg://db.example/DEEP_RESEARCHER_MCP_TEST",
+            "postgresql://db.example/DEEP_RESEARCHER_MCP_TEST",
+        ),
         ("postgresql://db.example/deep_researcher_mcp_tests", "postgresql://db.example/deep_researcher_mcp_tests"),
-        ("postgresql+asyncpg://db.example/DEEP_RESEARCHER_MCP_TESTS", "postgresql://db.example/DEEP_RESEARCHER_MCP_TESTS"),
+        (
+            "postgresql+asyncpg://db.example/DEEP_RESEARCHER_MCP_TESTS",
+            "postgresql://db.example/DEEP_RESEARCHER_MCP_TESTS",
+        ),
     ],
 )
 def test_require_test_database_url_accepts_test_database_names(value: str, expected: str) -> None:

@@ -332,7 +332,7 @@ Treat optional sandbox runtimes as separate execution and authentication boundar
 Production OpenShell requires an explicitly owned authenticated gateway, a distinct
 policy-bound sandbox per job, verified terminal cleanup, and hard Landlock enforcement.
 Follow the [Linux production acceptance](./openshell.md#linux-production-acceptance)
-and [policy/config pairing](./openshell.md#policy-and-ai-q-config-pairing) contracts;
+and [policy/config pairing](./openshell.md#policy-and-deep-researcher-agent-config-pairing) contracts;
 do not infer production readiness from a macOS best-effort demo.
 
 ## Monitoring

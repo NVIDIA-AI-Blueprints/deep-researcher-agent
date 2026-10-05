@@ -309,7 +309,9 @@ class _OpenSearchConfigMixin:
         self.timeout = self.config.get("timeout", DEFAULT_TIMEOUT)
         self.max_retries = self.config.get("max_retries", 3)
         self.retry_on_timeout = self.config.get("retry_on_timeout", True)
-        self.index_prefix = _sanitize_index_part(self.config.get("index_prefix", DEFAULT_INDEX_PREFIX), "deep-researcher")
+        self.index_prefix = _sanitize_index_part(
+            self.config.get("index_prefix", DEFAULT_INDEX_PREFIX), "deep-researcher"
+        )
         self.vector_field = self.config.get("vector_field", DEFAULT_VECTOR_FIELD)
         self.text_field = self.config.get("text_field", DEFAULT_TEXT_FIELD)
         self.embedding_dim = int(self.config.get("embedding_dim", DEFAULT_EMBEDDING_DIM))

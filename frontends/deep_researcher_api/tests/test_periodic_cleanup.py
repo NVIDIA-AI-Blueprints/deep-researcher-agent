@@ -331,7 +331,9 @@ class TestRunEventCleanup:
                 "deep_researcher_api.jobs.event_store.EventStore._get_or_create_sync_engine",
                 return_value=engine,
             ),
-            patch("deep_researcher_agent.agents.deep_researcher.sandbox.artifacts.build_artifact_store") as mock_artifact_store,
+            patch(
+                "deep_researcher_agent.agents.deep_researcher.sandbox.artifacts.build_artifact_store"
+            ) as mock_artifact_store,
         ):
             await _run_event_cleanup(
                 "postgresql+asyncpg://example.invalid/jobs",

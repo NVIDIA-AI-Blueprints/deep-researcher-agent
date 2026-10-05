@@ -96,7 +96,9 @@ class LocalSettings:
 
     @classmethod
     def from_config(cls, config: dict[str, Any]) -> LocalSettings:
-        raw_dir = str(_config_value(config, "data_dir", "NRL_LOCAL_DATA_DIR", ".deep-researcher-data/nemo_retriever")).strip()
+        raw_dir = str(
+            _config_value(config, "data_dir", "NRL_LOCAL_DATA_DIR", ".deep-researcher-data/nemo_retriever")
+        ).strip()
         if not raw_dir:
             raise ValueError("nrl_local_data_dir must not be empty")
         scope = str(_config_value(config, "scope", "NRL_SCOPE", "local")).strip()

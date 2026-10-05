@@ -1406,7 +1406,9 @@ def test_collection_ownership_mismatch_is_rejected(tmp_path):
     bindings, _state = _bindings()
     ingestor = NemoRetrieverLocalIngestor(_config(tmp_path, bindings))
     ingestor.create_collection("reports")
-    ingestor._runtime.vdb.collections["reports"]["metadata"]["deep_researcher_nemo_retriever_local"]["profile"] = "fast-text"
+    ingestor._runtime.vdb.collections["reports"]["metadata"]["deep_researcher_nemo_retriever_local"]["profile"] = (
+        "fast-text"
+    )
     with pytest.raises(NemoRetrieverLocalOwnershipError, match="different adapter"):
         ingestor.get_collection("reports")
     ingestor.close()

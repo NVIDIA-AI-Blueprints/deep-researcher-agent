@@ -38,9 +38,9 @@ workflow as a public MCP server.
 
 | Scenario | Pattern | Section |
 |---|---|---|
-| MCP server has no per-user auth | `mcp_client` function group | [Connect Deep Researcher Agent to an MCP Server](#connect-deep-researcher-to-an-mcp-server) |
+| MCP server has no per-user auth | `mcp_client` function group | [Connect Deep Researcher Agent to an MCP Server](#connect-deep-researcher-agent-to-an-mcp-server) |
 | MCP server uses backend / app credentials | `mcp_client` + `mcp_service_account` | [Service-Account MCP Servers](#service-account-mcp-servers) |
-| Downstream API trusts the Deep Researcher Agent user's bearer token | Custom Deep Researcher Agent tool using `get_auth_token()` | [Forwarding Deep Researcher Agent User Identity](#forwarding-deep-researcher-user-identity-from-a-tool) |
+| Downstream API trusts the Deep Researcher Agent user's bearer token | Custom Deep Researcher Agent tool using `get_auth_token()` | [Forwarding Deep Researcher Agent User Identity](#forwarding-deep-researcher-agent-user-identity-from-a-tool) |
 | MCP server requires per-user OAuth consent | `per_user_mcp_client` + `mcp_oauth2` | [Per-User MCP OAuth](#per-user-mcp-oauth) |
 
 ## Prerequisites

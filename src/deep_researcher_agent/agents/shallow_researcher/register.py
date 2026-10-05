@@ -125,7 +125,8 @@ async def shallow_research_agent(config: ShallowResearchAgentConfig, builder: Bu
             async with AsyncExitStack() as mcp_stack:
                 # Per-user MCP tools require ``deep_researcher_api`` (the API/auth layer under
                 # frontends/deep_researcher_api), which the standalone public MCP image intentionally does
-                # not bundle — mcp/Dockerfile copies only deep_researcher_agent, select sources, and deep_researcher_mcp.
+                # not bundle — mcp/Dockerfile copies only deep_researcher_agent, select sources,
+                # and deep_researcher_mcp.
                 # That profile runs anonymous with no per-user OAuth, so per-user sources never
                 # apply there. Resolve the reconnect exception type up front (guarded) so the
                 # handler below can never reference an unbound name when the ``deep_researcher_api`` import

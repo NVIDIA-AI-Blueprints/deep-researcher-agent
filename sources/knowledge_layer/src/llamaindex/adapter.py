@@ -86,7 +86,8 @@ def _validate_chroma_embedding_model(collection: Any, collection_name: str, expe
 
     persisted_label = repr(persisted_model) if persisted_model else "an unknown legacy model"
     raise RuntimeError(
-        f"Chroma collection {collection_name!r} was created with {persisted_label}, but Deep Researcher Agent is configured "
+        f"Chroma collection {collection_name!r} was created with {persisted_label}, "
+        f"but Deep Researcher Agent is configured "
         f"for {expected_model!r}. Delete and re-ingest the collection before using the new embedding model."
     )
 

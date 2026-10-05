@@ -47,7 +47,9 @@ def test_package_version_present() -> None:
 
 def test_console_script_entry_point_resolves_to_public_server_main() -> None:
     entry_point = next(
-        candidate for candidate in entry_points(group="console_scripts") if candidate.name == "deep-researcher-mcp-server"
+        candidate
+        for candidate in entry_points(group="console_scripts")
+        if candidate.name == "deep-researcher-mcp-server"
     )
 
     assert entry_point.value == "deep_researcher_mcp.server:main"

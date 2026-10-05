@@ -136,7 +136,10 @@ def test_get_current_principal_uses_verified_middleware_context():
 
 
 def test_get_current_principal_rejects_unverified_token_context():
-    with patch("deep_researcher_api.auth.middleware.get_current_user", return_value={"type": "unverified_jwt", "token": "x.y.z"}):
+    with patch(
+        "deep_researcher_api.auth.middleware.get_current_user",
+        return_value={"type": "unverified_jwt", "token": "x.y.z"},
+    ):
         assert get_current_principal() is None
 
 
@@ -155,7 +158,10 @@ def test_get_current_user_info_uses_verified_middleware_context():
 def test_get_current_user_info_ignores_registered_unverified_token_fetcher():
     jwt = _make_jwt({"email": "alice@nvidia.com", "name": "Alice"})
     register_token_fetcher(lambda: jwt)
-    with patch("deep_researcher_api.auth.middleware.get_current_user", return_value={"type": "internal", "skip_clarifier": False}):
+    with patch(
+        "deep_researcher_api.auth.middleware.get_current_user",
+        return_value={"type": "internal", "skip_clarifier": False},
+    ):
         assert get_current_user_info() is None
 
 

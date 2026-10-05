@@ -45,9 +45,11 @@ pytestmark = [
     pytest.mark.integration,
     pytest.mark.opensearch_serverless,
     pytest.mark.skipif(
-        os.environ.get("DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_LIVE_TESTS", "").lower() not in {"1", "true", "yes", "on"},
+        os.environ.get("DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_LIVE_TESTS", "").lower()
+        not in {"1", "true", "yes", "on"},
         reason=(
-            "Set and export DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_LIVE_TESTS=1, or pass it as a same-line env assignment, "
+            "Set and export DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_LIVE_TESTS=1, "
+            "or pass it as a same-line env assignment, "
             "to run live Amazon OpenSearch Serverless tests."
         ),
     ),
@@ -85,7 +87,9 @@ def _serverless_config() -> dict[str, Any]:
     if not endpoint:
         pytest.fail("Amazon OpenSearch Serverless live tests require OPENSEARCH_URL or AOSS_ENDPOINT.")
 
-    if ".aoss.amazonaws.com" not in endpoint and not _env_bool("DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_ALLOW_CUSTOM_ENDPOINT"):
+    if ".aoss.amazonaws.com" not in endpoint and not _env_bool(
+        "DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_ALLOW_CUSTOM_ENDPOINT"
+    ):
         pytest.fail(
             "Amazon OpenSearch Serverless live tests expect an .aoss.amazonaws.com endpoint. "
             "Set DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_ALLOW_CUSTOM_ENDPOINT=1 for a custom/private endpoint."

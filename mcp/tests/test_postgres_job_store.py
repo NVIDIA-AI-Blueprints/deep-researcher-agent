@@ -120,13 +120,13 @@ async def test_schema_init_is_idempotent_and_concurrent(postgres_url: str) -> No
             ]
             assert (
                 await conn.fetchval(
-                    "SELECT COUNT(*) FROM public.mcp_schema_migrations WHERE component = 'deep_researcher_maas_mcp' AND version = 1"
+                    "SELECT COUNT(*) FROM public.mcp_schema_migrations WHERE component = 'aiq_maas_mcp' AND version = 1"
                 )
                 == 1
             )
             assert (
                 await conn.fetchval(
-                    "SELECT COUNT(*) FROM public.mcp_schema_migrations WHERE component = 'deep_researcher_maas_mcp' AND version = 2"
+                    "SELECT COUNT(*) FROM public.mcp_schema_migrations WHERE component = 'aiq_maas_mcp' AND version = 2"
                 )
                 == 1
             )

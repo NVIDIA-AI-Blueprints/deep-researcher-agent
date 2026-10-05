@@ -829,7 +829,9 @@ class TestRunAgentJobConversationContext:
                     return_value=FakeExporterManager(),
                 ),
                 patch("deep_researcher_api.jobs.runner._load_agent_class", return_value=object),
-                patch("deep_researcher_api.jobs.runner._create_llm_provider", AsyncMock(return_value=(object(), object()))),
+                patch(
+                    "deep_researcher_api.jobs.runner._create_llm_provider", AsyncMock(return_value=(object(), object()))
+                ),
                 patch("deep_researcher_api.jobs.runner._create_agent_instance", side_effect=create_agent),
                 patch("deep_researcher_api.jobs.runner._run_agent", side_effect=run_agent),
                 patch("deep_researcher_api.jobs.runner._run_lease_refresher"),
@@ -1065,7 +1067,9 @@ class TestRunAgentJobEncryption:
                                 "deep_researcher_api.jobs.runner._create_llm_provider",
                                 AsyncMock(return_value=(object(), object())),
                             ):
-                                with patch("deep_researcher_api.jobs.runner._create_agent_instance", return_value=object()):
+                                with patch(
+                                    "deep_researcher_api.jobs.runner._create_agent_instance", return_value=object()
+                                ):
                                     with patch(
                                         "deep_researcher_api.jobs.runner._run_agent",
                                         AsyncMock(return_value="secret report"),
@@ -1194,7 +1198,9 @@ class TestRunAgentJobEncryption:
                                     "deep_researcher_api.jobs.runner._create_llm_provider",
                                     AsyncMock(return_value=(object(), object())),
                                 ):
-                                    with patch("deep_researcher_api.jobs.runner._create_agent_instance", return_value=object()):
+                                    with patch(
+                                        "deep_researcher_api.jobs.runner._create_agent_instance", return_value=object()
+                                    ):
                                         with patch(
                                             "deep_researcher_api.jobs.runner._run_agent",
                                             side_effect=run_agent_with_event,
@@ -1329,10 +1335,14 @@ class TestRunAgentJobEncryption:
             )
             stack.enter_context(patch("deep_researcher_api.jobs.runner._load_agent_class", return_value=object))
             stack.enter_context(
-                patch("deep_researcher_api.jobs.runner._create_llm_provider", AsyncMock(return_value=(object(), object())))
+                patch(
+                    "deep_researcher_api.jobs.runner._create_llm_provider", AsyncMock(return_value=(object(), object()))
+                )
             )
             stack.enter_context(patch("deep_researcher_api.jobs.runner._create_agent_instance", return_value=object()))
-            stack.enter_context(patch("deep_researcher_api.jobs.runner._run_agent", AsyncMock(side_effect=source_error)))
+            stack.enter_context(
+                patch("deep_researcher_api.jobs.runner._run_agent", AsyncMock(side_effect=source_error))
+            )
             await run_agent_job(
                 False,
                 20,
@@ -1642,7 +1652,9 @@ class TestDeepResearchTimeoutLifecycle:
                                 "deep_researcher_api.jobs.runner._create_llm_provider",
                                 AsyncMock(return_value=(object(), object())),
                             ):
-                                with patch("deep_researcher_api.jobs.runner._create_agent_instance", return_value=agent):
+                                with patch(
+                                    "deep_researcher_api.jobs.runner._create_agent_instance", return_value=agent
+                                ):
                                     with patch(
                                         "deep_researcher_api.jobs.runner._run_agent",
                                         AsyncMock(side_effect=run_error),
@@ -3422,7 +3434,9 @@ class TestAsyncJobRunnerAgentFactory:
         mock_deep_agent.with_config.return_value = mock_deep_agent
 
         with (
-            patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=mock_deep_agent) as create,
+            patch(
+                "deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=mock_deep_agent
+            ) as create,
             patch(
                 "deep_researcher_agent.agents.deep_researcher.factory.create_summarization_middleware",
                 return_value=MagicMock(),

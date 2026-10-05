@@ -258,7 +258,10 @@ def run_check(config: ReadinessConfig) -> tuple[str, str]:
                 sandbox_pb2=sandbox_pb2,
             )
             result = client.exec(sandbox.id or sandbox.name, ["sh", "-c", "printf %s deep-researcher-openshell-ready"])
-            if getattr(result, "exit_code", 1) != 0 or getattr(result, "stdout", "") != "deep-researcher-openshell-ready":
+            if (
+                getattr(result, "exit_code", 1) != 0
+                or getattr(result, "stdout", "") != "deep-researcher-openshell-ready"
+            ):
                 raise ReadinessError("execution_failed")
         except ReadinessError as exc:
             primary_error = exc

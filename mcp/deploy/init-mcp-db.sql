@@ -9,7 +9,7 @@
 -- SQL in sync with deep_researcher_mcp.job_store. Application startup also applies this
 -- schema under a PostgreSQL advisory lock for safe multi-replica startup.
 --
--- The legacy migration component name deep_researcher_maas_mcp is intentionally preserved
+-- The legacy migration component name aiq_maas_mcp is intentionally preserved
 -- so upgrades reuse the existing migration history for these physical tables.
 -- =============================================================================
 
@@ -46,9 +46,9 @@ CREATE INDEX IF NOT EXISTS idx_mcp_jobs_state_updated_at ON mcp_jobs(state, upda
 CREATE INDEX IF NOT EXISTS idx_mcp_jobs_runner_state ON mcp_jobs(runner_id, state);
 
 INSERT INTO mcp_schema_migrations (component, version)
-VALUES ('deep_researcher_maas_mcp', 1)
+VALUES ('aiq_maas_mcp', 1)
 ON CONFLICT (component, version) DO NOTHING;
 
 INSERT INTO mcp_schema_migrations (component, version)
-VALUES ('deep_researcher_maas_mcp', 2)
+VALUES ('aiq_maas_mcp', 2)
 ON CONFLICT (component, version) DO NOTHING;

@@ -229,7 +229,8 @@ def _build_trace_user_tags(user: dict[str, Any], mode: str, secret: str | None) 
     pseudonymous_id = _build_pseudonymous_trace_user_id(str(principal_type), str(principal_sub), secret)
     if pseudonymous_id is None:
         logger.warning(
-            "DEEP_RESEARCHER_TRACE_USER_IDENTITY_MODE=%s but DEEP_RESEARCHER_TRACE_USER_IDENTITY_HMAC_SECRET is not set; "
+            "DEEP_RESEARCHER_TRACE_USER_IDENTITY_MODE=%s "
+            "but DEEP_RESEARCHER_TRACE_USER_IDENTITY_HMAC_SECRET is not set; "
             "skipping user identity trace tags.",
             mode,
         )

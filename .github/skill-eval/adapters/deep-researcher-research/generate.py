@@ -71,7 +71,9 @@ def _test_script(spec_name: str, step: int) -> str:
 
 
 def _solution_script() -> str:
-    return "#!/bin/bash\nset -euo pipefail\npython3 /skills/deep-researcher-research/scripts/deep_researcher.py health\n"
+    return (
+        "#!/bin/bash\nset -euo pipefail\npython3 /skills/deep-researcher-research/scripts/deep_researcher.py health\n"
+    )
 
 
 def _environment_compose() -> str:
@@ -153,7 +155,8 @@ def generate(spec_path: Path, skill_dir: Path, output_dir: Path, repo_root: Path
                     [
                         PREAMBLE,
                         "",
-                        f"Deep Researcher Agent server URL: `{os.environ.get('DEEP_RESEARCHER_SERVER_URL', DEFAULT_SERVER_URL)}`.",
+                        f"Deep Researcher Agent server URL: "
+                        f"`{os.environ.get('DEEP_RESEARCHER_SERVER_URL', DEFAULT_SERVER_URL)}`.",
                         "Use the `/deep-researcher-research` skill for this task.",
                         "If the server is unavailable and `/deep-researcher-deploy` is installed, "
                         "use it to start or verify Deep Researcher Agent first.",

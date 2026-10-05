@@ -116,7 +116,10 @@ def test_backend_wires_default_on_deep_research_admission_limits():
         for name, value in [entry.split("=", maxsplit=1)]
     }
 
-    assert backend_env["DEEP_RESEARCHER_MAX_DEEP_RESEARCH_INPUT_CHARS"] == "${DEEP_RESEARCHER_MAX_DEEP_RESEARCH_INPUT_CHARS:-32768}"
+    assert (
+        backend_env["DEEP_RESEARCHER_MAX_DEEP_RESEARCH_INPUT_CHARS"]
+        == "${DEEP_RESEARCHER_MAX_DEEP_RESEARCH_INPUT_CHARS:-32768}"
+    )
     assert backend_env["DEEP_RESEARCHER_MAX_ACTIVE_DEEP_RESEARCH_JOBS_PER_PRINCIPAL"] == (
         "${DEEP_RESEARCHER_MAX_ACTIVE_DEEP_RESEARCH_JOBS_PER_PRINCIPAL:-5}"
     )

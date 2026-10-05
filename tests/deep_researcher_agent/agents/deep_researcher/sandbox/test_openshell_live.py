@@ -380,7 +380,9 @@ def test_live_per_job_isolation_attestation_and_cancellation(
         _assert_deleted(live_runtime, client, names[0])
         selected_names = {
             item.name
-            for item in client.list(workspace=live_runtime.config.workspace, label_selector="deep-researcher=deep-research")
+            for item in client.list(
+                workspace=live_runtime.config.workspace, label_selector="deep-researcher=deep-research"
+            )
         }
         assert names[0] not in selected_names
         assert names[1] in selected_names
@@ -393,7 +395,9 @@ def test_live_per_job_isolation_attestation_and_cancellation(
         _assert_deleted(live_runtime, client, names[1])
         assert names[1] not in {
             item.name
-            for item in client.list(workspace=live_runtime.config.workspace, label_selector="deep-researcher=deep-research")
+            for item in client.list(
+                workspace=live_runtime.config.workspace, label_selector="deep-researcher=deep-research"
+            )
         }
 
 

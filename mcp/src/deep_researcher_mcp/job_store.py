@@ -34,7 +34,7 @@ _DEFAULT_MAX_POOL_SIZE = 5
 _SCHEMA_LOCK_ID = 742190880248061112
 # Preserve the reference component ID so an in-place upgrade does not create a
 # second migration history for the same physical tables.
-_MIGRATION_COMPONENT = "deep_researcher_maas_mcp"
+_MIGRATION_COMPONENT = "aiq_maas_mcp"
 _BASE_MIGRATION_VERSION = 1
 _POLL_COUNT_MIGRATION_VERSION = 2
 _IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")

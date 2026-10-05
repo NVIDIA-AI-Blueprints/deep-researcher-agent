@@ -79,7 +79,9 @@ _DEFAULT_ALLOW_EXTENSIONS: tuple[str, ...] = (
 class ModalProviderConfig(BaseModel):
     """Modal-specific sandbox settings."""
 
-    app_name: str = Field(default="deep-researcher-deep-research", description="Modal app name for deep research sandboxes")
+    app_name: str = Field(
+        default="deep-researcher-deep-research", description="Modal app name for deep research sandboxes"
+    )
     image: str = Field(default="python:3.12-slim", description="Container image for Modal sandboxes")
     python_packages: tuple[str, ...] = Field(
         default=(),

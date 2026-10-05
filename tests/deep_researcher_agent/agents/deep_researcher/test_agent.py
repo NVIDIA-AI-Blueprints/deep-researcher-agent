@@ -216,7 +216,10 @@ class TestDeepResearcherAgent:
     def test_init_with_custom_settings(self, mock_llm_provider, real_tool, mock_create_deep_agent):
         """Test DeepResearcherAgent initialization with custom settings."""
         with (
-            patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=mock_create_deep_agent),
+            patch(
+                "deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent",
+                return_value=mock_create_deep_agent,
+            ),
             # Patch backend creation so the test does not require the optional OpenShell adapter
             # (the default sandbox provider) to be installed.
             patch(
@@ -535,7 +538,10 @@ class TestDeepResearcherAgent:
 
     def test_init_without_tools(self, mock_llm_provider, mock_create_deep_agent):
         """Test DeepResearcherAgent initialization without tools."""
-        with patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=mock_create_deep_agent):
+        with patch(
+            "deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent",
+            return_value=mock_create_deep_agent,
+        ):
             from deep_researcher_agent.agents.deep_researcher.agent import DeepResearcherAgent
 
             agent = DeepResearcherAgent(
@@ -547,7 +553,10 @@ class TestDeepResearcherAgent:
 
     def test_load_prompts(self, mock_llm_provider, real_tool, mock_create_deep_agent):
         """Test _load_prompts loads all required prompts."""
-        with patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=mock_create_deep_agent):
+        with patch(
+            "deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent",
+            return_value=mock_create_deep_agent,
+        ):
             from deep_researcher_agent.agents.deep_researcher.agent import DeepResearcherAgent
 
             agent = DeepResearcherAgent(
@@ -1449,7 +1458,10 @@ class TestDeepResearcherAgent:
 
     def test_load_prompts_raises_when_missing(self, mock_llm_provider, real_tool, mock_create_deep_agent):
         """Missing prompts fail fast instead of silently using inline defaults."""
-        with patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=mock_create_deep_agent):
+        with patch(
+            "deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent",
+            return_value=mock_create_deep_agent,
+        ):
             with patch(
                 "deep_researcher_agent.agents.deep_researcher.agent.load_prompt",
                 side_effect=FileNotFoundError(),
@@ -1534,7 +1546,10 @@ class TestDeepResearcherAgent:
     async def test_provider_roles_used_on_init(self, mock_llm_provider, real_tool, mock_create_deep_agent):
         """Test LLM roles (planner, researcher, orchestrator) are requested when run() is invoked."""
         with (
-            patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=mock_create_deep_agent),
+            patch(
+                "deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent",
+                return_value=mock_create_deep_agent,
+            ),
             patch(
                 "deep_researcher_agent.agents.deep_researcher.agent.FinalReportCommitTracker",
                 return_value=committed_tracker(DEFAULT_REPORT),
@@ -1562,7 +1577,10 @@ class TestDeepResearcherAgent:
     async def test_run_basic_query(self, mock_llm_provider, real_tool, mock_create_deep_agent):
         """Test run() with a basic query."""
         with (
-            patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=mock_create_deep_agent),
+            patch(
+                "deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent",
+                return_value=mock_create_deep_agent,
+            ),
             patch(
                 "deep_researcher_agent.agents.deep_researcher.agent.FinalReportCommitTracker",
                 return_value=committed_tracker(DEFAULT_REPORT),
@@ -1595,7 +1613,10 @@ class TestDeepResearcherAgent:
         secret_query = "research CUDA using nvapi-vdr-fake-secret-do-not-log"  # pragma: allowlist secret
         caplog.set_level(logging.INFO, logger="deep_researcher_agent.agents.deep_researcher.agent")
         with (
-            patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=mock_create_deep_agent),
+            patch(
+                "deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent",
+                return_value=mock_create_deep_agent,
+            ),
             patch(
                 "deep_researcher_agent.agents.deep_researcher.agent.FinalReportCommitTracker",
                 return_value=committed_tracker(DEFAULT_REPORT),
@@ -1621,7 +1642,10 @@ class TestDeepResearcherAgent:
     ):
         """The request ceiling covers both prompt sources and accepts exact equality."""
         with (
-            patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=mock_create_deep_agent),
+            patch(
+                "deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent",
+                return_value=mock_create_deep_agent,
+            ),
             patch(
                 "deep_researcher_agent.agents.deep_researcher.agent.FinalReportCommitTracker",
                 return_value=committed_tracker(DEFAULT_REPORT),
@@ -1729,7 +1753,10 @@ class TestDeepResearcherAgent:
     async def test_run_empty_messages(self, mock_llm_provider, real_tool, mock_create_deep_agent):
         """Test run() with empty messages."""
         with (
-            patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=mock_create_deep_agent),
+            patch(
+                "deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent",
+                return_value=mock_create_deep_agent,
+            ),
             patch(
                 "deep_researcher_agent.agents.deep_researcher.agent.FinalReportCommitTracker",
                 return_value=committed_tracker(DEFAULT_REPORT),
@@ -1753,7 +1780,10 @@ class TestDeepResearcherAgent:
     async def test_run_with_callbacks(self, mock_llm_provider, real_tool, mock_create_deep_agent):
         """Test run() uses callbacks."""
         with (
-            patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=mock_create_deep_agent),
+            patch(
+                "deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent",
+                return_value=mock_create_deep_agent,
+            ),
             patch(
                 "deep_researcher_agent.agents.deep_researcher.agent.FinalReportCommitTracker",
                 return_value=committed_tracker(DEFAULT_REPORT),

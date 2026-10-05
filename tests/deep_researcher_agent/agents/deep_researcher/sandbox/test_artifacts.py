@@ -105,12 +105,18 @@ class TestNormalizePosix:
         from pathlib import PurePosixPath
 
         # The absolute-root sentinel must not be re-appended as a path segment.
-        assert _normalize_posix(PurePosixPath("/sandbox/deep-researcher-artifacts")) == "/sandbox/deep-researcher-artifacts"
+        assert (
+            _normalize_posix(PurePosixPath("/sandbox/deep-researcher-artifacts"))
+            == "/sandbox/deep-researcher-artifacts"
+        )
 
     def test_collapses_dot_and_parent_segments(self) -> None:
         from pathlib import PurePosixPath
 
-        assert _normalize_posix(PurePosixPath("/sandbox/./sub/../deep-researcher-artifacts")) == "/sandbox/deep-researcher-artifacts"
+        assert (
+            _normalize_posix(PurePosixPath("/sandbox/./sub/../deep-researcher-artifacts"))
+            == "/sandbox/deep-researcher-artifacts"
+        )
 
     def test_relative_path_has_no_leading_slash(self) -> None:
         from pathlib import PurePosixPath

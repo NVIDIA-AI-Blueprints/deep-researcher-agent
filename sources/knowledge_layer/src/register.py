@@ -270,7 +270,9 @@ class KnowledgeRetrievalConfig(FunctionBaseConfig, name="knowledge_retrieval"):
         description="Embedding model for OpenSearch and Azure AI Search ingestion and retrieval.",
     )
     embed_base_url: str = Field(
-        default_factory=lambda: _env_value("DEEP_RESEARCHER_EMBED_BASE_URL", default="https://integrate.api.nvidia.com/v1"),
+        default_factory=lambda: _env_value(
+            "DEEP_RESEARCHER_EMBED_BASE_URL", default="https://integrate.api.nvidia.com/v1"
+        ),
         description="OpenAI-compatible embeddings endpoint base URL.",
     )
     # Azure AI Search options

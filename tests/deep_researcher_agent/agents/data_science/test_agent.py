@@ -598,10 +598,14 @@ async def test_instruction_like_catalog_metadata_is_isolated_as_tool_data(monkey
     result = await _agent(graph, monkeypatch).run(state)
 
     invoked_messages = graph.ainvoke.await_args.args[0]["messages"]
-    catalog_message = next(message for message in invoked_messages if message.name == "deep_researcher__preloaded_catalog_context")
+    catalog_message = next(
+        message for message in invoked_messages if message.name == "deep_researcher__preloaded_catalog_context"
+    )
     assert catalog_instruction in str(catalog_message.content)
     assert catalog_message.type == "tool"
-    assert all(getattr(message, "name", None) != "deep_researcher__preloaded_catalog_context" for message in result.messages)
+    assert all(
+        getattr(message, "name", None) != "deep_researcher__preloaded_catalog_context" for message in result.messages
+    )
 
 
 @pytest.mark.asyncio

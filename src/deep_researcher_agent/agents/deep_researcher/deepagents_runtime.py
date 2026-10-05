@@ -83,7 +83,9 @@ class DeepResearchSandboxConfig(FunctionBaseConfig, name="deep_research_sandbox"
 
     provider: str = Field(default="openshell", description="Sandbox backend provider (resolved by registry).")
     # Modal-specific (used when provider == "modal").
-    app_name: str = Field(default="deep-researcher-deep-research", description="Modal app name for deep research sandboxes")
+    app_name: str = Field(
+        default="deep-researcher-deep-research", description="Modal app name for deep research sandboxes"
+    )
     image: str = Field(default="python:3.13-slim", description="Container image for Modal sandboxes")
     packages: tuple[str, ...] = Field(
         default=(),

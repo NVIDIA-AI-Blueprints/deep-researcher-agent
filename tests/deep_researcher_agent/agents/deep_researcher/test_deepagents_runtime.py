@@ -285,7 +285,9 @@ class TestDeepAgentsRuntimeJobId:
 
     def test_explicit_job_id_is_kept(self) -> None:
         sandbox = DeepResearchSandboxConfig()
-        with patch("deep_researcher_agent.agents.deep_researcher.deepagents_runtime._create_sandbox_backend") as create_backend:
+        with patch(
+            "deep_researcher_agent.agents.deep_researcher.deepagents_runtime._create_sandbox_backend"
+        ) as create_backend:
             runtime = DeepAgentsRuntime(sandbox=sandbox, job_id="job-abc-123")
             _ = runtime.backend
 
@@ -295,7 +297,9 @@ class TestDeepAgentsRuntimeJobId:
     def test_missing_job_id_generates_uuid(self) -> None:
         sandbox_a = DeepResearchSandboxConfig()
         sandbox_b = DeepResearchSandboxConfig()
-        with patch("deep_researcher_agent.agents.deep_researcher.deepagents_runtime._create_sandbox_backend") as create_backend:
+        with patch(
+            "deep_researcher_agent.agents.deep_researcher.deepagents_runtime._create_sandbox_backend"
+        ) as create_backend:
             runtime_a = DeepAgentsRuntime(sandbox=sandbox_a)
             runtime_b = DeepAgentsRuntime(sandbox=sandbox_b)
             _ = runtime_a.backend
@@ -314,7 +318,8 @@ class TestDeepAgentsRuntimeJobId:
 
         with (
             patch(
-                "deep_researcher_agent.agents.deep_researcher.deepagents_runtime.importlib.util.find_spec", side_effect=find_spec
+                "deep_researcher_agent.agents.deep_researcher.deepagents_runtime.importlib.util.find_spec",
+                side_effect=find_spec,
             ),
             pytest.raises(ImportError, match="langchain-modal"),
         ):

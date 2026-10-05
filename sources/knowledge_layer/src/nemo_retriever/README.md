@@ -20,7 +20,7 @@ for shared Knowledge API behavior.
   - [Service compatibility](#service-compatibility)
   - [Service configuration](#service-configuration)
   - [Connect to the service](#connect-to-the-service)
-  - [Start Deep Researcher Agent](#start-ai-q-with-the-service-backend)
+  - [Start Deep Researcher Agent](#start-deep-researcher-agent-with-the-service-backend)
   - [Service validation](#service-validation)
   - [Service troubleshooting](#service-troubleshooting)
 

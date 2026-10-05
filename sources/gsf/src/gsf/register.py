@@ -208,8 +208,8 @@ async def gsf_function_group(config: GSFFunctionGroupConfig, _builder: Builder):
             """Generate validated SQL and return bounded rows from authorized enterprise data.
 
             Use for an analytical question after the relevant structured-data scope is known. The result contains SQL
-            and rows, plus semantic context, warnings, and provenance when GSF provides them. Deep Researcher Agent remains responsible
-            for analysis and synthesis.
+            and rows, plus semantic context, warnings, and provenance when GSF provides them. Deep Researcher Agent
+            remains responsible for analysis and synthesis.
             """
 
             try:

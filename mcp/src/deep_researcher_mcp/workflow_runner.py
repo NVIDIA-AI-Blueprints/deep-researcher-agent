@@ -155,7 +155,8 @@ def _resolve_checkpointer_caches() -> tuple[dict[str, Any], dict[str, Any]] | No
         from deep_researcher_agent import common as deep_researcher_common
     except Exception as exc:  # pragma: no cover - defensive shutdown path
         logger.warning(
-            "deep_researcher_agent.common is unavailable; MCP checkpointer cleanup skipped and owned handles may leak: %s",
+            "deep_researcher_agent.common is unavailable; "
+            "MCP checkpointer cleanup skipped and owned handles may leak: %s",
             exc,
         )
         return None

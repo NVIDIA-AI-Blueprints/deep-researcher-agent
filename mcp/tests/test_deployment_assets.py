@@ -201,7 +201,8 @@ def _release_notice_section(text: str, section_number: int) -> str:
     next_section = text.find(f"{separator}{section_number + 1}. ", section_start)
     if next_section == -1:
         end_marker = (
-            "\n============================================================================\nEND OF Deep Researcher Agent 2.2 RELEASE"
+            "\n============================================================================\n"
+            "END OF Deep Researcher Agent 2.2 RELEASE"
         )
         next_section = text.index(end_marker, section_start)
     return text[section_start:next_section]
@@ -366,7 +367,9 @@ def test_release_third_party_notice_contains_reviewed_payloads() -> None:
 def test_source_only_pydata_notice_and_local_template_preserve_bsd_terms() -> None:
     notices = _THIRD_PARTY_LICENSE.read_text()
     source_addendum = notices.split("Deep Researcher Agent 2.2 SOURCE-DISTRIBUTION-ONLY ATTRIBUTION ADDENDUM", 1)[1]
-    source_addendum = source_addendum.split("END OF Deep Researcher Agent 2.2 SOURCE-DISTRIBUTION-ONLY ATTRIBUTION ADDENDUM", 1)[0]
+    source_addendum = source_addendum.split(
+        "END OF Deep Researcher Agent 2.2 SOURCE-DISTRIBUTION-ONLY ATTRIBUTION ADDENDUM", 1
+    )[0]
     template = _SIDEBAR_TEMPLATE.read_text()
 
     assert _SIDEBAR_TEMPLATE.is_file()
@@ -427,8 +430,8 @@ def test_init_sql_preserves_reference_schema_and_upgrade_history() -> None:
     assert hashlib.sha256(normalized.encode()).hexdigest() == _EXPECTED_SQL_HASH
     assert "CREATE TABLE IF NOT EXISTS mcp_jobs" in normalized
     assert "idx_mcp_jobs_runner_state" in normalized
-    assert "VALUES ('deep_researcher_maas_mcp', 1)" in normalized
-    assert "VALUES ('deep_researcher_maas_mcp', 2)" in normalized
+    assert "VALUES ('aiq_maas_mcp', 1)" in normalized
+    assert "VALUES ('aiq_maas_mcp', 2)" in normalized
 
 
 def test_compose_stack_is_isolated_explicit_and_health_gated() -> None:
@@ -457,7 +460,8 @@ def test_compose_stack_is_isolated_explicit_and_health_gated() -> None:
     assert set(mcp["environment"]) == _MCP_ENVIRONMENT
     assert (
         mcp["environment"]["DEEP_RESEARCHER_CHECKPOINT_DB"]
-        == "postgresql://deep_researcher:local_mcp_password@postgres:5432/deep_researcher_jobs"  # pragma: allowlist secret
+        == "postgresql://deep_researcher:local_mcp_password@postgres:5432/"  # pragma: allowlist secret
+        "deep_researcher_jobs"
     )
     assert mcp["environment"]["DEEP_RESEARCHER_MCP_PORT"] == "9001"
     assert mcp["environment"]["DEEP_RESEARCHER_MCP_CONFIG"] == "/app/configs/config_mcp.yml"

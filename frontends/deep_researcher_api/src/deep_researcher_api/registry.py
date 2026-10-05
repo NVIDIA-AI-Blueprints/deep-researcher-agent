@@ -33,7 +33,10 @@ class AgentConfig:
     """Configuration for a registered agent."""
 
     class_path: str
-    """Full module path to the agent class, e.g., 'deep_researcher_agent.agents.deep_researcher.agent.DeepResearcherAgent'"""
+    """Full module path to the agent class.
+
+    Example: 'deep_researcher_agent.agents.deep_researcher.agent.DeepResearcherAgent'
+    """
 
     config_name: str
     """NAT config function name, e.g., 'deep_research_agent'"""

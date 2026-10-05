@@ -10,7 +10,12 @@ import pytest
 import yaml
 
 _VALIDATOR_PATH = (
-    Path(__file__).parents[2] / ".agents" / "skills" / "deep-researcher-configure-workflow" / "scripts" / "validate_config.py"
+    Path(__file__).parents[2]
+    / ".agents"
+    / "skills"
+    / "deep-researcher-configure-workflow"
+    / "scripts"
+    / "validate_config.py"
 )
 _SPEC = importlib.util.spec_from_file_location("deep_researcher_validate_config", _VALIDATOR_PATH)
 assert _SPEC is not None and _SPEC.loader is not None

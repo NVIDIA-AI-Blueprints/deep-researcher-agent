@@ -19,7 +19,9 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_OUTPUT_DIR = Path(os.environ.get("DEEP_RESEARCHER_SKILL_EVAL_OUTPUT_DIR", "/tmp/deep-researcher-skill-eval/datasets"))
+DEFAULT_OUTPUT_DIR = Path(
+    os.environ.get("DEEP_RESEARCHER_SKILL_EVAL_OUTPUT_DIR", "/tmp/deep-researcher-skill-eval/datasets")
+)
 REQUIRED_SPEC_KEYS = ("skills", "resources", "env", "expects")
 
 # Argv elements whose key portion ends in any of these suffixes are redacted in
@@ -277,7 +279,9 @@ def main() -> int:
     print(json.dumps(summary, indent=2))
 
     if args.run_harbor:
-        results_root = Path(os.environ.get("DEEP_RESEARCHER_SKILL_EVAL_RESULTS_DIR", "/tmp/deep-researcher-skill-eval/results"))
+        results_root = Path(
+            os.environ.get("DEEP_RESEARCHER_SKILL_EVAL_RESULTS_DIR", "/tmp/deep-researcher-skill-eval/results")
+        )
         # Isolate this job's results so the gate can never read a previous job's
         # output on the long-lived self-hosted runner (the results root persists
         # between jobs). Keyed by GitHub run id + attempt in CI; random locally.

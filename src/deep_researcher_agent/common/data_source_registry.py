@@ -86,7 +86,8 @@ class PerUserAuthConfig(BaseModel):
             "Name of the NAT `authentication` (mcp_oauth2) provider for this source, resolved via the builder "
             "to derive OAuth settings + shared token storage (connect flow) and to build the per-user MCP "
             "client in the worker at job time. Defaults to mcp_server_id when unset. NOTE: no config-declared "
-            "per_user_mcp_client function group is used — see deep_researcher_api.mcp_auth.runtime_tools for why (it breaks "
+            "per_user_mcp_client function group is used — "
+            "see deep_researcher_api.mcp_auth.runtime_tools for why (it breaks "
             "the interactive WebSocket path)."
         ),
     )

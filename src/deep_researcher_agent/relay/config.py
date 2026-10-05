@@ -53,7 +53,9 @@ class RelayOpenTelemetryEndpointConfig(_RelayBaseConfig):
     instrumentation_scope: str = "nemo-relay"
     timeout_millis: int = Field(default=3000, gt=0)
     header_env: dict[str, str] = Field(default_factory=dict)
-    resource_attributes: dict[str, str] = Field(default_factory=lambda: {"openinference.project.name": "deep-researcher-relay"})
+    resource_attributes: dict[str, str] = Field(
+        default_factory=lambda: {"openinference.project.name": "deep-researcher-relay"}
+    )
 
 
 class RelayOpenTelemetryConfig(_RelayBaseConfig):

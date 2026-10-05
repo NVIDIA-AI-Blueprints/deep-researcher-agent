@@ -215,7 +215,9 @@ def _remove_existing_health_routes(app: FastAPI) -> int:
     for route in existing_routes:
         app.router.routes.remove(route)
     if existing_routes:
-        logger.info("Replacing %d existing GET /health route(s) with Deep Researcher Agent readiness", len(existing_routes))
+        logger.info(
+            "Replacing %d existing GET /health route(s) with Deep Researcher Agent readiness", len(existing_routes)
+        )
     app.openapi_schema = None
     return len(existing_routes)
 
@@ -249,7 +251,10 @@ def _sandbox_caps_configured() -> bool:
     Default-off so the guard never adds a function-config lookup (or behavior change)
     to submits unless caps are explicitly configured.
     """
-    return "DEEP_RESEARCHER_MAX_SANDBOXES_PER_PRINCIPAL" in os.environ or "DEEP_RESEARCHER_MAX_SANDBOXES_GLOBAL" in os.environ
+    return (
+        "DEEP_RESEARCHER_MAX_SANDBOXES_PER_PRINCIPAL" in os.environ
+        or "DEEP_RESEARCHER_MAX_SANDBOXES_GLOBAL" in os.environ
+    )
 
 
 def _sandbox_enabled(sandbox: Any) -> bool:

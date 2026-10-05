@@ -354,7 +354,9 @@ def _validate_index_schema(index: SearchIndex, cfg: SimpleNamespace) -> dict[str
     if marker is None:
         raise RuntimeError(f"Azure AI Search index {index.name!r} is not owned by Deep Researcher Agent")
     if marker.get("backend") != _BACKEND_NAME or marker.get("schema_version") != _SCHEMA_VERSION:
-        raise RuntimeError(f"Azure AI Search index {index.name!r} has an incompatible Deep Researcher Agent ownership marker")
+        raise RuntimeError(
+            f"Azure AI Search index {index.name!r} has an incompatible Deep Researcher Agent ownership marker"
+        )
     if (
         marker.get("index_prefix") != cfg.index_prefix
         or marker.get("embedding_dim") != cfg.embed_dim

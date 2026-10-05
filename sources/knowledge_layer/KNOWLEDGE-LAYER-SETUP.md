@@ -185,7 +185,7 @@ functions:
     timeout: 120
 ```
 
-> **Separate Docker stacks:** When Deep Researcher Agent and RAG run as separate Docker Compose stacks, connect the Deep Researcher Agent backend to the RAG network: `docker network connect nvidia-rag deep-researcher-agent`. See the [Docker Compose README](../../deploy/compose/README.md#networking-when-deep-researcher-and-rag-run-as-separate-compose-stacks) for details.
+> **Separate Docker stacks:** When Deep Researcher Agent and RAG run as separate Docker Compose stacks, connect the Deep Researcher Agent backend to the RAG network: `docker network connect nvidia-rag deep-researcher-agent`. See the [Docker Compose README](../../deploy/compose/README.md#networking-when-deep-researcher-agent-and-rag-run-as-separate-compose-stacks) for details.
 
 **Azure AI Search (Managed Service)**
 

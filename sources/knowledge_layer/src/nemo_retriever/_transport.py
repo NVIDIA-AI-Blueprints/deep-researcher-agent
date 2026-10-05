@@ -131,7 +131,8 @@ class _NRLTransport:
         if compatibility_route and status in {404, 410}:
             return NemoRetrieverCompatibilityError(
                 "NeMo Retriever rejected a job-scoped API route with "
-                f"HTTP {status}. Confirm Deep Researcher Agent and the NRL service use compatible collection-management API versions.",
+                f"HTTP {status}. "
+                f"Confirm Deep Researcher Agent and the NRL service use compatible collection-management API versions.",
                 status_code=status,
             )
         reason = {

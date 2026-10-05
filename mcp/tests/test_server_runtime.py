@@ -233,7 +233,9 @@ def test_installed_layout_disables_checkout_defaults(
         server.ServerSettings.from_env({})
 
     explicit = tmp_path / "workflow.yml"
-    assert server.ServerSettings.from_env({"DEEP_RESEARCHER_MCP_CONFIG": str(explicit)}).config_path == explicit.resolve()
+    assert (
+        server.ServerSettings.from_env({"DEEP_RESEARCHER_MCP_CONFIG": str(explicit)}).config_path == explicit.resolve()
+    )
 
     monkeypatch.delenv("DEEP_RESEARCHER_MCP_ENV_FILE", raising=False)
     monkeypatch.setattr(server, "_DEFAULT_ENV_FILE", None)
@@ -1263,7 +1265,10 @@ def test_create_app_returns_fresh_worker_runtime(monkeypatch: pytest.MonkeyPatch
 
     assert first is not second
     assert first.state.deep_researcher_mcp_runtime is not second.state.deep_researcher_mcp_runtime
-    assert first.state.deep_researcher_mcp_runtime.mcp.session_manager is not second.state.deep_researcher_mcp_runtime.mcp.session_manager
+    assert (
+        first.state.deep_researcher_mcp_runtime.mcp.session_manager
+        is not second.state.deep_researcher_mcp_runtime.mcp.session_manager
+    )
 
 
 def test_main_uses_uvicorn_import_string(monkeypatch: pytest.MonkeyPatch) -> None:

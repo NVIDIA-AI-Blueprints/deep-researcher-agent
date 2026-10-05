@@ -101,8 +101,13 @@ def test_release_version_matches_helm_chart_images_and_docs():
         for manifest in render_chart()
         if manifest.get("kind") == "Deployment"
     }
-    assert rendered_images["deep-researcher-backend"] == f"nvcr.io/nvidia/blueprint/aiq-agent:{EXPECTED_RELEASE_VERSION}"
-    assert rendered_images["deep-researcher-frontend"] == f"nvcr.io/nvidia/blueprint/aiq-frontend:{EXPECTED_RELEASE_VERSION}"
+    assert (
+        rendered_images["deep-researcher-backend"] == f"nvcr.io/nvidia/blueprint/aiq-agent:{EXPECTED_RELEASE_VERSION}"
+    )
+    assert (
+        rendered_images["deep-researcher-frontend"]
+        == f"nvcr.io/nvidia/blueprint/aiq-frontend:{EXPECTED_RELEASE_VERSION}"
+    )
 
     expected_chart_archive = f"deep-researcher-web-{EXPECTED_RELEASE_VERSION}.tgz"
     chart_archive_pattern = re.compile(r"deep-researcher-web-[\w.-]+\.tgz")
