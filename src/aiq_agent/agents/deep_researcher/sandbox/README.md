@@ -410,7 +410,7 @@ Every sandbox execution and transfer traverses the OpenShell SDK, Gateway, and
 authenticated Gateway-Supervisor relay; AI-Q does not directly address a container or
 pod. The Gateway is OpenShell's control plane, while the Supervisor is the local
 security boundary that launches restricted child processes and applies the active
-policy. See [How OpenShell Works](https://docs.nvidia.com/openshell/about/how-it-works)
+policy. See [How OpenShell Works](https://docs.nvidia.com/openshell/latest/about/architecture)
 for the OpenShell-owned portion of this sequence.
 
 #### What AI-Q policy verification proves
