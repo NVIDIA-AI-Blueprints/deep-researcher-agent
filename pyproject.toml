@@ -23,6 +23,7 @@ package-dir = {"" = "src"}
 [tool.setuptools.package-data]
 "aiq_agent.agents.chat_researcher" = ["prompts/*.j2"]
 "aiq_agent.agents.clarifier" = ["prompts/*.j2"]
+"aiq_agent.agents.data_science" = ["prompts/*.j2"]
 "aiq_agent.agents.deep_researcher" = ["prompts/*.j2", "skills/**/*"]
 "aiq_agent.agents.report_rewriter" = ["prompts/*.j2"]
 "aiq_agent.agents.shallow_researcher" = ["prompts/*.j2"]
@@ -67,6 +68,13 @@ pii = [
 s3 = [
     "boto3>=1.35.0,<2",
 ]
+sandboxed-python-test = [
+    "numpy>=2.0",
+    "pandas>=2.0",
+    "scikit-learn>=1.5",
+    "scipy>=1.13",
+    "statsmodels>=0.14",
+]
 dev = [
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",
@@ -109,6 +117,7 @@ aiq_shallow_researcher = "aiq_agent.agents.shallow_researcher.register"
 aiq_deep_researcher = "aiq_agent.agents.deep_researcher.register"
 aiq_fastapi_extensions = "aiq_agent.fastapi_extensions.register"
 aiq_clarifier = "aiq_agent.agents.clarifier.register"
+aiq_data_science = "aiq_agent.agents.data_science.register"
 aiq_data_source_registry = "aiq_agent.common.data_source_registry"
 aiq_guardrails = "aiq_agent.guardrails.register"
 

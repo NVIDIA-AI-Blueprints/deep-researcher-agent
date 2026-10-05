@@ -527,9 +527,9 @@ class TestSubmitDeepResearchJob:
         job_args = mock_job_store.submit_job.call_args.kwargs["job_args"]
         # Trailing worker args: available_documents, data_sources, auth_token,
         # encryption policy, initial_files, output_metadata, principal_user_id,
-        # admission fencing token.
-        assert job_args[-7] == ["web_search"]
-        assert job_args[-5].mode == "off"
+        # admission fencing token, database_name.
+        assert job_args[-8] == ["web_search"]
+        assert job_args[-6].mode == "off"
 
     @pytest.mark.asyncio
     async def test_submit_agent_job_passes_explicit_conversation_id_to_worker(self):
@@ -598,9 +598,9 @@ class TestSubmitDeepResearchJob:
         assert result == "test-job-id"
         job_args = mock_job_store.submit_job.call_args.kwargs["job_args"]
         # Encryption policy precedes the upstream report-context arguments.
-        assert job_args[-5].mode == "off"
-        assert job_args[-4] == initial_files
-        assert job_args[-3] == output_metadata
+        assert job_args[-6].mode == "off"
+        assert job_args[-5] == initial_files
+        assert job_args[-4] == output_metadata
 
     @pytest.mark.asyncio
     async def test_submit_with_custom_job_id(self):

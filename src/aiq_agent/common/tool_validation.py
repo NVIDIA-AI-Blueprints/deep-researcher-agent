@@ -17,6 +17,7 @@
 
 import logging
 import os
+import re
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -28,6 +29,7 @@ logger = logging.getLogger(__name__)
 _GENERIC_TOOL_ERROR = (
     "Some search capabilities are currently unavailable. Please contact your administrator or try again later."
 )
+_UNAVAILABLE_TOOL_MARKER = re.compile(r"\(\s*unavailable\s*[-:]", re.IGNORECASE)
 
 
 def _extract_unavailable_reason(description: str) -> str:
@@ -37,8 +39,6 @@ def _extract_unavailable_reason(description: str) -> str:
         ``"Web search tool (unavailable - missing TAVILY_API_KEY)"``
     This extracts ``"missing TAVILY_API_KEY"`` from the parenthetical.
     """
-    import re
-
     match = re.search(r"\(unavailable\s*[-:]\s*(.+?)\)", description, re.IGNORECASE)
     if match:
         return match.group(1).strip()
@@ -76,9 +76,7 @@ def validate_tool_availability(
     for tool in tools:
         tool_name = getattr(tool, "name", "").lower()
         tool_desc_original = getattr(tool, "description", "") or ""
-        tool_desc = tool_desc_original.lower()
-
-        is_unavailable = "unavailable" in tool_desc or "missing" in tool_desc
+        is_unavailable = _UNAVAILABLE_TOOL_MARKER.search(tool_desc_original) is not None
 
         if is_unavailable:
             reason = _extract_unavailable_reason(tool_desc_original)

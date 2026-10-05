@@ -380,7 +380,7 @@ async def polymarket_search(
     except ImportError:
 
         async def _polymarket_search_stub(query: str) -> str:
-            """Prediction market search unavailable because the `httpx` package is not installed."""
+            """Prediction market search (unavailable - missing optional `httpx` package)."""
             return (
                 "Error: Polymarket search is unavailable because the `httpx` package is not installed. "
                 "Install the polymarket-prediction-market workspace package dependencies and restart AIQ."

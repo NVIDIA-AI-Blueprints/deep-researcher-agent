@@ -21,6 +21,7 @@ when only lightweight submodules like `aiq_agent.knowledge` are needed.
 
 __all__ = [
     "chat_deepresearcher_agent",
+    "data_science_agent",
     "shallow_research_agent",
     "deep_research_agent",
 ]
@@ -51,6 +52,12 @@ def __getattr__(name: str):
 
         _lazy_imports[name] = shallow_research_agent
         return shallow_research_agent
+
+    if name == "data_science_agent":
+        from .agents import data_science_agent
+
+        _lazy_imports[name] = data_science_agent
+        return data_science_agent
 
     if name == "deep_research_agent":
         from .agents import deep_research_agent

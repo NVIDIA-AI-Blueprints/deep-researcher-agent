@@ -1,0 +1,299 @@
+# Web profile that routes structured-data questions to the Data Science Agent.
+#
+# The chat router (context_aware_intent_router) probes the GSF catalog on each
+# research request. When coverage clears catalog_confidence_threshold -- or the
+# request carries an explicit database_name scope -- it takes the Hybrid path and
+# submits the DS agent as an async job, so the run survives a browser refresh.
+#
+# Requires: NVIDIA_API_KEY, TAVILY_API_KEY, GSF_BASE_URL, GSF_EMAIL, GSF_PASSWORD.
+# Async jobs reload this file in a worker, so NAT_CONFIG_FILE must point at it.
+
+
+general:
+  use_uvloop: true
+  telemetry:
+    logging:
+      console:
+        _type: console
+        level: INFO
+
+  front_end:
+    _type: aiq_api
+    runner_class: aiq_api.plugin.AIQAPIWorker
+    # =========================================================================
+    # Knowledge API is automatically enabled when knowledge_retrieval function
+    # is configured
+    # =========================================================================
+    # Async Job API Settings
+    # =========================================================================
+    # Async job infrastructure database (NAT JobStore + EventStore)
+    # Used by: /v1/jobs/async routes, SSE streaming, job status persistence
+    # Requires async driver for SQLite (aiosqlite) or PostgreSQL (asyncpg)
+    # Environment overrides:
+    # - NAT_JOB_STORE_DB_URL (direct override)
+    # - NAT_JOB_STORE_DB_URL_DEV / NAT_JOB_STORE_DB_URL_PROD (via NAT_ENV)
+    db_url: ${NAT_JOB_STORE_DB_URL:-sqlite+aiosqlite:///./jobs.db}
+    # Job expiry - how long completed jobs stay in database before cleanup
+    expiry_seconds: 86400  # 24 hours (min: 600, max: 604800/7 days)
+    cors:
+      allow_origin_regex: 'http://localhost(:\d+)?|http://127.0.0.1(:\d+)?'
+      allow_methods:
+        - GET
+        - POST
+        - DELETE
+        - OPTIONS
+      allow_headers:
+        - "*"
+      allow_credentials: true
+      expose_headers:
+        - "*"
+
+llms:
+  nemotron_lightning_intent_llm:
+    _type: nim
+    model_name: nvidia/nemotron-3.5-lightning-30b-a3b
+    base_url: "https://integrate.api.nvidia.com/v1"
+    api_key: ${NVIDIA_API_KEY}
+    temperature: 0.1
+    top_p: 0.9
+    max_tokens: 1024
+    num_retries: 5
+    parallel_tool_calls: false
+    chat_template_kwargs:
+      enable_thinking: false
+
+  nemotron_lightning_agent_llm:
+    _type: nim
+    model_name: nvidia/nemotron-3-ultra-550b-a55b
+    base_url: "https://integrate.api.nvidia.com/v1"
+    api_key: ${NVIDIA_API_KEY}
+    temperature: 0.2
+    top_p: 0.7
+    max_tokens: 32768
+    num_retries: 5
+    parallel_tool_calls: false
+    chat_template_kwargs:
+      enable_thinking: true
+
+  nemotron_ultra_llm:
+    _type: nim
+    model_name: nvidia/nemotron-3-ultra-550b-a55b
+    base_url: "https://integrate.api.nvidia.com/v1"
+    api_key: ${NVIDIA_API_KEY}
+    temperature: 0.2
+    top_p: 0.7
+    max_tokens: 16384
+    num_retries: 5
+    chat_template_kwargs:
+      enable_thinking: false
+
+  nemotron_ultra_writer_llm:
+    _type: nim
+    model_name: nvidia/nemotron-3-ultra-550b-a55b
+    base_url: "https://integrate.api.nvidia.com/v1"
+    api_key: ${NVIDIA_API_KEY}
+    temperature: 0.2
+    top_p: 0.7
+    max_tokens: 32768
+    num_retries: 5
+    chat_template_kwargs:
+      enable_thinking: false
+
+  # LLM for document summaries (required when generate_summary: true)
+  summary_llm:
+    _type: nim
+    model_name: google/gemma-4-31b-it
+    base_url: "https://integrate.api.nvidia.com/v1"
+    api_key: ${NVIDIA_API_KEY}
+    temperature: 0.1
+    max_tokens: 100
+
+function_groups:
+  gsf:
+    _type: gsf
+    base_url: ${GSF_BASE_URL}
+    auth:
+      mode: password
+      email: ${GSF_EMAIL}
+      # This field takes the NAME of the env var holding the password, not the
+      # password itself. Using ${GSF_PASSWORD} here resolves to the secret and
+      # GSF then looks up an env var by that value, silently disabling the tools.
+      password: GSF_PASSWORD  # pragma: allowlist secret
+    include:
+      - catalog_search
+      - text_to_sql
+    connect_timeout_seconds: 10
+    read_timeout_seconds: ${GSF_READ_TIMEOUT_SECONDS:-600}
+    max_retries: 2
+    default_max_rows: 1000
+
+functions:
+  # =========================================================================
+  # Data Source Registry
+  # =========================================================================
+  # Central registry that controls:
+  #   1. UI toggles — each source appears as an on/off switch in the frontend
+  #   2. Per-message filtering — users can select active sources per request
+  #   3. Tool auto-inheritance — agents with no explicit `tools` list receive
+  #      every tool listed here (use `exclude_tools` on agents to specialize)
+  #
+  # Adding a new tool or MCP function group? Just add it here — all agents
+  # pick it up automatically. No per-agent config changes needed.
+  #
+  # Source entry fields:
+  #   id            — Unique key used in API payloads and filtering
+  #   name          — Display name shown in the UI
+  #   description   — Human-readable description shown in the UI
+  #   tools         — List of NAT function names or function group names
+  #   requires_auth — (default: false) If true, the UI greys out this source
+  #                   until the user signs in. Use for sources that need
+  #                   user-level OAuth tokens (e.g., enterprise SSO).
+  #                   Sources using backend API keys (Tavily, Serper) should
+  #                   leave this false.
+  #   default_enabled — (default: true) Whether enabled by default
+  #
+  # See docs/source/customization/tools-and-sources.md for full details.
+  # =========================================================================
+  data_sources:
+    _type: data_source_registry
+    sources:
+      - id: web_search
+        name: "Web Search"
+        description: "Search the web for real-time information."
+        tools:
+          - web_search_tool
+          - advanced_web_search_tool
+      - id: structured_data
+        name: "Enterprise Structured Data"
+        description: "Query structured enterprise data through GSF."
+        tools:
+          - gsf
+      - id: knowledge_layer
+        name: "Knowledge Base"
+        description: "Search uploaded documents and files."
+        tools:
+          - knowledge_search
+      # Uncomment when paper_search_tool is enabled (requires SERPER_API_KEY)
+      # - id: paper_search
+      #   name: "Academic Papers"
+      #   description: "Search academic papers and scientific publications."
+      #   tools:
+      #     - paper_search_tool
+
+  web_search_tool:
+    _type: tavily_web_search
+    max_results: 5
+    max_content_length: 1000
+
+  advanced_web_search_tool:
+    _type: tavily_web_search
+    max_results: 2
+    advanced_search: true
+
+  # Knowledge Retrieval (see sources/knowledge_layer/KNOWLEDGE-LAYER-SETUP.md)
+  knowledge_search:
+    _type: knowledge_retrieval
+    backend: llamaindex
+    collection_name: ${COLLECTION_NAME:-test_collection}
+    generate_summary: true
+    summary_model: summary_llm                     # Required when generate_summary: true
+    summary_db: ${AIQ_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
+    top_k: 5
+    chroma_dir: ${AIQ_CHROMA_DIR:-/tmp/chroma_data}
+
+  # Paper Search (optional - requires SERPER_API_KEY)
+  # Uncomment the block below and set SERPER_API_KEY to enable academic paper search.
+  # paper_search_tool:
+  #   _type: paper_search
+  #   max_results: 5
+  #   serper_api_key: ${SERPER_API_KEY}
+
+  # =========================================================================
+  # Agents
+  # =========================================================================
+  # Tool inheritance: agents with no `tools` list inherit ALL tools from the
+  # data_source_registry above. Use `exclude_tools` to remove specific tools
+  # from an agent (e.g., give shallow the basic search, deep the advanced).
+  # To bypass auto-inherit entirely, set an explicit `tools` list.
+  # =========================================================================
+  intent_classifier:
+    _type: context_aware_intent_router
+    llm: nemotron_lightning_intent_llm
+    catalog_tool: gsf__catalog_search
+    catalog_source_id: structured_data
+    max_catalog_results: 10
+    # Unscoped chat requests reach the DS agent only when catalog coverage clears this
+    # threshold. Tune per deployment: a test deployment measured 0.5 coverage on a
+    # representative question, which falls back to shallow at the 0.6 default.
+    catalog_confidence_threshold: ${AIQ_CATALOG_CONFIDENCE_THRESHOLD:-0.6}
+    verbose: true
+
+  clarifier_agent:
+    _type: clarifier_agent
+    llm: nemotron_ultra_llm
+    # tools: omitted -> inherits all from data_source_registry
+    # exclude_tools: []
+    max_turns: 3
+    log_response_max_chars: 2000
+
+  shallow_research_agent:
+    _type: shallow_research_agent
+    llm: nemotron_lightning_agent_llm
+    # tools: omitted -> inherits all from data_source_registry
+    exclude_tools:                     # Remove advanced variant; shallow uses web_search_tool
+      - advanced_web_search_tool
+    max_llm_turns: 10
+    max_tool_iterations: 5
+
+  deep_research_agent:
+    _type: deep_research_agent
+    enable_citation_verification: true
+    orchestrator_llm: nemotron_ultra_llm
+    source_router_llm: nemotron_ultra_llm
+    researcher_llm: nemotron_ultra_llm
+    planner_llm: nemotron_ultra_llm
+    writer_llm: nemotron_ultra_writer_llm
+    # tools: omitted -> inherits all from data_source_registry
+    exclude_tools:                     # Remove basic variant; deep uses advanced_web_search_tool
+      - web_search_tool
+
+  data_science_agent:
+    _type: data_science_agent
+    llm: nemotron_ultra_llm
+    tools:
+      - gsf
+      - knowledge_search
+      - web_search_tool
+    # The router submits this as an async job, which always runs headless.
+    interaction_mode: headless
+    recursion_limit: 48
+    verbose: true
+
+  data_science_hybrid_adapter:
+    _type: data_science_hybrid_adapter
+    agent: data_science_agent
+
+workflow:
+  _type: chat_deepresearcher_agent
+  hybrid_research_agent: data_science_hybrid_adapter
+  enable_escalation: true
+  enable_clarifier: true
+  use_async_deep_research: true
+  checkpoint_db: ${AIQ_CHECKPOINT_DB:-./checkpoints.db}
+  relay:
+    observability:
+      atof:
+        enabled: true
+        output_directory: ./relay
+        filename: aiq-relay.atof.jsonl
+        mode: append
+      # Uncomment to export Relay traces to a local Phoenix instance.
+      # opentelemetry:
+      #   enabled: true
+      #   endpoints:
+      #     - type: openinference
+      #       endpoint: http://localhost:6006/v1/traces
+      #       service_name: aiq-relay
+      #       resource_attributes:
+      #         openinference.project.name: aiq-relay
+      #         deployment.environment: development

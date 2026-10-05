@@ -67,6 +67,10 @@ PARENT_REPORT_CONTEXT_PATH = "/shared/parent_report_context.json"
 AGENT_DIR = Path(__file__).parent
 
 
+class WorkflowOutputError(RuntimeError):
+    """Raised when the deep-research workflow does not produce a final report."""
+
+
 class DeepResearcherAgent:
     """
     Deep research agent using deepagents library for multi-phase workflow.
@@ -367,7 +371,7 @@ class DeepResearcherAgent:
                     generated_answer=generated_answer,
                 )
             if final_message is None:
-                raise RuntimeError("writer_output_not_committed")
+                raise WorkflowOutputError("writer-agent did not produce a final Markdown answer")
 
             # Post-process: verify citations against source registry
             citation_registry = None

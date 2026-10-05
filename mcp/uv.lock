@@ -212,6 +212,7 @@ requires-dist = [
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.5.0" },
     { name = "myst-parser", marker = "extra == 'docs'", specifier = ">=3.0" },
     { name = "nemo-relay", extras = ["deepagents", "langchain", "langgraph"], git = "https://github.com/NVIDIA/NeMo-Relay.git?rev=ffb24817442bac99212da0971b13bdad5bc4d84d" },
+    { name = "numpy", marker = "extra == 'sandboxed-python-test'", specifier = ">=2.0" },
     { name = "nvidia-nat", extras = ["langchain", "async-endpoints", "phoenix", "mcp"], specifier = "==1.8.0" },
     { name = "nvidia-nat-core", specifier = "==1.8.0" },
     { name = "nvidia-nat-eval", specifier = "==1.8.0" },
@@ -220,6 +221,7 @@ requires-dist = [
     { name = "nvidia-nat-security", extras = ["defense"], marker = "extra == 'pii'", specifier = "==1.8.0" },
     { name = "nvidia-nat-security", extras = ["guardrails"], specifier = "==1.8.0" },
     { name = "nvidia-sphinx-theme", marker = "extra == 'docs'", specifier = ">=0.0.9.post1" },
+    { name = "pandas", marker = "extra == 'sandboxed-python-test'", specifier = ">=2.0" },
     { name = "pillow", specifier = ">=12.3.0,<13" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.5.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.0.0" },
@@ -232,6 +234,8 @@ requires-dist = [
     { name = "pytest-env", marker = "extra == 'dev'", specifier = ">=1.1.0" },
     { name = "python-multipart", specifier = ">=0.0.27,<0.1" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "~=0.15.1" },
+    { name = "scikit-learn", marker = "extra == 'sandboxed-python-test'", specifier = ">=1.5" },
+    { name = "scipy", marker = "extra == 'sandboxed-python-test'", specifier = ">=1.13" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=7.0" },
     { name = "sphinx-autobuild", marker = "extra == 'docs'", specifier = ">=2025.8.25" },
     { name = "sphinx-copybutton", marker = "extra == 'docs'", specifier = ">=0.5" },
@@ -239,9 +243,10 @@ requires-dist = [
     { name = "sphinx-mermaid", marker = "extra == 'docs'", specifier = ">=0.0.8" },
     { name = "sphinx-rtd-theme", marker = "extra == 'docs'", specifier = ">=2.0" },
     { name = "sphinxcontrib-mermaid", marker = "extra == 'docs'", specifier = ">=2.0.1" },
+    { name = "statsmodels", marker = "extra == 'sandboxed-python-test'", specifier = ">=0.14" },
     { name = "yapf", marker = "extra == 'dev'", specifier = ">=0.40.0" },
 ]
-provides-extras = ["pii", "s3", "dev", "docs", "viz"]
+provides-extras = ["pii", "s3", "sandboxed-python-test", "dev", "docs", "viz"]
 
 [package.metadata.requires-dev]
 dev = [

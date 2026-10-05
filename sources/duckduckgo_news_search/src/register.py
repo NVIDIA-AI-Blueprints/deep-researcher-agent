@@ -93,7 +93,7 @@ async def duckduckgo_news_search(
     except ImportError:
 
         async def _duckduckgo_news_search_stub(query: str) -> str:
-            """News search tool unavailable because the `ddgs` package is not installed."""
+            """News search tool (unavailable - missing optional `ddgs` package)."""
             return (
                 "Error: DuckDuckGo news search is unavailable because the `ddgs` package is not installed. "
                 "Install the duckduckgo-news-search workspace package dependencies and restart AIQ."

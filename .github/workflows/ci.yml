@@ -105,7 +105,7 @@ jobs:
         run: |
           set -euo pipefail
           uv venv --python 3.13 .venv
-          uv sync --frozen --group dev
+          uv sync --frozen --group dev --extra sandboxed-python-test
           UV_PROJECT_ENVIRONMENT="$RUNNER_TEMP/aiq-mcp-test-venv" \
             uv sync --project mcp --frozen --extra dev
 
@@ -281,7 +281,7 @@ jobs:
         run: |
           set -euo pipefail
           uv venv --python 3.13 .venv
-          uv sync --frozen --group dev
+          uv sync --frozen --group dev --extra sandboxed-python-test
           for pkg in \
             ./frontends/benchmarks/freshqa \
             ./frontends/benchmarks/intent_classifier

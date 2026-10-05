@@ -34,7 +34,9 @@ except ImportError:  # pragma: no cover
     print("ERROR: PyYAML is required. Install with: uv sync", file=sys.stderr)
     sys.exit(2)
 
-WORKFLOW_TYPE = "chat_deepresearcher_agent"
+CHAT_WORKFLOW_TYPE = "chat_deepresearcher_agent"
+DATA_SCIENCE_WORKFLOW_TYPE = "data_science_workflow"
+WORKFLOW_TYPES = {CHAT_WORKFLOW_TYPE, DATA_SCIENCE_WORKFLOW_TYPE}
 FRONT_END_TYPE = "aiq_api"
 LOG_LEVELS = {"DEBUG", "INFO", "WARNING", "ERROR"}
 TRACING_TYPES = {"langsmith", "otelcollector_redaction", "phoenix", "weave"}
@@ -53,11 +55,10 @@ LLM_REF_FIELDS = (
     "summary_model",
 )
 
-REQUIRED_WORKFLOW_AGENTS = (
-    "intent_classifier",
-    "shallow_research_agent",
-    "deep_research_agent",
-)
+REQUIRED_WORKFLOW_FUNCTIONS = {
+    CHAT_WORKFLOW_TYPE: ("intent_classifier", "shallow_research_agent", "deep_research_agent"),
+    DATA_SCIENCE_WORKFLOW_TYPE: ("data_science_agent",),
+}
 
 ENV_REF = re.compile(r"\$\{([A-Z0-9_]+)(?::-[^}]*)?\}")
 
@@ -256,20 +257,39 @@ def validate(path: str) -> int:
         _validate_registry(registry, declared_functions | set(function_groups), errors, warnings)
 
     workflow = data.get("workflow")
-    for agent_name in REQUIRED_WORKFLOW_AGENTS:
-        if agent_name not in declared_functions:
-            errors.append(f"workflow requires function '{agent_name}' under functions: (missing).")
     if workflow is None:
         errors.append("`workflow:` is required for an AI-Q workflow config.")
     elif not isinstance(workflow, dict):
         errors.append("`workflow:` must be a mapping.")
     else:
         wf_type = workflow.get("_type")
-        if wf_type != WORKFLOW_TYPE:
-            errors.append(f"workflow._type must be '{WORKFLOW_TYPE}' (got {wf_type!r}).")
-        if workflow.get("enable_clarifier") is True and "clarifier_agent" not in declared_functions:
+        if not isinstance(wf_type, str) or wf_type not in WORKFLOW_TYPES:
+            allowed = ", ".join(sorted(WORKFLOW_TYPES))
+            errors.append(f"workflow._type must be one of {allowed} (got {wf_type!r}).")
+        if isinstance(wf_type, str):
+            for function_name in REQUIRED_WORKFLOW_FUNCTIONS.get(wf_type, ()):
+                if function_name not in declared_functions:
+                    errors.append(f"workflow requires function '{function_name}' under functions: (missing).")
+        hybrid_research_agent = workflow.get("hybrid_research_agent")
+        if hybrid_research_agent is not None and not isinstance(hybrid_research_agent, str):
+            errors.append("workflow.hybrid_research_agent must be a string function name when configured.")
+        elif hybrid_research_agent is not None and hybrid_research_agent not in declared_functions:
+            errors.append(
+                "workflow.hybrid_research_agent references function "
+                f"'{hybrid_research_agent}' but it is missing under functions: "
+                "(configure a data_science_hybrid_adapter function)."
+            )
+        if (
+            wf_type == CHAT_WORKFLOW_TYPE
+            and workflow.get("enable_clarifier") is True
+            and "clarifier_agent" not in declared_functions
+        ):
             errors.append("workflow.enable_clarifier is true but 'clarifier_agent' is missing under functions:.")
-        if workflow.get("use_async_deep_research") is True and not _general_block(data).get("front_end"):
+        if (
+            wf_type == CHAT_WORKFLOW_TYPE
+            and workflow.get("use_async_deep_research") is True
+            and not _general_block(data).get("front_end")
+        ):
             warnings.append(
                 "use_async_deep_research is true but general.front_end is missing "
                 "(web/aiq_api mode expected for async jobs)."

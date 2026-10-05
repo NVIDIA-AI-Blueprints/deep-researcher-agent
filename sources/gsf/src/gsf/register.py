@@ -49,6 +49,8 @@ class GSFFunctionGroupConfig(FunctionGroupBaseConfig, name="gsf"):
     connect_timeout_seconds: float = Field(default=5.0, gt=0)
     read_timeout_seconds: float = Field(default=60.0, gt=0)
     max_retries: int = Field(default=2, ge=0, le=5)
+    completion_wall_timeout_seconds: float | None = Field(default=None, gt=0)
+    max_completion_retries: int = Field(default=0, ge=0, le=2)
     max_response_bytes: int = Field(default=5_000_000, ge=1)
     default_max_rows: int = Field(default=1_000, ge=1)
 

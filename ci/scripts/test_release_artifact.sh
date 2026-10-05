@@ -58,6 +58,7 @@ expected = {
     "aiq_agent/agents/chat_researcher/prompts/context_aware_intent_router.j2",
     "aiq_agent/agents/chat_researcher/prompts/intent_classification.j2",
     "aiq_agent/agents/clarifier/prompts/research_clarification.j2",
+    "aiq_agent/agents/data_science/prompts/agent.j2",
     "aiq_agent/agents/deep_researcher/prompts/orchestrator.j2",
     "aiq_agent/agents/deep_researcher/prompts/planner.j2",
     "aiq_agent/agents/deep_researcher/prompts/researcher.j2",
@@ -124,8 +125,16 @@ PY
 
 export NVIDIA_API_KEY="ci-not-a-real-key"  # pragma: allowlist secret
 export OPENAI_API_KEY="ci-not-a-real-key"  # pragma: allowlist secret
+export INFERENCE_NVIDIA_API_KEY="ci-not-a-real-key"  # pragma: allowlist secret
+export AIQ_DATA_SCIENCE_MODEL="openai/ci-test-model"
+export AIQ_INFERENCE_BASE_URL="https://inference.invalid/v1"
 export TAVILY_API_KEY="ci-not-a-real-key"  # pragma: allowlist secret
 export SERPER_API_KEY="ci-not-a-real-key"  # pragma: allowlist secret
+export GSF_BASE_URL="https://gsf.invalid"
+export GSF_EMAIL="ci@example.invalid"
+export GSF_PASSWORD="ci-not-a-real-password"  # pragma: allowlist secret
+export COLLECTION_NAME="ci-test-collection"
+export RAG_SERVER_URL="https://rag.invalid/v1"
 export REDIS_PASSWORD="ci-not-a-real-password"  # pragma: allowlist secret
 export NAT_JOB_STORE_DB_URL="sqlite+aiosqlite:///$RUNTIME_ROOT/jobs.db"
 export AIQ_CHECKPOINT_DB="$RUNTIME_ROOT/checkpoints.db"

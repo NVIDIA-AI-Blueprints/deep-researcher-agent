@@ -252,16 +252,59 @@ def _sandbox_caps_configured() -> bool:
     return "AIQ_MAX_SANDBOXES_PER_PRINCIPAL" in os.environ or "AIQ_MAX_SANDBOXES_GLOBAL" in os.environ
 
 
+def _sandbox_enabled(sandbox: Any) -> bool:
+    """Return whether a resolved sandbox config is active."""
+    if sandbox is None:
+        return False
+    return bool(getattr(sandbox, "enabled", True))
+
+
+def _tool_config_uses_sandbox(builder: Any, fn_config: Any) -> bool:
+    """Return whether any tool the agent can resolve owns a sandbox.
+
+    Agents such as ``data_science`` never declare ``sandbox`` themselves: the
+    analysis tool (``stateful_python``) holds the sandbox ``FunctionRef``. Walk
+    the agent's effective tool refs so the submit-path cap covers those jobs
+    too, mirroring how the worker resolves tools.
+    """
+    tool_refs = getattr(fn_config, "tools", None) or get_all_tool_refs()
+    # exclude_tools holds exact runtime tool names while tool_refs holds function and
+    # group references. These coincide for plain-function tools, which is every tool
+    # that owns a sandbox today (stateful_python, registered under its function name).
+    # A group reference such as `gsf` would not match a child name such as
+    # `gsf__text_to_sql`, but no function group owns a sandbox. Matching exactly here
+    # keeps this off the async builder.get_tools() path on every submit; if a group
+    # ever owns a sandbox, resolve runtime names instead. Erring toward "uses a
+    # sandbox" only over-applies an opt-in cap rather than letting one escape it.
+    excluded = set(getattr(fn_config, "exclude_tools", None) or [])
+    for tool_ref in tool_refs:
+        if tool_ref in excluded:
+            continue
+        try:
+            tool_config = builder.get_function_config(tool_ref)
+        except Exception:  # noqa: BLE001 - an unresolvable ref cannot enable a sandbox
+            continue
+        sandbox = getattr(tool_config, "sandbox", None)
+        if isinstance(sandbox, str):
+            # A FunctionRef naming a separate sandbox function config.
+            try:
+                sandbox = builder.get_function_config(sandbox)
+            except Exception:  # noqa: BLE001 - same rationale as above
+                continue
+        if _sandbox_enabled(sandbox):
+            return True
+    return False
+
+
 def _agent_uses_sandbox(builder: Any, config_name: str) -> bool:
-    """Return whether the agent's function config enables a sandbox."""
+    """Return whether the agent reaches a sandbox directly or through a tool."""
     try:
         fn_config = builder.get_function_config(config_name)
     except Exception:  # noqa: BLE001 - missing/odd config means "no sandbox guard"
         return False
-    sandbox = getattr(fn_config, "sandbox", None)
-    if sandbox is None:
-        return False
-    return bool(getattr(sandbox, "enabled", True))
+    if _sandbox_enabled(getattr(fn_config, "sandbox", None)):
+        return True
+    return _tool_config_uses_sandbox(builder, fn_config)
 
 
 async def _enforce_sandbox_concurrency(db_url: str, principal: Any) -> None:

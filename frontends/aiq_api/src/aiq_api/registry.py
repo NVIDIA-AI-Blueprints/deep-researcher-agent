@@ -124,3 +124,10 @@ register_agent(
     description="Internal child agent for report edit follow-up",
     public=False,
 )
+
+register_agent(
+    agent_type="data_science",
+    class_path="aiq_agent.agents.data_science.agent.DataScienceAgent",
+    config_name="data_science_agent",
+    description="Analyzes enterprise structured data, documents, and web evidence in one autonomous loop",
+)

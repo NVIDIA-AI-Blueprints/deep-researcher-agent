@@ -536,3 +536,59 @@ class TestResolveEffectiveReportJobId:
         )
         result = await _resolve_effective_report_job_id(None, "conv-A", None, is_input_mode=False)
         assert result is None
+
+
+class TestResolveSubmissionQuery:
+    """Query derivation for async research submissions.
+
+    Regression cover for the hybrid route, which never passes through
+    ``clarifier_node`` and so never has ``original_query`` set.
+    """
+
+    @staticmethod
+    def _state(messages, original_query=None):
+        state = MagicMock()
+        state.messages = messages
+        state.original_query = original_query
+        return state
+
+    def test_uses_the_latest_user_message_across_turns(self) -> None:
+        from aiq_agent.agents.chat_researcher.register import _resolve_submission_query
+
+        state = self._state(
+            [
+                HumanMessage(content="What tables exist?"),
+                AIMessage(content="Several."),
+                HumanMessage(content="Which state has the most orders?"),
+            ]
+        )
+
+        assert _resolve_submission_query(state) == "Which state has the most orders?"
+
+    def test_latest_message_wins_over_a_stale_original_query(self) -> None:
+        """A previous turn's original_query must not leak into this turn's job."""
+        from aiq_agent.agents.chat_researcher.register import _resolve_submission_query
+
+        state = self._state(
+            [
+                HumanMessage(content="What tables exist?"),
+                AIMessage(content="Several."),
+                HumanMessage(content="Which state has the most orders?"),
+            ],
+            original_query="What tables exist?",
+        )
+
+        assert _resolve_submission_query(state) == "Which state has the most orders?"
+
+    def test_falls_back_to_original_query_when_no_user_message(self) -> None:
+        from aiq_agent.agents.chat_researcher.register import _resolve_submission_query
+
+        state = self._state([AIMessage(content="Only assistant turns.")], original_query="Earlier question")
+
+        assert _resolve_submission_query(state) == "Earlier question"
+
+    def test_raises_without_messages(self) -> None:
+        from aiq_agent.agents.chat_researcher.register import _resolve_submission_query
+
+        with pytest.raises(RuntimeError, match="without messages"):
+            _resolve_submission_query(self._state([]))

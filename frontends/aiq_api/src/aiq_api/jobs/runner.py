@@ -68,6 +68,19 @@ _DEEP_RESEARCH_AGENT_KWARGS = frozenset(
 _CONFIGURABLE_AGENT_KWARGS = frozenset({"config", "job_id"})
 _JOB_SCOPED_AGENT_KWARGS = frozenset({"job_id"})
 _SHALLOW_RESEARCH_AGENT_KWARGS = frozenset({"max_tool_iterations", "enforce_citations"})
+_DATA_SCIENCE_AGENT_KWARGS = frozenset(
+    {
+        "llm",
+        "recursion_limit",
+        "interaction_mode",
+        "response_mode",
+        "gsf_catalog_call_limit",
+        "gsf_text_to_sql_call_limit",
+        "gsf_cache_repeated_calls",
+        "python_call_limit",
+        "finalization_model_call_limit",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -621,6 +634,7 @@ async def run_agent_job(
     output_metadata: dict[str, Any] | None = None,
     owner_user_id: str | None = None,
     admission_token: str | None = None,
+    database_name: str | None = None,
 ):
     """
     Dask task to run any registered agent with cancellation support and telemetry.
@@ -949,6 +963,7 @@ async def run_agent_job(
                                 data_sources=data_sources,
                                 event_store=event_store,
                                 initial_files=initial_files,
+                                database_name=database_name,
                             )
 
                         result = await run_relay_workflow(
@@ -1216,15 +1231,43 @@ def _create_agent_instance(
     Create an agent instance, supporting different constructor patterns.
 
     Tries in order:
-    1. DeepResearcherAgent explicit config pattern
-    2. llm_provider + tools + config/job_id pattern
-    3. llm_provider + tools + job_id pattern
-    4. ShallowResearcherAgent config pattern
-    5. llm_provider + tools pattern
-    6. llm + tools pattern (simpler agents)
+    1. DataScienceAgent explicit config pattern
+    2. DeepResearcherAgent explicit config pattern
+    3. llm_provider + tools + config/job_id pattern
+    4. llm_provider + tools + job_id pattern
+    5. ShallowResearcherAgent config pattern
+    6. llm_provider + tools pattern
+    7. llm + tools pattern (simpler agents)
     """
+    from aiq_agent.agents.data_science.register import DataScienceAgentConfig
     from aiq_agent.agents.deep_researcher.register import DeepResearchAgentConfig
     from aiq_agent.agents.shallow_researcher.register import ShallowResearchAgentConfig
+
+    if isinstance(fn_config, DataScienceAgentConfig) and _constructor_accepts_explicit_kwargs(
+        agent_cls, _DATA_SCIENCE_AGENT_KWARGS
+    ):
+        # An async job has no channel back to the user, so a clarifying question
+        # would strand the job. Clarification is a pre-submission concern (the
+        # chat workflow's clarifier), exactly as it is for deep research.
+        if fn_config.interaction_mode != "headless":
+            logger.info(
+                "Running data_science_agent headless for job %s (configured interaction_mode=%s)",
+                job_id,
+                fn_config.interaction_mode,
+            )
+        return agent_cls(
+            llm=llm,
+            tools=tools,
+            callbacks=callbacks,
+            recursion_limit=fn_config.recursion_limit,
+            interaction_mode="headless",
+            response_mode=fn_config.response_mode,
+            gsf_catalog_call_limit=fn_config.gsf_catalog_call_limit,
+            gsf_text_to_sql_call_limit=fn_config.gsf_text_to_sql_call_limit,
+            gsf_cache_repeated_calls=fn_config.gsf_cache_repeated_calls,
+            python_call_limit=fn_config.python_call_limit,
+            finalization_model_call_limit=fn_config.finalization_model_call_limit,
+        )
 
     if isinstance(fn_config, DeepResearchAgentConfig) and _constructor_accepts_explicit_kwargs(
         agent_cls, _DEEP_RESEARCH_AGENT_KWARGS
@@ -1317,6 +1360,7 @@ async def _run_agent(
     data_sources: list[str] | None = None,
     event_store: EventStore | None = None,
     initial_files: dict[str, Any] | None = None,
+    database_name: str | None = None,
 ) -> Any:
     """
     Run the agent, supporting different run() signatures.
@@ -1355,6 +1399,10 @@ async def _run_agent(
                 state_kwargs["data_sources"] = data_sources
             if initial_files and has_fields and "files" in state_cls.model_fields:
                 state_kwargs["files"] = initial_files
+            # A router-resolved database scope is authoritative for the request, so the
+            # worker must not fall back to the agent's configured default.
+            if database_name and has_fields and "database_name" in state_cls.model_fields:
+                state_kwargs["database_name"] = database_name
             if available_documents:
                 # Convert dicts to AvailableDocument if the state class expects them
                 try:
@@ -1376,6 +1424,8 @@ async def _run_agent(
                 state["data_sources"] = data_sources
             if initial_files:
                 state["files"] = initial_files
+            if database_name:
+                state["database_name"] = database_name
             if available_documents:
                 state["available_documents"] = available_documents
 

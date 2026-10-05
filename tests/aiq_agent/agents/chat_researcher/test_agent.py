@@ -1340,3 +1340,121 @@ class TestChatResearcherAgent:
         result = await agent.run(state, thread_id="test-thread-capture")
 
         assert result["last_report_markdown"] == "# Deep Report\n\nFindings."
+
+
+class TestHybridResearchAsyncSubmission:
+    """The hybrid (data-science) route must submit a durable job, not run in-request.
+
+    A DS run takes minutes. Running it inline ties the answer to the open websocket,
+    so a refresh loses the work -- the same failure mode the async job path exists to
+    prevent for deep research.
+    """
+
+    @pytest.fixture
+    def mock_shallow_research(self):
+        async def shallow(state_input):
+            messages = state_input.messages if hasattr(state_input, "messages") else state_input
+            result = MagicMock()
+            result.messages = list(messages) + [AIMessage(content="Here's a quick answer with sources.")]
+            return result
+
+        return shallow
+
+    @pytest.fixture
+    def mock_deep_research(self):
+        async def deep(state):
+            result = MagicMock()
+            result.messages = list(state.messages) + [AIMessage(content="Here's a comprehensive report.")]
+            return result
+
+        return deep
+
+    @pytest.fixture
+    def mock_clarifier(self):
+        async def clarifier(state_input):
+            messages = state_input.messages if hasattr(state_input, "messages") else state_input
+            result = MagicMock()
+            result.messages = list(messages)
+            result.clarifier_log = "User clarified: technical focus"
+            return result
+
+        return clarifier
+
+    @staticmethod
+    def _hybrid_intent():
+        async def _route(state):
+            return {
+                "user_intent": IntentResult(intent="research", raw=None, target="hybrid_research"),
+                "depth_decision": DepthDecision(decision="shallow", raw_reasoning="Structured data"),
+            }
+
+        return _route
+
+    @pytest.mark.asyncio
+    async def test_submitter_emits_data_science_escalation(
+        self,
+        mock_shallow_research,
+        mock_deep_research,
+        mock_clarifier,
+    ):
+        import json
+
+        submitted = {}
+
+        async def submit_hybrid(state):
+            submitted["state"] = state
+            return "ds-job-1"
+
+        async def fail_if_called(_state):
+            raise AssertionError("inline hybrid research must not run when a submitter is set")
+
+        agent = ChatResearcherAgent(
+            intent_classifier_fn=self._hybrid_intent(),
+            shallow_research_fn=mock_shallow_research,
+            deep_research_fn=mock_deep_research,
+            clarifier_fn=mock_clarifier,
+            enable_clarifier=False,
+            hybrid_research_fn=fail_if_called,
+            hybrid_research_job_submitter=submit_hybrid,
+        )
+
+        state = ChatResearcherState(messages=[HumanMessage(content="Which state has the most orders?")])
+        result = await agent.run(state, thread_id="test-thread-hybrid-escalation")
+
+        assert json.loads(result["messages"][-1].content) == {
+            "type": "job_escalation",
+            "kind": "data_science",
+            "job_id": "ds-job-1",
+        }
+        # The submitted state must carry the turn's own question, not the thread's first
+        # message, so the worker analyzes what the user actually asked.
+        assert submitted["state"].messages[-1].content == "Which state has the most orders?"
+
+    @pytest.mark.asyncio
+    async def test_runs_inline_when_no_submitter_is_configured(
+        self,
+        mock_shallow_research,
+        mock_deep_research,
+        mock_clarifier,
+    ):
+        """Without a scheduler the CLI has no job store, so hybrid must still answer inline."""
+        called = {}
+
+        async def inline_hybrid(_state):
+            called["yes"] = True
+            return {"messages": [AIMessage(content="inline hybrid answer")]}
+
+        agent = ChatResearcherAgent(
+            intent_classifier_fn=self._hybrid_intent(),
+            shallow_research_fn=mock_shallow_research,
+            deep_research_fn=mock_deep_research,
+            clarifier_fn=mock_clarifier,
+            enable_clarifier=False,
+            hybrid_research_fn=inline_hybrid,
+        )
+
+        state = ChatResearcherState(messages=[HumanMessage(content="Which state has the most orders?")])
+        result = await agent.run(state, thread_id="test-thread-hybrid-inline")
+
+        assert called.get("yes") is True
+        assert result["messages"][-1].content == "inline hybrid answer"

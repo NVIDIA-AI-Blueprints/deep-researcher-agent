@@ -145,6 +145,22 @@ async def test_missing_password_registers_unavailable_group_without_client_const
     sign_in.assert_not_awaited()
 
 
+def test_completion_retry_and_wall_timeout_are_bounded() -> None:
+    """Validate the narrow completion reliability controls."""
+
+    config = GSFFunctionGroupConfig(
+        base_url="https://gsf.example",
+        completion_wall_timeout_seconds=600,
+        max_completion_retries=1,
+    )
+
+    assert config.completion_wall_timeout_seconds == 600
+    assert config.max_completion_retries == 1
+
+    with pytest.raises(ValueError):
+        GSFFunctionGroupConfig(base_url="https://gsf.example", max_completion_retries=3)
+
+
 def test_request_trace_headers_forwards_only_allowlisted_nonempty_values() -> None:
     """Forward only nonempty request headers on the tracing allowlist."""
 

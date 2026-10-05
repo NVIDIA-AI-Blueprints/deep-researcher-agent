@@ -304,6 +304,12 @@ class DeepAgentsRuntime:
             )
         return self._backend
 
+    @property
+    def sandbox_backend(self) -> Any | None:
+        """Return the provider sandbox without DeepAgents virtual-route wrapping."""
+
+        return self._sandbox_provider
+
     def final_harvest(self) -> None:
         """Best-effort final artifact harvest before cleanup (terminal job path)."""
         manager = self.artifact_manager

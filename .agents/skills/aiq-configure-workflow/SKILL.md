@@ -1,6 +1,6 @@
 ---
 name: aiq-configure-workflow
-description: Use when composing, adapting, or validating an AI-Q workflow YAML under configs/ — selecting a shipped profile, enabling tools and data_source_registry sources, wiring agents and the chat_deepresearcher_agent workflow, configuring NeMo Relay observability and general.front_end aiq_api settings, and pre-flighting cross-references before deploy or serve. Hand off deploy to aiq-deploy, live research to aiq-research, prompt/model edits to aiq-customize-prompts-models, and new source code to aiq-add-tool or aiq-add-data-source.
+description: Use when composing, adapting, or validating an AI-Q workflow YAML under configs/ — selecting a shipped profile, enabling tools and data_source_registry sources, wiring chat or direct data-science workflows, configuring NeMo Relay and general.telemetry observability plus general.front_end aiq_api settings, and pre-flighting cross-references before deploy or serve. Hand off deploy to aiq-deploy, live research to aiq-research, prompt/model edits to aiq-customize-prompts-models, and new source code to aiq-add-tool or aiq-add-data-source.
 license: Apache-2.0
 compatibility: Claude Code, Codex, Cursor, OpenCode, and Agent Skills-compatible tools.
 metadata:
@@ -73,8 +73,9 @@ See [references/config-schema.md](references/config-schema.md). Expected: exit 0
 
 - Skipping `validate_config.py` on a new config.
 - Undefined `llms:` alias or registry tool not declared under `functions:`.
-- Missing required workflow agents (`intent_classifier`, `shallow_research_agent`,
-  `deep_research_agent`).
+- Missing functions required by the selected workflow: the chat workflow needs
+  `intent_classifier`, `shallow_research_agent`, and `deep_research_agent`; the
+  direct DS workflow needs `data_science_agent`.
 - `use_async_deep_research: true` without `general.front_end` (`aiq_api`).
 - Inventing feature YAML — copy from a shipped profile.
 

@@ -34,6 +34,10 @@ _HTTP_MAX_CONNECTIONS = 100
 _HTTP_MAX_KEEPALIVE_CONNECTIONS = 20
 _MAX_RETRY_DELAY_SECONDS = 30.0
 _SSE_LINE_SPLIT = re.compile(r"\r\n|\r|\n")
+_RETRYABLE_COMPLETION_ERROR_MARKERS = (
+    "graph_recursion_limit",
+    "recursion limit of",
+)
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +52,8 @@ class GSFClient:
         connect_timeout_seconds: float = 5.0,
         read_timeout_seconds: float = 60.0,
         max_retries: int = 2,
+        completion_wall_timeout_seconds: float | None = None,
+        max_completion_retries: int = 0,
         max_response_bytes: int = 5_000_000,
         default_max_rows: int = 1_000,
         password_auth_email: str | None = None,
@@ -58,9 +64,15 @@ class GSFClient:
 
         if (password_auth_email is None) != (password_auth_password is None):
             raise ValueError("GSF password authentication requires both email and password")
+        if completion_wall_timeout_seconds is not None and completion_wall_timeout_seconds <= 0:
+            raise ValueError("GSF completion wall timeout must be positive when configured")
+        if max_completion_retries < 0:
+            raise ValueError("GSF completion retries cannot be negative")
         self._base_url = base_url.rstrip("/")
         self._api_base_url = f"{self._base_url}/api"
         self._max_retries = max_retries
+        self._completion_wall_timeout_seconds = completion_wall_timeout_seconds
+        self._max_completion_retries = max_completion_retries
         self._max_response_bytes = max_response_bytes
         self._default_max_rows = default_max_rows
         self._password_auth_email = password_auth_email
@@ -90,6 +102,8 @@ class GSFClient:
             connect_timeout_seconds=config.connect_timeout_seconds,
             read_timeout_seconds=config.read_timeout_seconds,
             max_retries=config.max_retries,
+            completion_wall_timeout_seconds=config.completion_wall_timeout_seconds,
+            max_completion_retries=config.max_completion_retries,
             max_response_bytes=config.max_response_bytes,
             default_max_rows=config.default_max_rows,
             password_auth_email=password_auth.email if password_auth is not None else None,
@@ -208,15 +222,44 @@ class GSFClient:
     ) -> tuple[dict[str, Any], str | None]:
         """Call GSF chat completions and return its normalized final event."""
 
-        body, request_id, content_type = await self._post(
-            "chat/completions",
-            payload,
-            token=token,
-            trace_headers=trace_headers,
-            capability="GSF chat completions",
-            accept="text/event-stream",
-        )
-        return self._parse_chat_answer(body, content_type=content_type, request_id=request_id), request_id
+        attempts = self._max_completion_retries + 1
+        for attempt in range(attempts):
+            try:
+                async with asyncio.timeout(self._completion_wall_timeout_seconds):
+                    body, request_id, content_type = await self._post(
+                        "chat/completions",
+                        payload,
+                        token=token,
+                        trace_headers=trace_headers,
+                        capability="GSF chat completions",
+                        accept="text/event-stream",
+                    )
+                return self._parse_chat_answer(body, content_type=content_type, request_id=request_id), request_id
+            except TimeoutError as exc:
+                error = GSFError(
+                    GSFErrorCode.TIMEOUT,
+                    "GSF chat completions exceeded its wall-clock limit.",
+                    retryable=True,
+                )
+                if attempt + 1 >= attempts:
+                    raise error from exc
+                logger.warning(
+                    "Retrying a timed-out GSF completion (%s/%s)",
+                    attempt + 1,
+                    self._max_completion_retries,
+                )
+                await asyncio.sleep(self._retry_delay(attempt, None))
+            except GSFError as error:
+                if not error.retryable or attempt + 1 >= attempts:
+                    raise
+                logger.warning(
+                    "Retrying a terminal GSF completion failure (%s/%s)",
+                    attempt + 1,
+                    self._max_completion_retries,
+                )
+                await asyncio.sleep(self._retry_delay(attempt, None))
+
+        raise AssertionError("unreachable")
 
     async def _post(
         self,
@@ -294,33 +337,56 @@ class GSFClient:
     async def _sign_in_with_password(self, client: httpx.AsyncClient) -> None:
         """Establish a Better Auth password session on the provided client."""
 
-        try:
-            response = await client.post(
-                f"{self._base_url}/{_PASSWORD_SIGN_IN_PATH}",
-                json={
-                    "email": self._password_auth_email,
-                    "password": self._password_auth_password.get_secret_value(),
-                },
-                headers=self._auth_origin_headers(),
-            )
-        except httpx.TimeoutException as exc:
-            raise GSFError(
-                GSFErrorCode.TIMEOUT,
-                "GSF password sign-in timed out.",
-                retryable=True,
-            ) from exc
-        except httpx.TransportError as exc:
-            raise GSFError(
-                GSFErrorCode.UPSTREAM_ERROR,
-                "GSF password sign-in could not reach GSF.",
-                retryable=True,
-            ) from exc
+        attempts = self._max_retries + 1
+        for attempt in range(attempts):
+            try:
+                response = await client.post(
+                    f"{self._base_url}/{_PASSWORD_SIGN_IN_PATH}",
+                    json={
+                        "email": self._password_auth_email,
+                        "password": self._password_auth_password.get_secret_value(),
+                    },
+                    headers=self._auth_origin_headers(),
+                )
+            except httpx.ConnectTimeout as exc:
+                if attempt + 1 < attempts:
+                    await asyncio.sleep(self._retry_delay(attempt, None))
+                    continue
+                raise GSFError(
+                    GSFErrorCode.TIMEOUT,
+                    "GSF password sign-in timed out.",
+                    retryable=True,
+                ) from exc
+            except httpx.TimeoutException as exc:
+                raise GSFError(
+                    GSFErrorCode.TIMEOUT,
+                    "GSF password sign-in timed out.",
+                    retryable=True,
+                ) from exc
+            except httpx.TransportError as exc:
+                raise GSFError(
+                    GSFErrorCode.UPSTREAM_ERROR,
+                    "GSF password sign-in could not reach GSF.",
+                    retryable=True,
+                ) from exc
 
-        if response.status_code >= 400:
-            raise GSFError(
-                GSFErrorCode.AUTHENTICATION_REQUIRED,
-                "GSF password sign-in was rejected.",
-            )
+            if response.status_code < 400:
+                return
+
+            request_id = response.headers.get("x-request-id")
+            error = self._http_error(response.status_code, "GSF password sign-in", request_id)
+            if error.retryable and attempt + 1 < attempts:
+                await asyncio.sleep(self._retry_delay(attempt, response.headers.get("retry-after")))
+                continue
+            if error.code in {GSFErrorCode.AUTHENTICATION_REQUIRED, GSFErrorCode.FORBIDDEN}:
+                raise GSFError(
+                    error.code,
+                    "GSF password sign-in was rejected.",
+                    request_id=request_id,
+                )
+            raise error
+
+        raise AssertionError("unreachable")
 
     async def _sign_out_password_session(self, client: httpx.AsyncClient) -> None:
         """Best-effort sign out of the active Better Auth password session."""
@@ -429,9 +495,11 @@ class GSFClient:
                 if not isinstance(event, dict):
                     continue
                 if event.get("type") == "error":
+                    upstream_message = cls._completion_error_message(event)
                     raise GSFError(
                         GSFErrorCode.UPSTREAM_ERROR,
                         "GSF chat completions failed.",
+                        retryable=cls._is_retryable_completion_error(upstream_message),
                         request_id=request_id,
                     )
                 if event.get("type") == "result":
@@ -450,6 +518,27 @@ class GSFClient:
             "GSF response did not contain a final result.",
             request_id=request_id,
         )
+
+    @staticmethod
+    def _completion_error_message(event: Mapping[str, Any]) -> str:
+        """Extract an upstream error only for classification; never expose it to callers."""
+
+        for field in ("error", "message", "detail"):
+            value = event.get(field)
+            if isinstance(value, str):
+                return value
+            if isinstance(value, Mapping):
+                nested = value.get("message")
+                if isinstance(nested, str):
+                    return nested
+        return ""
+
+    @staticmethod
+    def _is_retryable_completion_error(message: str) -> bool:
+        """Recognize GSF terminal failures observed to be stochastic and safe to replay."""
+
+        normalized = message.casefold()
+        return any(marker in normalized for marker in _RETRYABLE_COMPLETION_ERROR_MARKERS)
 
     @staticmethod
     def _parse_json_data(body: bytes, *, request_id: str | None) -> dict[str, Any]:

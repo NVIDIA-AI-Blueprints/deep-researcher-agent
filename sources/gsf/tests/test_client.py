@@ -3,6 +3,7 @@
 
 """Tests for the typed GSF HTTP client."""
 
+import asyncio
 import json
 from unittest.mock import AsyncMock
 from unittest.mock import patch
@@ -38,6 +39,17 @@ def _sse_response(answer: dict) -> httpx.Response:
     )
 
 
+def _sse_error_response(message: str) -> httpx.Response:
+    """Build a representative terminal GSF SSE error response."""
+
+    event = json.dumps({"type": "error", "error": message})
+    return httpx.Response(
+        200,
+        content=f"data: {event}\n\ndata: [DONE]\n\n".encode(),
+        headers={"content-type": "text/event-stream", "x-request-id": "header-request"},
+    )
+
+
 @pytest.mark.parametrize(
     ("email", "password"),
     [
@@ -53,6 +65,23 @@ def test_password_auth_requires_both_email_and_password(email: str | None, passw
             base_url="https://gsf.example",
             password_auth_email=email,
             password_auth_password=password,
+        )
+
+
+@pytest.mark.parametrize("timeout", [0, -1])
+def test_completion_wall_timeout_must_be_positive(timeout: float) -> None:
+    with pytest.raises(ValueError, match="completion wall timeout must be positive"):
+        GSFClient(
+            base_url="https://gsf.example",
+            completion_wall_timeout_seconds=timeout,
+        )
+
+
+def test_completion_retry_count_cannot_be_negative() -> None:
+    with pytest.raises(ValueError, match="completion retries cannot be negative"):
+        GSFClient(
+            base_url="https://gsf.example",
+            max_completion_retries=-1,
         )
 
 
@@ -224,6 +253,104 @@ async def test_text_to_sql_skips_malformed_intermediate_sse_event(chat_sql_answe
 
 
 @pytest.mark.asyncio
+async def test_text_to_sql_retries_terminal_recursion_failure(chat_sql_answer: dict) -> None:
+    """Replay a completed GSF request after its stochastic recursion-limit failure."""
+
+    attempts = 0
+
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            return _sse_error_response("Agent failed: Recursion limit of 45 reached. GRAPH_RECURSION_LIMIT")
+        return _sse_response(chat_sql_answer)
+
+    client = GSFClient(
+        base_url="https://gsf.example",
+        max_completion_retries=1,
+        transport=httpx.MockTransport(handler),
+    )
+    with patch("gsf.client.asyncio.sleep", new=AsyncMock()):
+        async with client:
+            result = await client.text_to_sql(TextToSQLRequest(question="Show revenue"), token="user-token")
+
+    assert attempts == 2
+    assert result.sql == "SELECT revenue FROM quarterly_results"
+
+
+@pytest.mark.asyncio
+async def test_text_to_sql_does_not_retry_unknown_terminal_failure() -> None:
+    """Do not replay semantic or otherwise unclassified GSF failures."""
+
+    attempts = 0
+
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        nonlocal attempts
+        attempts += 1
+        return _sse_error_response("The requested field is not available")
+
+    client = GSFClient(
+        base_url="https://gsf.example",
+        max_completion_retries=1,
+        transport=httpx.MockTransport(handler),
+    )
+    async with client:
+        with pytest.raises(GSFError) as raised:
+            await client.text_to_sql(TextToSQLRequest(question="Show revenue"), token="user-token")
+
+    assert attempts == 1
+    assert raised.value.retryable is False
+
+
+@pytest.mark.asyncio
+async def test_text_to_sql_enforces_completion_wall_timeout() -> None:
+    """Bound total completion time even when HTTP streaming remains active."""
+
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        await asyncio.sleep(0.05)
+        return _sse_error_response("unreachable")
+
+    client = GSFClient(
+        base_url="https://gsf.example",
+        completion_wall_timeout_seconds=0.001,
+        transport=httpx.MockTransport(handler),
+    )
+    async with client:
+        with pytest.raises(GSFError) as raised:
+            await client.text_to_sql(TextToSQLRequest(question="Show revenue"), token="user-token")
+
+    assert raised.value.code is GSFErrorCode.TIMEOUT
+    assert raised.value.retryable is True
+
+
+@pytest.mark.asyncio
+async def test_text_to_sql_retries_completion_wall_timeout(chat_sql_answer: dict) -> None:
+    """Apply the completion retry budget after an initial wall timeout."""
+
+    attempts = 0
+
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            await asyncio.sleep(0.05)
+        return _sse_response(chat_sql_answer)
+
+    client = GSFClient(
+        base_url="https://gsf.example",
+        completion_wall_timeout_seconds=0.01,
+        max_completion_retries=1,
+        transport=httpx.MockTransport(handler),
+    )
+    with patch.object(GSFClient, "_retry_delay", return_value=0):
+        async with client:
+            result = await client.text_to_sql(TextToSQLRequest(question="Show revenue"), token="user-token")
+
+    assert attempts == 2
+    assert result.sql == "SELECT revenue FROM quarterly_results"
+
+
+@pytest.mark.asyncio
 async def test_text_to_pql_uses_prediction_routing_without_database_scope(chat_pql_answer: dict) -> None:
     """Route predictions without selecting a database in the AI-Q tool call."""
 
@@ -386,6 +513,62 @@ async def test_password_session_is_reused_across_tool_calls(chat_sql_answer: dic
         "/api/chat/completions",
         "/api/auth/sign-out",
     ]
+
+
+@pytest.mark.asyncio
+async def test_password_sign_in_retries_rate_limit_before_opening_session() -> None:
+    """Retry a transient sign-in rate limit using the shared retry policy."""
+
+    attempts = 0
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal attempts
+        if request.url.path == "/api/auth/sign-in/email":
+            attempts += 1
+            if attempts == 1:
+                return httpx.Response(429, headers={"retry-after": "0"})
+            return httpx.Response(200, json={"user": {"email": "developer@example.com"}})
+        assert request.url.path == "/api/auth/sign-out"
+        return httpx.Response(200, json={"success": True})
+
+    client = GSFClient(
+        base_url="https://gsf.example",
+        max_retries=1,
+        password_auth_email="developer@example.com",  # pragma: allowlist secret
+        password_auth_password=SecretStr(_TEST_PASSWORD),
+        transport=httpx.MockTransport(handler),
+    )
+    async with client:
+        pass
+
+    assert attempts == 2
+
+
+@pytest.mark.asyncio
+async def test_password_sign_in_does_not_retry_invalid_credentials() -> None:
+    """Fail immediately when GSF rejects the configured credentials."""
+
+    attempts = 0
+
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        nonlocal attempts
+        attempts += 1
+        return httpx.Response(401)
+
+    client = GSFClient(
+        base_url="https://gsf.example",
+        max_retries=2,
+        password_auth_email="developer@example.com",  # pragma: allowlist secret
+        password_auth_password=SecretStr(_TEST_PASSWORD),
+        transport=httpx.MockTransport(handler),
+    )
+    with pytest.raises(GSFError) as raised:
+        async with client:
+            pass
+
+    assert raised.value.code is GSFErrorCode.AUTHENTICATION_REQUIRED
+    assert str(raised.value) == "GSF password sign-in was rejected."
+    assert attempts == 1
 
 
 @pytest.mark.asyncio

@@ -77,10 +77,10 @@ export const deriveArgSummary = (functionName: string, payload: string): string 
  * The backend (chat_researcher/agent.py `_job_escalation_message`) emits a compact JSON
  * payload rather than a prose sentence so escalation detection is immune to wording or
  * punctuation changes:
- *   {"type":"job_escalation","kind":"deep_research"|"report_edit","job_id":"<id>"}
+ *   {"type":"job_escalation","kind":"deep_research"|"report_edit"|"data_science","job_id":"<id>"}
  */
 interface JobEscalation {
-  kind: 'deep_research' | 'report_edit'
+  kind: 'deep_research' | 'report_edit' | 'data_science'
   jobId: string
 }
 
@@ -95,7 +95,7 @@ function parseJobEscalation(content?: string): JobEscalation | null {
   if (typeof parsed !== 'object' || parsed === null) return null
   const obj = parsed as Record<string, unknown>
   if (obj.type !== 'job_escalation') return null
-  if (obj.kind !== 'deep_research' && obj.kind !== 'report_edit') return null
+  if (obj.kind !== 'deep_research' && obj.kind !== 'report_edit' && obj.kind !== 'data_science') return null
   if (typeof obj.job_id !== 'string' || obj.job_id.length === 0) return null
   return { kind: obj.kind, jobId: obj.job_id }
 }

@@ -290,6 +290,7 @@ class TestDeepAgentsRuntimeJobId:
             _ = runtime.backend
 
         create_backend.assert_called_once_with(sandbox, "job-abc-123")
+        assert runtime.sandbox_backend is create_backend.return_value
 
     def test_missing_job_id_generates_uuid(self) -> None:
         sandbox_a = DeepResearchSandboxConfig()

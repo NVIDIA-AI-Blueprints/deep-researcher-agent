@@ -40,7 +40,7 @@ llms:
     base_url: ${AIQ_AGENT_LLM_BASE_URL:-http://127.0.0.1:1234/v1}
     api_key: ${AIQ_AGENT_LLM_API_KEY:-local}
     temperature: 0.2
-    max_tokens: 16384
+    max_tokens: 32768
     num_retries: 3
 
 functions:
@@ -116,6 +116,7 @@ functions:
     verbose: true
     max_llm_turns: 10
     max_tool_iterations: 5
+    enforce_citations: false
 
   deep_research_agent:
     _type: deep_research_agent

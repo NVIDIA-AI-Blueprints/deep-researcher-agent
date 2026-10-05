@@ -1,0 +1,138 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# FDABench-Lite DS ReAct profile with request-scoped OpenShell Python execution.
+# GSF remains the only structured-data access path; Python receives exact GSF
+# rows through request-local receipt helpers and performs derived analysis in a
+# fresh, blocked-network sandbox that is deleted after each task.
+# Required: AIQ_DATA_SCIENCE_MODEL, INFERENCE_NVIDIA_API_KEY,
+# AIQ_INFERENCE_BASE_URL, TAVILY_API_KEY, GSF_BASE_URL, GSF_EMAIL,
+# GSF_PASSWORD, RAG_SERVER_URL, COLLECTION_NAME, AIQ_DS_OPENSHELL_IMAGE,
+# AIQ_DS_OPENSHELL_POLICY_FILE.
+
+general:
+  telemetry:
+    logging:
+      console:
+        _type: console
+        level: INFO
+
+llms:
+  data_science_llm:
+    _type: openai
+    model_name: ${AIQ_DATA_SCIENCE_MODEL}
+    base_url: ${AIQ_INFERENCE_BASE_URL}
+    api_key: ${INFERENCE_NVIDIA_API_KEY}
+    temperature: 0.2
+    max_tokens: 32768
+    num_retries: 2
+    request_timeout: 600
+
+function_groups:
+  gsf:
+    _type: gsf
+    base_url: ${GSF_BASE_URL}
+    auth:
+      mode: password
+      email: ${GSF_EMAIL}
+      password: GSF_PASSWORD  # pragma: allowlist secret
+    include:
+      - catalog_search
+      - text_to_sql
+    connect_timeout_seconds: 10
+    read_timeout_seconds: ${GSF_READ_TIMEOUT_SECONDS:-600}
+    max_retries: 2
+    completion_wall_timeout_seconds: ${GSF_COMPLETION_WALL_TIMEOUT_SECONDS:-600}
+    max_completion_retries: ${GSF_COMPLETION_RETRIES:-1}
+    default_max_rows: 1000
+
+functions:
+  data_sources:
+    _type: data_source_registry
+    sources:
+      - id: structured_data
+        name: "Enterprise Structured Data"
+        description: "Discover benchmark database semantics and execute bounded analytical queries through GSF."
+        tools:
+          - gsf
+      - id: knowledge_base
+        name: "FDABench Knowledge Base"
+        description: "Search the configured FDABench document collection for unstructured evidence."
+        tools:
+          - knowledge_search
+      - id: web_search
+        name: "Web Search"
+        description: "Search the public web for current and external evidence."
+        tools:
+          - web_search_tool
+
+  knowledge_search:
+    _type: knowledge_retrieval
+    backend: foundational_rag
+    collection_name: ${COLLECTION_NAME}
+    top_k: ${RAG_TOP_K:-5}
+    rag_url: ${RAG_SERVER_URL}
+    ingest_url: ${RAG_INGEST_URL:-http://127.0.0.1:9/v1}
+    timeout: ${RAG_RETRIEVAL_TIMEOUT_SECONDS:-300}
+    summary_db: ${AIQ_SUMMARY_DB:-sqlite+aiosqlite:////tmp/aiq-ds-lite-summaries.db}
+    verify_ssl: ${RAG_VERIFY_SSL:-true}
+
+  web_search_tool:
+    _type: tavily_web_search
+    max_results: 5
+    advanced_search: true
+    max_content_length: 2000
+
+  ds_python_sandbox:
+    _type: deep_research_sandbox
+    provider: openshell
+    openshell_image: ${AIQ_DS_OPENSHELL_IMAGE:-aiq-openshell-demo:latest}
+    workspace: ${AIQ_OPENSHELL_WORKSPACE:-default}
+    policy: ${AIQ_DS_OPENSHELL_POLICY_FILE:-configs/openshell/generated/aiq-ds-python-policy.yaml}
+    workdir: /sandbox
+    network: blocked
+    timeout: 1200
+    idle_timeout: 1800
+    policy_load_timeout_seconds: 30
+    delete_on_exit: true
+    attest: true
+    require_hard_landlock: ${AIQ_OPENSHELL_REQUIRE_HARD_LANDLOCK:-true}
+
+  python:
+    _type: sandboxed_python
+    sandbox: ds_python_sandbox
+    wall_timeout_seconds: ${AIQ_DS_PYTHON_TIMEOUT_SECONDS:-60}
+    max_code_chars: 50000
+    max_output_chars: 50000
+    max_evidence_bytes: ${AIQ_DS_PYTHON_MAX_EVIDENCE_BYTES:-20000000}
+    max_memory_mb: ${AIQ_DS_PYTHON_MAX_MEMORY_MB:-8192}
+    max_cpu_seconds: ${AIQ_DS_PYTHON_MAX_CPU_SECONDS:-600}
+    max_processes: 256
+    max_open_files: 256
+    max_file_bytes: 100000000
+
+  data_science_agent:
+    _type: data_science_agent
+    llm: data_science_llm
+    # Explicit list adds the non-source analysis tool to the same source surface.
+    tools:
+      - gsf
+      - knowledge_search
+      - web_search_tool
+      - python
+    ontology_provider:
+      provider: gsf
+      catalog_tools: [gsf__catalog_search]
+      analytical_tools: [gsf__text_to_sql]
+    interaction_mode: headless
+    response_mode: fdabench_choice
+    structured_catalog_call_limit: ${AIQ_DS_STRUCTURED_CATALOG_CALL_LIMIT:-2}
+    structured_text_to_sql_call_limit: ${AIQ_DS_STRUCTURED_TEXT_TO_SQL_CALL_LIMIT:-6}
+    structured_cache_repeated_calls: true
+    python_call_limit: ${AIQ_DS_PYTHON_CALL_LIMIT:-8}
+    finalization_model_call_limit: ${AIQ_DS_FINALIZATION_MODEL_CALL_LIMIT:-18}
+    recursion_limit: 64
+    verbose: true
+
+workflow:
+  _type: data_science_workflow

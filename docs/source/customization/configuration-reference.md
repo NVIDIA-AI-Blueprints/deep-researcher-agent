@@ -373,6 +373,87 @@ functions:
 Refer to [Knowledge Layer](./knowledge-layer.md) for backend selection and the
 [Amazon OpenSearch Serverless](../deployment/aws-opensearch-serverless.md) guide for SigV4, IAM, and AOSS setup.
 
+### `gsf` function group
+
+The GSF function group exposes `gsf__catalog_search` for semantic discovery and
+`gsf__text_to_sql` for validated, bounded structured-data queries. Declare it
+under the top-level `function_groups` section:
+
+```yaml
+function_groups:
+  gsf:
+    _type: gsf
+    base_url: ${GSF_BASE_URL}
+    auth:
+      mode: password
+      email: ${GSF_EMAIL}
+      password: GSF_PASSWORD
+    include:
+      - catalog_search
+      - text_to_sql
+```
+
+Omit `auth` in an authenticated AI-Q deployment to forward the current user's
+bearer token. Password mode is intended for local development and evaluation.
+The `password` field names the environment variable containing the secret; it
+does not contain or interpolate the secret itself.
+Refer to `sources/gsf/README.md` for the complete contract and limits.
+
+### `sandboxed_python`
+
+Stateless scientific analysis inside one fresh OpenShell sandbox per Data
+Science Agent request. Each call runs a self-contained script in a fresh Python
+namespace. The tool is an unmapped utility rather than a data source; add its
+function key directly to the agent's explicit `tools` list.
+
+```yaml
+functions:
+  ds_python_sandbox:
+    _type: deep_research_sandbox
+    provider: openshell
+    openshell_image: ${AIQ_DS_OPENSHELL_IMAGE:-aiq-openshell-demo:latest}
+    policy: ${AIQ_DS_OPENSHELL_POLICY_FILE}
+    workdir: /sandbox
+    network: blocked
+    delete_on_exit: true
+    attest: true
+
+  python:
+    _type: sandboxed_python
+    sandbox: ds_python_sandbox
+    wall_timeout_seconds: 60
+    max_code_chars: 50000
+    max_output_chars: 50000
+    max_evidence_bytes: 20000000
+    max_memory_mb: 8192
+    max_cpu_seconds: 600
+    max_processes: 256
+    max_open_files: 256
+    max_file_bytes: 100000000
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `sandbox` | function ref | **required** | A `deep_research_sandbox` function configured for a fresh OpenShell sandbox with `network: blocked`. Shared-sandbox attachment and other providers are rejected. |
+| `wall_timeout_seconds` | `float` | `30` | Maximum wall time for one Python script. A timeout terminates the complete request sandbox. |
+| `max_code_chars` | `int` | `50000` | Maximum characters accepted in one Python script. |
+| `max_output_chars` | `int` | `50000` | Maximum captured script output and displayed-result characters. |
+| `max_evidence_bytes` | `int` | `20000000` | Maximum total bytes of request-owned GSF receipts and manifest synchronized into the sandbox. |
+| `max_memory_mb` | `int` | `8192` | Hard address-space limit for each Python process. |
+| `max_cpu_seconds` | `int` | `600` | Hard CPU-time limit for each Python process. |
+| `max_processes` | `int` | `256` | Hard per-user process/thread limit inside the fresh sandbox. |
+| `max_open_files` | `int` | `256` | Hard open-file-descriptor limit for the worker. |
+| `max_file_bytes` | `int` | `100000000` | Hard maximum size of a file created by the worker process. |
+
+The runner preloads pandas, NumPy, SciPy, scikit-learn, and statsmodels for every
+call. It has
+no GSF client, SQL connection, host-process fallback, or network access. AI-Q
+uploads only the version-matched runner, model code request, and validated request-local
+GSF receipt JSON; application environment variables and credentials are not
+included in the OpenShell sandbox specification. OpenShell owns the physical
+sandbox boundary, while each process additionally receives hard Unix resource
+limits before model-authored code starts.
+
 ### `intent_classifier`
 
 Classifies user queries as meta (conversational) or research, and determines research depth (shallow vs. deep).
@@ -443,6 +524,62 @@ functions:
 | `max_tool_iterations` | `int` | `5` | Maximum tool-calling iterations before forcing synthesis. |
 | `enforce_citations` | `bool` | `false` | Fail the run when citation integrity cannot be preserved. When `false`, AI-Q returns the generated answer after sanitization instead of failing solely on the citation contract. |
 | `verbose` | `bool` | `false` | Enable verbose logging. |
+
+### `data_science_agent`
+
+Adaptive ReAct agent for structured-data analysis, document retrieval, web
+evidence, and final synthesis.
+
+```yaml
+functions:
+  data_science_agent:
+    _type: data_science_agent
+    llm: data_science_llm
+    # tools omitted -> inherit every tool in data_source_registry
+    ontology_provider:
+      provider: gsf
+      catalog_tools: [gsf__catalog_search]
+      analytical_tools: [gsf__text_to_sql]
+    response_mode: standard
+    structured_catalog_call_limit: 2
+    structured_text_to_sql_call_limit: 6
+    python_call_limit: 8
+    finalization_model_call_limit: 18
+    recursion_limit: 64
+    verbose: true
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `llm` | `str` | **required** | LLM used for tool selection, analysis, and synthesis. |
+| `tools` | `list[str]` | `[]` | Explicit callable tools. An empty list inherits all tool and function-group references in `data_source_registry`. |
+| `exclude_tools` | `list[str]` | `[]` | Exact runtime tool names removed after inherited or explicit tools are resolved. |
+| `interaction_mode` | `interactive` or `headless` | `interactive` | In `headless` mode, never wait for clarification; resolve supported assumptions and perform one bounded synthesis retry if needed. |
+| `response_mode` | `standard` or `fdabench_choice` | `standard` | In `fdabench_choice` mode, preserve explicitly supplied option labels and emit an `Answer:` marker; non-choice requests retain normal report behavior. |
+| `ontology_provider` | object or `None` | `None` | Assign one provider identifier, non-empty `catalog_tools` and `analytical_tools` lists, and optional `predictive_tools`. Every referenced tool must be enabled and mapped to the same `data_source_registry` source. |
+| `structured_catalog_call_limit` | `int` or `None` | `None` | Optional request-local hard limit on ontology catalog calls. Minimum `1`; exact cache hits do not count. |
+| `structured_text_to_sql_call_limit` | `int` or `None` | `None` | Optional request-local hard limit on ontology-provider text-to-SQL calls. Predictive execution is not included. Minimum `1`; exact cache hits do not count. |
+| `structured_cache_repeated_calls` | `bool` | `true` | Reuse exact repeated catalog and text-to-SQL calls within one agent request. Cache state never crosses requests. |
+| `python_call_limit` | `int` or `None` | `None` | Optional request-local call ceiling for stateless scientific Python execution. |
+| `finalization_model_call_limit` | `int` or `None` | derived | Model-call count at which tools are disabled and a no-tool synthesis turn is forced before recursion exhaustion. |
+| `recursion_limit` | `int` | `64` | Hard LangGraph step limit for one adaptive run. Minimum `4`. |
+| `verbose` | `bool` | `false` | Enable verbose tracing. |
+
+### `data_science_hybrid_adapter`
+
+Maps the catalog-aware Chat Researcher state into a configured
+`data_science_agent`. Direct DS Agent workflows do not use this adapter.
+
+```yaml
+functions:
+  data_science_hybrid_adapter:
+    _type: data_science_hybrid_adapter
+    agent: data_science_agent
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `agent` | `str` | **required** | Function reference for the `data_science_agent` instance that handles Hybrid requests. |
 
 ### `deep_research_agent`
 
@@ -554,7 +691,9 @@ A writer that wants inline charts must be assigned the `visualization` collectio
 
 ## `workflow` Section
 
-Defines the top-level orchestrator that wires together all agents.
+Defines the top-level workflow. The normal product pipeline uses
+`chat_deepresearcher_agent`; direct DS Agent development uses
+`data_science_workflow`.
 
 ```yaml
 workflow:
@@ -591,10 +730,11 @@ catalog when the provider offer or deployment changes.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `_type` | `str` | **required** | Workflow type. Use `chat_deepresearcher_agent` for the full pipeline. |
+| `_type` | `str` | **required** | Use `chat_deepresearcher_agent` for the full pipeline or `data_science_workflow` to run the DS Agent directly. |
 | `enable_escalation` | `bool` | `true` | Allow the intent classifier to route queries to deep research. When `false`, all research queries use shallow research only. |
 | `enable_clarifier` | `bool` | `true` | Run the clarifier agent before deep research to gather user requirements. |
 | `use_async_deep_research` | `bool` | `false` | Submit deep research as an async background job (requires [Dask](https://www.dask.org/) scheduler). |
+| `hybrid_research_agent` | `str` or `None` | `None` | Optional function reference invoked when catalog-aware routing selects Hybrid research. |
 | `max_history` | `int` | `20` | Maximum number of messages to keep in conversation history before trimming. |
 | `checkpoint_db` | `str` | `./checkpoints.db` | SQLite path or PostgreSQL DSN for persistent conversation checkpoints. |
 | `relay` | `object` | enabled defaults | NeMo Relay logging, Observability v3 ATOF/OTEL destinations, PII redaction, and pricing sources. Relay instrumentation itself has no workflow disable switch. See [Observability with NeMo Relay](../deployment/observability.md). |
@@ -733,13 +873,16 @@ workflow:
 
 ## Provided Config Files
 
-The repository includes eleven top-level workflow configurations. They are focused reference profiles, not cumulative
+The repository includes fourteen top-level workflow configurations. They are focused reference profiles, not cumulative
 layers, and no single profile enables every capability. Start from the profile closest to the deployment and merge
 only the additional sections you need.
 
 | File | Mode | Enabled behavior and opt-ins |
 |------|------|------------------------------|
 | `configs/config_cli_default.yml` | CLI | Chat pipeline with Tavily web search and clarification. No knowledge backend. Paper search is present only as a commented opt-in. |
+| `configs/config_cli_data_science.yml` | Direct DS Agent CLI | GSF catalog/text-to-SQL, Foundational RAG knowledge retrieval, and Tavily web search without the top-level router. |
+| `configs/config_cli_data_science_fdabench_lite.yml` | Direct DS Agent evaluation | Headless FDABench-Lite DS ReAct profile with GSF, Foundational RAG, Tavily, choice-label output, and request-local GSF budgets. |
+| `configs/config_cli_data_science_fdabench_lite_python.yml` | Direct DS Agent evaluation | Same FDABench-Lite profile plus blocked-network, stateless OpenShell scientific Python execution and an exact GSF-result bridge. |
 | `configs/config_web_default_llamaindex.yml` | Web API | Default chat pipeline with LlamaIndex/ChromaDB knowledge retrieval and Tavily. Paper search is commented out. |
 | `configs/config_web_azure_ai_search.yml` | Web API | Azure AI Search knowledge retrieval and web search |
 | `configs/config_web_frag.yml` | Web API / Helm base | Foundational RAG plus Tavily. Requires separately deployed RAG query and ingestion services. Paper search is commented out. |

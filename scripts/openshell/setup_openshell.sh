@@ -255,6 +255,13 @@ ensure_aiq_env() {
     else
         log "Using existing AI-Q virtual environment"
     fi
+    # Never let a caller's activated checkout redirect `uv pip` into another
+    # repository. Provisioning must mutate only this repository's environment.
+    export VIRTUAL_ENV="$VENV_DIR"
+    case ":$PATH:" in
+        *":$VENV_DIR/bin:"*) ;;
+        *) export PATH="$VENV_DIR/bin:$PATH" ;;
+    esac
 }
 
 install_openshell_python() {

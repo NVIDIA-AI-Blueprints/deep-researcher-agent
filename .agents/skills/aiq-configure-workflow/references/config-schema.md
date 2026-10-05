@@ -12,8 +12,8 @@ uv run python .agents/skills/aiq-configure-workflow/scripts/validate_config.py <
 |-------|---------|
 | LLM aliases | Every `llm`, `orchestrator_llm`, `planner_llm`, `researcher_llm`, `writer_llm`, `source_router_llm`, `summary_llm`, `intent_llm`, `summary_model` value must exist under `llms:` |
 | Registry tools | Each tool in a `data_source_registry` source's `tools:` must be a key under `functions:` |
-| Workflow | `workflow:` must exist and `_type` must be `chat_deepresearcher_agent` |
-| Required agents | `intent_classifier`, `shallow_research_agent`, `deep_research_agent` must exist under `functions:` |
+| Workflow | `workflow:` must exist and `_type` must be `chat_deepresearcher_agent` or `data_science_workflow` |
+| Required agents | The chat workflow requires `intent_classifier`, `shallow_research_agent`, and `deep_research_agent`; the direct DS workflow requires `data_science_agent` |
 | Clarifier | When `workflow.enable_clarifier` is true, `clarifier_agent` must exist under `functions:` |
 | `front_end` type | When `general.front_end` is set, `_type` must be `aiq_api` |
 | `aiq_api` settings | `expiry_seconds`, `db_url`, and `cors` shape are checked |

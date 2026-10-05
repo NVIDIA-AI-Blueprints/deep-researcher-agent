@@ -1,0 +1,128 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Web profile for the Data Science Agent, served as an async job.
+#
+# A DS run can take several minutes, so the agent is submitted to the async job
+# API instead of being held open on a request. Clients POST
+# /v1/jobs/async/submit with agent_type "data_science", then stream progress
+# from /v1/jobs/async/job/{job_id}/stream. Closing or refreshing the browser
+# does not cancel the run: reconnecting to the same job_id replays the stored
+# events and returns the final report.
+#
+# Async jobs run in a Dask worker that reloads this file, so NAT_CONFIG_FILE
+# must point at it and NAT_DASK_SCHEDULER_ADDRESS must be set.
+#
+# Required: INFERENCE_NVIDIA_API_KEY, AIQ_INFERENCE_BASE_URL,
+# AIQ_DATA_SCIENCE_MODEL, TAVILY_API_KEY, GSF_BASE_URL, GSF_EMAIL,
+# GSF_PASSWORD, RAG_SERVER_URL, COLLECTION_NAME.
+
+general:
+  use_uvloop: true
+  telemetry:
+    logging:
+      console:
+        _type: console
+        level: INFO
+
+  front_end:
+    _type: aiq_api
+    runner_class: aiq_api.plugin.AIQAPIWorker
+    db_url: ${NAT_JOB_STORE_DB_URL:-sqlite+aiosqlite:///./jobs.db}
+    expiry_seconds: 86400  # 24 hours (min: 600, max: 604800/7 days)
+    cors:
+      allow_origin_regex: 'http://localhost(:\d+)?|http://127.0.0.1(:\d+)?'
+      allow_methods:
+        - GET
+        - POST
+        - DELETE
+        - OPTIONS
+      allow_headers:
+        - "*"
+      allow_credentials: true
+      expose_headers:
+        - "*"
+
+llms:
+  data_science_llm:
+    _type: openai
+    model_name: ${AIQ_DATA_SCIENCE_MODEL}
+    base_url: ${AIQ_INFERENCE_BASE_URL}
+    api_key: ${INFERENCE_NVIDIA_API_KEY}
+    reasoning_effort: medium
+    max_tokens: 32768
+    num_retries: 2
+    request_timeout: 600
+
+function_groups:
+  gsf:
+    _type: gsf
+    base_url: ${GSF_BASE_URL}
+    auth:
+      mode: password
+      email: ${GSF_EMAIL}
+      # This field takes the NAME of the env var holding the password, not the
+      # password itself. Using ${GSF_PASSWORD} here resolves to the secret and
+      # GSF then looks up an env var by that value, silently disabling the tools.
+      password: GSF_PASSWORD  # pragma: allowlist secret
+    include:
+      - catalog_search
+      - text_to_sql
+    connect_timeout_seconds: 10
+    read_timeout_seconds: ${GSF_READ_TIMEOUT_SECONDS:-600}
+    max_retries: 2
+    default_max_rows: 1000
+
+functions:
+  data_sources:
+    _type: data_source_registry
+    sources:
+      - id: structured_data
+        name: "Enterprise Structured Data"
+        description: "Discover enterprise semantics and execute bounded analytical queries through GSF."
+        tools:
+          - gsf
+      - id: knowledge_base
+        name: "Knowledge Base"
+        description: "Search the configured document collection for relevant unstructured evidence."
+        tools:
+          - knowledge_search
+      - id: web_search
+        name: "Web Search"
+        description: "Search the public web for current and external information."
+        tools:
+          - web_search_tool
+
+  knowledge_search:
+    _type: knowledge_retrieval
+    backend: foundational_rag
+    collection_name: ${COLLECTION_NAME}
+    top_k: 5
+    rag_url: ${RAG_SERVER_URL}
+    # This profile is retrieval-only; fail closed if an ingestion path is invoked.
+    ingest_url: http://127.0.0.1:9/v1
+    timeout: ${RAG_RETRIEVAL_TIMEOUT_SECONDS:-300}
+    summary_db: ${AIQ_SUMMARY_DB:-sqlite+aiosqlite:////tmp/aiq-ds-summaries.db}
+    # Keep certificate verification enabled by default; trusted test routes with a
+    # self-signed chain can opt out locally with RAG_VERIFY_SSL=false.
+    verify_ssl: ${RAG_VERIFY_SSL:-true}
+
+  web_search_tool:
+    _type: tavily_web_search
+    max_results: 5
+    advanced_search: true
+    max_content_length: 2000
+
+  data_science_agent:
+    _type: data_science_agent
+    llm: data_science_llm
+    # tools omitted: inherit GSF, knowledge, and web tools from data_sources
+    # An async job has no channel back to the user, so the job runner always
+    # runs this agent headless regardless of the value set here. Leave it
+    # interactive only if the same config also serves a synchronous CLI run.
+    interaction_mode: ${AIQ_DS_INTERACTION_MODE:-headless}
+    recursion_limit: 64
+    verbose: true
+
+workflow:
+  _type: data_science_workflow

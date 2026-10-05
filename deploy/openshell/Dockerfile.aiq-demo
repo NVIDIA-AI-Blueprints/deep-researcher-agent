@@ -21,7 +21,17 @@ RUN apt-get update \
         iproute2 \
         iptables \
         procps \
-    && python -m pip install --no-cache-dir numpy pandas matplotlib pillow tabulate requests \
+        util-linux \
+    && python -m pip install --no-cache-dir \
+        matplotlib \
+        numpy \
+        pandas \
+        pillow \
+        requests \
+        scikit-learn \
+        scipy \
+        statsmodels \
+        tabulate \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -r sandbox \
     && useradd -r -g sandbox -d /sandbox -s /bin/bash sandbox \

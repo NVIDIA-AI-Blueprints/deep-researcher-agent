@@ -69,6 +69,35 @@ _REPORT_ASK_TIMEOUT_S = 120
 _ensure_otel_redaction_registered()
 
 
+def _resolve_submission_query(state) -> str:
+    """Return the question a research job should answer for this turn.
+
+    Nothing on the hybrid route sets ``original_query``: the router goes straight
+    from ``intent_classifier`` to ``hybrid_research`` and never passes through
+    ``clarifier_node``, which is where deep research sets it. With a checkpointer
+    ``messages`` accumulates across turns, so ``messages[0]`` is the first message
+    of the whole conversation and a stale ``original_query`` can survive from an
+    earlier turn. Prefer the latest user message, matching how the inline
+    deep-research path resolves its own query.
+    """
+    from langchain_core.messages import HumanMessage
+
+    # Explicit precedence rather than get_latest_user_query, which falls back to the
+    # last message of any role when no user turn exists -- that would submit an
+    # assistant turn as the question instead of deferring to original_query.
+    query = next(
+        (message.content for message in reversed(state.messages) if isinstance(message, HumanMessage)),
+        None,
+    )
+    if not query:
+        query = state.original_query
+    if not query:
+        if not state.messages:
+            raise RuntimeError("Cannot submit a research job without messages.")
+        query = state.messages[-1].content
+    return query if isinstance(query, str) else str(query)
+
+
 def _log_conversation_reference(message: str, conversation_id: str) -> None:
     """Log a correlation reference without exposing the conversation identifier."""
     logger.info(message, log_identifier_ref(conversation_id))
@@ -462,6 +491,7 @@ async def chat_deepresearcher_agent(config: ChatDeepResearcherConfig, builder: B
         wrapper_type=LLMFrameworkEnum.LANGCHAIN,
     )
 
+    hybrid_research_job_submitter = None
     deep_research_job_submitter = None
     # Wired to the async submitter only when a Dask scheduler is available; otherwise edit runs
     # inline via report_edit_fn (synchronous CLI).
@@ -604,8 +634,37 @@ async def chat_deepresearcher_agent(config: ChatDeepResearcherConfig, builder: B
                     output_metadata=output_metadata,
                 )
 
+            async def _submit_hybrid_job(state: ChatResearcherState) -> str:
+                """Submit the data-science agent as a durable async job.
+
+                Mirrors ``_submit_deep_job``: same principal resolution (so the job's
+                per-user MCP token key matches connect time) and the same auth-token
+                pass-through. Catalog context resolved by the router is not forwarded --
+                the async worker builds agent state from the query, and the agent
+                re-runs its own bounded catalog discovery.
+                """
+                principal = require_verified_principal()
+                owner = principal.email or principal.sub
+                input_text = _resolve_submission_query(state)
+                if state.clarifier_result:
+                    input_text = f"{input_text}\n\n## Clarification Context\n{state.clarifier_result}"
+
+                return await submit_agent_job(
+                    agent_type="data_science",
+                    input_text=input_text,
+                    owner=owner,
+                    principal=principal,
+                    data_sources=state.data_sources,
+                    auth_token=get_auth_token(),
+                    # A database-scoped request always routes Hybrid, so the scope must
+                    # survive into the worker or the job queries the configured default.
+                    database_name=state.database_name,
+                )
+
             deep_research_job_submitter = _submit_deep_job
             report_edit_job_submitter = _submit_report_edit_job
+            if config.hybrid_research_agent:
+                hybrid_research_job_submitter = _submit_hybrid_job
         else:
             logger.info(
                 "use_async_deep_research is enabled but NAT_DASK_SCHEDULER_ADDRESS is not set. "
@@ -629,6 +688,7 @@ async def chat_deepresearcher_agent(config: ChatDeepResearcherConfig, builder: B
         report_edit_fn=_inline_report_edit,
         report_seed_files_fn=_build_report_seed_files,
         hybrid_research_fn=hybrid_research_fn.ainvoke if hybrid_research_fn else None,
+        hybrid_research_job_submitter=hybrid_research_job_submitter,
         checkpointer=checkpointer,
         validate_deep_research_tools_fn=validate_deep_research_tools,
     )

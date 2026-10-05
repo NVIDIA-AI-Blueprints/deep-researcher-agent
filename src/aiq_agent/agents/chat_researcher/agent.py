@@ -86,6 +86,7 @@ def _report_ref(job_id: str | None) -> str:
 # changes. Mirrored by the UI parser in frontends/ui/src/features/chat/hooks/use-websocket-chat.ts.
 _ESCALATION_KIND_DEEP_RESEARCH = "deep_research"
 _ESCALATION_KIND_REPORT_EDIT = "report_edit"
+_ESCALATION_KIND_DATA_SCIENCE = "data_science"
 
 
 def _research_workflow_failure() -> WorkflowFailure:
@@ -128,6 +129,7 @@ class ChatResearcherAgent:
         max_history: int = 5,
         deep_research_job_submitter: Callable[[Any], Awaitable[str]] | None = None,
         report_ask_fn: Callable[[ChatResearcherState], Awaitable[str]] | None = None,
+        hybrid_research_job_submitter: Callable[[ChatResearcherState], Awaitable[str]] | None = None,
         report_edit_job_submitter: Callable[[ChatResearcherState], Awaitable[str]] | None = None,
         report_edit_fn: Callable[[ChatResearcherState], Awaitable[str]] | None = None,
         report_seed_files_fn: Callable[[ChatResearcherState], Awaitable[dict[str, Any] | None]] | None = None,
@@ -149,6 +151,8 @@ class ChatResearcherAgent:
             max_history: Maximum number of messages to keep in history
             deep_research_job_submitter: Optional function to submit deep research as async job
             report_ask_fn: Optional function to answer questions against the active parent report
+            hybrid_research_job_submitter: Optional function to submit hybrid (data science)
+                research as an async job. When omitted, hybrid runs inline in-request.
             report_edit_job_submitter: Optional function to submit report edit child jobs
             checkpointer: Optional checkpointer for persistent state (defaults to MemorySaver)
         """
@@ -162,6 +166,7 @@ class ChatResearcherAgent:
         self.max_history = max_history
         self.deep_research_job_submitter = deep_research_job_submitter
         self.report_ask_fn = report_ask_fn
+        self.hybrid_research_job_submitter = hybrid_research_job_submitter
         self.report_edit_job_submitter = report_edit_job_submitter
         self.report_edit_fn = report_edit_fn
         self.report_seed_files_fn = report_seed_files_fn
@@ -201,6 +206,36 @@ class ChatResearcherAgent:
                 }
 
         async def hybrid_research_node(state: ChatResearcherState) -> dict[str, Any]:
+            # A data-science run takes minutes, so submit it as a durable async job when a
+            # submitter is wired. Running it inline would tie the answer to the open
+            # connection and lose it on a refresh. Mirrors deep_research_node.
+            if self.hybrid_research_job_submitter is not None:
+                try:
+                    job_id = await self.hybrid_research_job_submitter(state)
+                except Exception as e:
+                    if _JobAdmissionError and isinstance(e, _JobAdmissionError):
+                        logger.warning(
+                            "Hybrid research submission rejected (error_type=%s)",
+                            type(e).__name__,
+                        )
+                        return {
+                            "messages": [AIMessage(content=e.public_message)],
+                            "workflow_outcome": _research_workflow_failure(),
+                        }
+                    if _AuthError and isinstance(e, _AuthError):
+                        logger.warning(
+                            "Auth required before hybrid research submit (error_type=%s detail_%s)",
+                            type(e).__name__,
+                            log_content_metadata(e),
+                        )
+                        return {
+                            "messages": [AIMessage(content=str(e))],
+                            "workflow_outcome": _research_workflow_failure(),
+                        }
+                    raise
+                escalation = _job_escalation_message(_ESCALATION_KIND_DATA_SCIENCE, job_id)
+                return {"messages": [AIMessage(content=escalation)]}
+
             try:
                 if self.hybrid_research_fn is None:
                     raise RuntimeError("Hybrid research is not configured")

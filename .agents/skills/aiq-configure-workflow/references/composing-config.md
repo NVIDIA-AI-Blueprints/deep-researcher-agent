@@ -174,6 +174,8 @@ and feature guides under `docs/source/customization/`.
 | `shallow_research_agent` | always | `llm` |
 | `deep_research_agent` | always | `orchestrator_llm`, `planner_llm`, `researcher_llm`, `writer_llm`, `source_router_llm` |
 | `clarifier_agent` | `workflow.enable_clarifier: true` | `llm` |
+| `data_science_agent` | direct `data_science_workflow` | `llm` |
+| `data_science_hybrid_adapter` | `workflow.hybrid_research_agent` routes catalog-supported requests to DS | configured `agent` function reference |
 
 ---
 
@@ -182,6 +184,7 @@ and feature guides under `docs/source/customization/`.
 ```yaml
 workflow:
   _type: chat_deepresearcher_agent
+  hybrid_research_agent: data_science_hybrid_adapter
   enable_escalation: true       # false → shallow only
   enable_clarifier: true
   use_async_deep_research: true   # needs general.front_end
@@ -190,6 +193,17 @@ workflow:
 ```
 
 Full defaults table: `configuration-reference.md` § `workflow`.
+
+For direct DS Agent development, use `_type: data_science_workflow` and define
+`data_science_agent`; the chat-only intent, shallow, and deep functions are not
+required in that profile.
+
+For product Hybrid routing, configure `intent_classifier` with
+`_type: context_aware_intent_router`, define `data_science_hybrid_adapter` with
+an `agent` reference to the DS function, and set
+`workflow.hybrid_research_agent` to the adapter. The adapter consumes the
+router's validated catalog context; direct DS evaluation continues to bypass
+both the router and adapter.
 
 ---
 

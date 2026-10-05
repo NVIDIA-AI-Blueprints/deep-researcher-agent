@@ -117,9 +117,9 @@ SUMMARY_MAX_INPUT_CHARS = 4000  # ~1000 tokens input
 
 def _get_nvidia_api_key() -> str:
     """Get NVIDIA API key from environment."""
-    key = os.environ.get("NVIDIA_API_KEY", "")
+    key = os.environ.get("AIQ_EMBED_API_KEY") or os.environ.get("NVIDIA_API_KEY", "")
     if not key:
-        logger.warning("NVIDIA_API_KEY not set - embeddings may fail")
+        logger.warning("AIQ_EMBED_API_KEY or NVIDIA_API_KEY not set - embeddings may fail")
     return key
 
 

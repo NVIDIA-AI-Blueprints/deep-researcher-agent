@@ -6,6 +6,7 @@ the file from `configs/`. For the full nine-profile table, see
 
 1. **Run mode**
    - CLI only (`nat run`, `start_cli.sh`) → `config_cli_default.yml` (no `front_end`)
+   - Direct DS Agent development → `config_cli_data_science.yml` (no router or `front_end`)
    - Web UI / REST / async jobs / `aiq-research` → `config_web_*` or frontier/domain/skills profile (`front_end._type: aiq_api`)
 
 2. **Knowledge backend**

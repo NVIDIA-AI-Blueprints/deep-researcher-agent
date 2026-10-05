@@ -1,0 +1,98 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Direct local Data Science Agent profile. This bypasses the top-level AI-Q
+# router until the data-science route is integrated.
+#
+# Required: AIQ_DATA_SCIENCE_MODEL, INFERENCE_NVIDIA_API_KEY, AIQ_INFERENCE_BASE_URL,
+# TAVILY_API_KEY, GSF_BASE_URL, GSF_EMAIL, GSF_PASSWORD, RAG_SERVER_URL,
+# COLLECTION_NAME.
+
+general:
+  telemetry:
+    logging:
+      console:
+        _type: console
+        level: INFO
+
+llms:
+  data_science_llm:
+    _type: openai
+    model_name: ${AIQ_DATA_SCIENCE_MODEL}
+    base_url: ${AIQ_INFERENCE_BASE_URL}
+    api_key: ${INFERENCE_NVIDIA_API_KEY}
+    reasoning_effort: medium
+    max_tokens: 32768
+    num_retries: 2
+    request_timeout: 600
+
+function_groups:
+  gsf:
+    _type: gsf
+    base_url: ${GSF_BASE_URL}
+    auth:
+      mode: password
+      email: ${GSF_EMAIL}
+      password: GSF_PASSWORD  # pragma: allowlist secret
+    include:
+      - catalog_search
+      - text_to_sql
+    connect_timeout_seconds: 10
+    read_timeout_seconds: ${GSF_READ_TIMEOUT_SECONDS:-600}
+    max_retries: 2
+    default_max_rows: 1000
+
+functions:
+  data_sources:
+    _type: data_source_registry
+    sources:
+      - id: structured_data
+        name: "Enterprise Structured Data"
+        description: "Discover enterprise semantics and execute bounded analytical queries through GSF."
+        tools:
+          - gsf
+      - id: knowledge_base
+        name: "Knowledge Base"
+        description: "Search the configured document collection for relevant unstructured evidence."
+        tools:
+          - knowledge_search
+      - id: web_search
+        name: "Web Search"
+        description: "Search the public web for current and external information."
+        tools:
+          - web_search_tool
+
+  knowledge_search:
+    _type: knowledge_retrieval
+    backend: foundational_rag
+    collection_name: ${COLLECTION_NAME}
+    top_k: 5
+    rag_url: ${RAG_SERVER_URL}
+    # This direct workflow is retrieval-only; fail closed if an ingestion path is invoked.
+    ingest_url: http://127.0.0.1:9/v1
+    timeout: ${RAG_RETRIEVAL_TIMEOUT_SECONDS:-300}
+    summary_db: ${AIQ_SUMMARY_DB:-sqlite+aiosqlite:////tmp/aiq-ds-summaries.db}
+    # Keep certificate verification enabled by default; trusted test routes with a
+    # self-signed chain can opt out locally with RAG_VERIFY_SSL=false.
+    verify_ssl: ${RAG_VERIFY_SSL:-true}
+
+  web_search_tool:
+    _type: tavily_web_search
+    max_results: 5
+    advanced_search: true
+    max_content_length: 2000
+
+  data_science_agent:
+    _type: data_science_agent
+    llm: data_science_llm
+    # tools omitted: inherit GSF, knowledge, and web tools from data_sources
+    ontology_provider:
+      provider: gsf
+      catalog_tools: [gsf__catalog_search]
+      analytical_tools: [gsf__text_to_sql]
+    interaction_mode: ${AIQ_DS_INTERACTION_MODE:-interactive}
+    recursion_limit: 64
+    verbose: true
+
+workflow:
+  _type: data_science_workflow

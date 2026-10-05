@@ -63,7 +63,8 @@ curl http://localhost:8000/v1/jobs/async/agents
 {
   "agents": [
     {"agent_type": "deep_researcher", "description": "Performs comprehensive multi-loop deep research"},
-    {"agent_type": "shallow_researcher", "description": "Performs quick single-turn research"}
+    {"agent_type": "shallow_researcher", "description": "Performs quick single-turn research"},
+    {"agent_type": "data_science", "description": "Analyzes enterprise structured data, documents, and web evidence in one autonomous loop"}
   ]
 }
 ```
@@ -85,7 +86,7 @@ curl -X POST http://localhost:8000/v1/jobs/async/submit \
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `agent_type` | `string` | Yes | Agent identifier (for example, `deep_researcher`, `shallow_researcher`) |
+| `agent_type` | `string` | Yes | Agent identifier (for example, `deep_researcher`, `shallow_researcher`, `data_science`) |
 | `input` | `string` | Yes | Research query. Must be non-blank after trimming (whitespace-only is rejected with 422) |
 | `job_id` | `string` | No | Custom job ID. Auto-generated UUID if omitted. Pattern: `[a-zA-Z0-9_-]`, max 64 chars |
 | `expiry_seconds` | `integer` | No | Job expiry in seconds. Range: 600--604800 (10 min to 7 days). Default from config |

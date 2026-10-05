@@ -206,6 +206,7 @@ requires-dist = [
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.5.0" },
     { name = "myst-parser", marker = "extra == 'docs'", specifier = ">=3.0" },
     { name = "nemo-relay", extras = ["deepagents", "langchain", "langgraph"], git = "https://github.com/NVIDIA/NeMo-Relay.git?rev=ffb24817442bac99212da0971b13bdad5bc4d84d" },
+    { name = "numpy", marker = "extra == 'sandboxed-python-test'", specifier = ">=2.0" },
     { name = "nvidia-nat", extras = ["langchain", "async-endpoints", "phoenix", "mcp"], specifier = "==1.8.0" },
     { name = "nvidia-nat-core", specifier = "==1.8.0" },
     { name = "nvidia-nat-eval", specifier = "==1.8.0" },
@@ -214,6 +215,7 @@ requires-dist = [
     { name = "nvidia-nat-security", extras = ["defense"], marker = "extra == 'pii'", specifier = "==1.8.0" },
     { name = "nvidia-nat-security", extras = ["guardrails"], specifier = "==1.8.0" },
     { name = "nvidia-sphinx-theme", marker = "extra == 'docs'", specifier = ">=0.0.9.post1" },
+    { name = "pandas", marker = "extra == 'sandboxed-python-test'", specifier = ">=2.0" },
     { name = "pillow", specifier = ">=12.3.0,<13" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.5.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.0.0" },
@@ -226,6 +228,8 @@ requires-dist = [
     { name = "pytest-env", marker = "extra == 'dev'", specifier = ">=1.1.0" },
     { name = "python-multipart", specifier = ">=0.0.27,<0.1" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "~=0.15.1" },
+    { name = "scikit-learn", marker = "extra == 'sandboxed-python-test'", specifier = ">=1.5" },
+    { name = "scipy", marker = "extra == 'sandboxed-python-test'", specifier = ">=1.13" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=7.0" },
     { name = "sphinx-autobuild", marker = "extra == 'docs'", specifier = ">=2025.8.25" },
     { name = "sphinx-copybutton", marker = "extra == 'docs'", specifier = ">=0.5" },
@@ -233,9 +237,10 @@ requires-dist = [
     { name = "sphinx-mermaid", marker = "extra == 'docs'", specifier = ">=0.0.8" },
     { name = "sphinx-rtd-theme", marker = "extra == 'docs'", specifier = ">=2.0" },
     { name = "sphinxcontrib-mermaid", marker = "extra == 'docs'", specifier = ">=2.0.1" },
+    { name = "statsmodels", marker = "extra == 'sandboxed-python-test'", specifier = ">=0.14" },
     { name = "yapf", marker = "extra == 'dev'", specifier = ">=0.40.0" },
 ]
-provides-extras = ["pii", "s3", "dev", "docs", "viz"]
+provides-extras = ["pii", "s3", "sandboxed-python-test", "dev", "docs", "viz"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -3121,7 +3126,7 @@ langgraph = [
 
 [[package]]
 name = "nemo-retriever"
-version = "2026.8.21.dev20260821180950"
+version = "2026.8.26.dev20260826112201"
 source = { git = "https://github.com/NVIDIA/NeMo-Retriever.git?subdirectory=nemo_retriever&rev=c80f4a5189ee10b98cbdb93e2f853ceb7b699c3b#c80f4a5189ee10b98cbdb93e2f853ceb7b699c3b" }
 dependencies = [
     { name = "backoff" },
@@ -4414,15 +4419,15 @@ wheels = [
 
 [[package]]
 name = "pyopenssl"
-version = "26.4.0"
+version = "26.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3f/e8/7325d258199b159eb2c03fe32107533e2832e70e63f4fb88a6aa00023201/pyopenssl-26.4.0.tar.gz", hash = "sha256:28dfcce0162b9211413e26dfbfdf1d24317fbeba18fc93c12400a1856b2a0bc7", size = 182046, upload-time = "2026-08-01T19:50:50.512Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1a/51/27a5ad5f939d08f690a326ef9582cda7140555180db71695f6fb747d6a36/pyopenssl-26.2.0.tar.gz", hash = "sha256:8c6fcecd1183a7fc897548dfe388b0cdb7f37e018200d8409cf33959dbe35387", size = 182195, upload-time = "2026-05-04T23:06:09.72Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/51/ad/2cf6d3fa2fae5c79e1ed9960c0d42badd0f94d81dd12b50604cdc839e648/pyopenssl-26.4.0-py3-none-any.whl", hash = "sha256:f0eb0cb2d581d3ad2b9c489468485e7f2ab6727d08401bcf9d824c3caddf3c1c", size = 56026, upload-time = "2026-08-01T19:50:48.94Z" },
+    { url = "https://files.pythonhosted.org/packages/73/b8/a0e2790ae249d6f38c9f66de7a211621a7ab2650217bcd04e1262f578a56/pyopenssl-26.2.0-py3-none-any.whl", hash = "sha256:4f9d971bc5298b8bc1fab282803da04bf000c755d4ad9d99b52de2569ca19a70", size = 55823, upload-time = "2026-05-04T23:06:08.395Z" },
 ]
 
 [[package]]

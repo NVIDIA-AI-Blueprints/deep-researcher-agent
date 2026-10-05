@@ -525,6 +525,7 @@ def test_local_profile_selects_embedded_backend_and_upstream_auto_defaults() -> 
     assert local_llm["model_name"] == "${AIQ_AGENT_LLM_MODEL:-openai/local-tool-model}"
     assert local_llm["base_url"] == "${AIQ_AGENT_LLM_BASE_URL:-http://127.0.0.1:1234/v1}"
     assert local_llm["api_key"] == "${AIQ_AGENT_LLM_API_KEY:-local}"
+    assert local_llm["max_tokens"] == 32768
     assert "parallel_tool_calls" not in local_llm
     for function in functions.values():
         if not isinstance(function, dict):
@@ -556,6 +557,16 @@ def test_nemo_retriever_profiles_only_keep_supported_verbose_setting() -> None:
         assert functions["shallow_research_agent"]["verbose"] is True
         assert "verbose" not in functions["deep_research_agent"]
         assert "verbose" not in config["workflow"]
+
+
+def test_nemo_retriever_shallow_profiles_pin_citation_policy() -> None:
+    for filename in ("config_web_nemo_retriever.yml", "config_web_nemo_retriever_local.yml"):
+        config = yaml.safe_load((PROJECT_ROOT / "configs" / filename).read_text(encoding="utf-8"))
+        shallow_agent = config["functions"]["shallow_research_agent"]
+
+        assert shallow_agent["max_llm_turns"] == 10
+        assert shallow_agent["max_tool_iterations"] == 5
+        assert shallow_agent["enforce_citations"] is False
 
 
 def test_pdf_image_extraction_supports_pdfium_4_and_5(tmp_path) -> None:

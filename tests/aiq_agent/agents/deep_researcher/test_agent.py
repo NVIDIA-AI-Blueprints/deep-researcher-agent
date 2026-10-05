@@ -2161,12 +2161,13 @@ class TestFinalMarkdownExtraction:
             return_value=mock_agent,
         ):
             from aiq_agent.agents.deep_researcher.agent import DeepResearcherAgent
+            from aiq_agent.agents.deep_researcher.agent import WorkflowOutputError
 
             agent = DeepResearcherAgent(llm_provider=mock_llm_provider, tools=[real_tool])
             agent.source_registry_middleware.registry.add(SourceEntry(url="https://example.com"))
 
             state = DeepResearchAgentState(messages=[HumanMessage(content="Write a report")])
-            with pytest.raises(RuntimeError, match="^writer_output_not_committed$"):
+            with pytest.raises(WorkflowOutputError, match="writer-agent did not produce a final Markdown answer"):
                 await agent.run(state)
 
     @pytest.mark.asyncio
@@ -2191,12 +2192,13 @@ class TestFinalMarkdownExtraction:
             return_value=mock_agent,
         ):
             from aiq_agent.agents.deep_researcher.agent import DeepResearcherAgent
+            from aiq_agent.agents.deep_researcher.agent import WorkflowOutputError
 
             agent = DeepResearcherAgent(llm_provider=mock_llm_provider, tools=[real_tool])
             agent.source_registry_middleware.registry.add(SourceEntry(url="https://example.com"))
 
             state = DeepResearchAgentState(messages=[HumanMessage(content="Original query")])
-            with pytest.raises(RuntimeError, match="^writer_output_not_committed$"):
+            with pytest.raises(WorkflowOutputError, match="writer-agent did not produce a final Markdown answer"):
                 await agent.run(state)
 
     @pytest.mark.asyncio
