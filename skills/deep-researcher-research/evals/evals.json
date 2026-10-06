@@ -1,0 +1,58 @@
+[
+  {
+    "id": "deep-researcher-research-001-health",
+    "question": "Use Deep Researcher Agent to check whether the local research backend is healthy.",
+    "expected_skill": "deep-researcher-research",
+    "expected_script": "scripts/deep_researcher.py",
+    "ground_truth": "The agent routes to deep-researcher-research, resolves DEEP_RESEARCHER_SERVER_URL or the default local backend, runs the helper health command, and reports the checked URL with a concise status.",
+    "expected_behavior": [
+      "Routes to deep-researcher-research",
+      "Uses DEEP_RESEARCHER_SERVER_URL when set, otherwise the localhost default",
+      "Runs scripts/deep_researcher.py health",
+      "Reports the URL that was checked"
+    ]
+  },
+  {
+    "id": "deep-researcher-research-002-cuda-x-report",
+    "question": "Please create a short deep research report on Nvidia's cuda-x and how the different libraries relate to one another.",
+    "expected_skill": "deep-researcher-research",
+    "expected_script": "scripts/deep_researcher.py",
+    "ground_truth": "The agent routes the research request to deep-researcher-research, checks that an Deep Researcher Agent backend is reachable, preserves the user's CUDA-X prompt, uses scripts/deep_researcher.py for the research flow, and presents the final report with citations intact when the job completes.",
+    "expected_behavior": [
+      "Routes to deep-researcher-research",
+      "Checks DEEP_RESEARCHER_SERVER_URL or the default local backend before research",
+      "Preserves the user's CUDA-X prompt",
+      "Uses scripts/deep_researcher.py for the research flow",
+      "Polls if Deep Researcher Agent returns an async job ID",
+      "Presents the final report when the job completes",
+      "Does not truncate citations or source URLs"
+    ]
+  },
+  {
+    "id": "deep-researcher-research-003-weather-santa-clara",
+    "question": "What is the weather like today in Santa Clara, CA?",
+    "expected_skill": "deep-researcher-research",
+    "expected_script": "scripts/deep_researcher.py",
+    "ground_truth": "The agent routes the current-weather question to deep-researcher-research, checks that an Deep Researcher Agent backend is reachable, sends the user's exact prompt through the routed chat flow, and returns a concise answer for Santa Clara, CA.",
+    "expected_behavior": [
+      "Routes to deep-researcher-research",
+      "Checks DEEP_RESEARCHER_SERVER_URL or the default local backend before the request",
+      "Preserves the user's Santa Clara weather prompt",
+      "Uses scripts/deep_researcher.py chat for the routed request",
+      "Returns a concise answer for Santa Clara, CA",
+      "Does not force a deep_researcher job unless Deep Researcher Agent returns an async job ID"
+    ]
+  },
+  {
+    "id": "deep-researcher-research-004-negative-deployment-request",
+    "question": "Set up Deep Researcher Agent locally with Docker Compose and verify the backend health endpoint.",
+    "expected_skill": null,
+    "expected_script": null,
+    "ground_truth": "The agent does not use deep-researcher-research for deployment or health setup. It should use deep-researcher-deploy.",
+    "expected_behavior": [
+      "Does not route to deep-researcher-research",
+      "Does not call scripts/deep_researcher.py for the initial setup",
+      "Recognizes this as a deployment and validation request"
+    ]
+  }
+]

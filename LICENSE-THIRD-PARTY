@@ -1,4 +1,4 @@
-AIQ Third-Party Licenses
+Deep Researcher Agent Third-Party Licenses
 =========================
 
 This file contains third-party license information for software packages used in this project.
@@ -7,7 +7,7 @@ we list the packages that are distributed under it and include the license text.
 
 The general inventory below is a curated notice snapshot, not an exhaustive
 or release-specific dependency inventory. Package versions in that inventory
-may differ from the current lock files. The AI-Q 2.2 release-container addendum
+may differ from the current lock files. The Deep Researcher Agent 2.2 release-container addendum
 below is release-specific for the six distributions named there and was
 prepared from their lock-pinned artifacts. A separate source-distribution-only
 addendum follows it. Release processes must still generate and review complete
@@ -219,11 +219,11 @@ and must be validated from upstream repositories:
    urllib3                           2.7.0
 
 ============================================================================
-AI-Q 2.2 RELEASE CONTAINER ATTRIBUTION ADDENDUM
+Deep Researcher Agent 2.2 RELEASE CONTAINER ATTRIBUTION ADDENDUM
 ============================================================================
 
 This release-specific addendum covers the six Python distributions identified
-in the AI-Q 2.2 release-container review. It supplements the general curated
+in the Deep Researcher Agent 2.2 release-container review. It supplements the general curated
 snapshot above. The package versions are pinned by `uv.lock`; loguru,
 nemoguardrails, py-rust-stemmers, and crc32c are also pinned by `mcp/uv.lock`.
 
@@ -4394,15 +4394,15 @@ Affirmer understands and acknowledges that Creative Commons is not a party to th
 END VERBATIM: en-core-web-lg 3.8.0 LICENSES_SOURCES
 
 ============================================================================
-END OF AI-Q 2.2 RELEASE CONTAINER ATTRIBUTION ADDENDUM
+END OF Deep Researcher Agent 2.2 RELEASE CONTAINER ATTRIBUTION ADDENDUM
 ============================================================================
 
 ============================================================================
-AI-Q 2.2 SOURCE-DISTRIBUTION-ONLY ATTRIBUTION ADDENDUM
+Deep Researcher Agent 2.2 SOURCE-DISTRIBUTION-ONLY ATTRIBUTION ADDENDUM
 ============================================================================
 
-This addendum applies to the AI-Q source distribution only. The referenced
-documentation template is not installed in the AI-Q release container.
+This addendum applies to the Deep Researcher Agent source distribution only. The referenced
+documentation template is not installed in the Deep Researcher Agent release container.
 
 ----------------------------------------------------------------------------
 docs/source/_templates/sidebar-nav-bs.html
@@ -4461,7 +4461,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 END VERBATIM: pydata-sphinx-theme 0.16.1 BSD-3-Clause LICENSE
 
 ============================================================================
-END OF AI-Q 2.2 SOURCE-DISTRIBUTION-ONLY ATTRIBUTION ADDENDUM
+END OF Deep Researcher Agent 2.2 SOURCE-DISTRIBUTION-ONLY ATTRIBUTION ADDENDUM
 ============================================================================
 
 END OF THIRD-PARTY LICENSES

@@ -195,7 +195,7 @@ print_summary() {
 main() {
     echo ""
     echo "================================================"
-    echo "  AI-Q Blueprint - Script Tests"
+    echo "  Deep Researcher Agent Blueprint - Script Tests"
     echo "================================================"
     echo ""
     echo "Repository: $REPO_ROOT"

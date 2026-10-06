@@ -1,5 +1,5 @@
 # This is the default Web configuration for an external NeMo Retriever knowledge layer.
-# AIQ calls only the NRL public REST API and does not manage the NRL deployment.
+# Deep Researcher Agent calls only the NRL public REST API and does not manage the NRL deployment.
 
 general:
   use_uvloop: true
@@ -11,11 +11,11 @@ general:
     # tracing:
     #   langsmith: # Optional: LangSmith tracing - requires langsmith API key. Set using `export LANGSMITH_API_KEY=<your-langsmith-api-key>`
     #     _type: langsmith
-    #     project: nvidia-aiq
+    #     project: nvidia-deep-researcher
 
   front_end:
-    _type: aiq_api
-    runner_class: aiq_api.plugin.AIQAPIWorker
+    _type: deep_researcher_api
+    runner_class: deep_researcher_api.plugin.DeepResearcherAPIWorker
     # =========================================================================
     # Knowledge API is automatically enabled when knowledge_retrieval function
     # is configured
@@ -144,11 +144,11 @@ functions:
     max_results: 2
     advanced_search: true
 
-  # NeMo Retriever is deployed and operated independently from AIQ.
+  # NeMo Retriever is deployed and operated independently from DeepResearcher.
   knowledge_search:
     _type: knowledge_retrieval
     backend: nemo_retriever
-    collection_name: ${COLLECTION_NAME:-aiq-nrl}
+    collection_name: ${COLLECTION_NAME:-deep-researcher-nrl}
     top_k: 5
     generate_summary: false
     backend_config:
@@ -210,4 +210,4 @@ workflow:
   enable_escalation: true
   enable_clarifier: true
   use_async_deep_research: true
-  checkpoint_db: ${AIQ_CHECKPOINT_DB:-./checkpoints.db}
+  checkpoint_db: ${DEEP_RESEARCHER_CHECKPOINT_DB:-./checkpoints.db}

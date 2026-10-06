@@ -29,11 +29,11 @@ from knowledge_layer.register import _setup_backend
 from PIL import Image
 from pydantic import SecretStr
 
-from aiq_agent.knowledge import JobState
-from aiq_agent.knowledge.factory import is_ingestor_registered
-from aiq_agent.knowledge.factory import is_retriever_registered
-from aiq_agent.knowledge.factory import release_ingestor
-from aiq_agent.knowledge.schema import FileStatus
+from deep_researcher_agent.knowledge import JobState
+from deep_researcher_agent.knowledge.factory import is_ingestor_registered
+from deep_researcher_agent.knowledge.factory import is_retriever_registered
+from deep_researcher_agent.knowledge.factory import release_ingestor
+from deep_researcher_agent.knowledge.schema import FileStatus
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 ENVIRONMENT_DIR = PROJECT_ROOT / "environments" / "nemo_retriever_local"
@@ -455,7 +455,7 @@ def test_local_backend_requires_scope_and_known_upstream_profile(monkeypatch):
 
 
 def test_release_ingestor_only_evicts_the_expected_cached_instance(monkeypatch):
-    from aiq_agent.knowledge import factory
+    from deep_researcher_agent.knowledge import factory
 
     expected = object()
     replacement = object()
@@ -522,9 +522,9 @@ def test_local_profile_selects_embedded_backend_and_upstream_auto_defaults() -> 
     assert functions["shallow_research_agent"]["exclude_tools"] == ["advanced_web_search_tool"]
     assert functions["deep_research_agent"]["exclude_tools"] == ["web_search_tool"]
     assert local_llm["_type"] == "openai"
-    assert local_llm["model_name"] == "${AIQ_AGENT_LLM_MODEL:-openai/local-tool-model}"
-    assert local_llm["base_url"] == "${AIQ_AGENT_LLM_BASE_URL:-http://127.0.0.1:1234/v1}"
-    assert local_llm["api_key"] == "${AIQ_AGENT_LLM_API_KEY:-local}"
+    assert local_llm["model_name"] == "${DEEP_RESEARCHER_AGENT_LLM_MODEL:-openai/local-tool-model}"
+    assert local_llm["base_url"] == "${DEEP_RESEARCHER_AGENT_LLM_BASE_URL:-http://127.0.0.1:1234/v1}"
+    assert local_llm["api_key"] == "${DEEP_RESEARCHER_AGENT_LLM_API_KEY:-local}"
     assert local_llm["max_tokens"] == 32768
     assert "parallel_tool_calls" not in local_llm
     for function in functions.values():
@@ -542,7 +542,7 @@ def test_local_profile_selects_embedded_backend_and_upstream_auto_defaults() -> 
                 assert function[role] == "agent_llm"
     assert knowledge["backend"] == "nemo_retriever_local"
     assert knowledge["backend_config"]["scope"] == "${NRL_SCOPE:-local}"
-    assert knowledge["backend_config"]["data_dir"] == "${NRL_LOCAL_DATA_DIR:-.aiq-data/nemo_retriever}"
+    assert knowledge["backend_config"]["data_dir"] == "${NRL_LOCAL_DATA_DIR:-.deep-researcher-data/nemo_retriever}"
     assert knowledge["backend_config"]["profile"] == "${NRL_LOCAL_PROFILE:-auto}"
     assert knowledge["generate_summary"] is False
 
@@ -972,7 +972,7 @@ def test_submit_is_non_blocking_stable_and_uses_exact_upstream_profile(tmp_path)
     assert state.embed_params[0]["model_name"] == "nvidia/upstream-default"
     assert "embed_modality" not in state.embed_params[0]
     assert state.sidecar_calls[0]["meta_fields"] == ["category"]
-    assert state.sidecar_calls[0]["meta_source_field"] == "__aiq_source"
+    assert state.sidecar_calls[0]["meta_source_field"] == "__deep_researcher_source"
     assert not list((tmp_path / "nrl" / ".staging").rglob("*"))
 
     retry_source = tmp_path / "retry.pdf"
@@ -1146,18 +1146,18 @@ def test_sidecar_join_key_cannot_be_overwritten_by_user_metadata(tmp_path):
         {
             "metadata": {
                 "source": "user-value",
-                "__aiq_source": "also-user-value",
+                "__deep_researcher_source": "also-user-value",
                 "category": "finance",
             }
         },
     )
     assert _wait_terminal(ingestor, job_id).status == JobState.COMPLETED
     call = state.sidecar_calls[0]
-    assert call["meta_source_field"] == "___aiq_source"
-    assert call["meta_df"][0]["___aiq_source"] == "report.pdf"
+    assert call["meta_source_field"] == "___deep_researcher_source"
+    assert call["meta_df"][0]["___deep_researcher_source"] == "report.pdf"
     assert call["meta_df"][0]["source"] == "user-value"
-    assert call["meta_df"][0]["__aiq_source"] == "also-user-value"
-    assert call["meta_fields"] == ["source", "__aiq_source", "category"]
+    assert call["meta_df"][0]["__deep_researcher_source"] == "also-user-value"
+    assert call["meta_fields"] == ["source", "__deep_researcher_source", "category"]
     ingestor.close()
 
 
@@ -1406,7 +1406,9 @@ def test_collection_ownership_mismatch_is_rejected(tmp_path):
     bindings, _state = _bindings()
     ingestor = NemoRetrieverLocalIngestor(_config(tmp_path, bindings))
     ingestor.create_collection("reports")
-    ingestor._runtime.vdb.collections["reports"]["metadata"]["aiq_nemo_retriever_local"]["profile"] = "fast-text"
+    ingestor._runtime.vdb.collections["reports"]["metadata"]["deep_researcher_nemo_retriever_local"]["profile"] = (
+        "fast-text"
+    )
     with pytest.raises(NemoRetrieverLocalOwnershipError, match="different adapter"):
         ingestor.get_collection("reports")
     ingestor.close()

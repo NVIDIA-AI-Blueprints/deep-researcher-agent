@@ -15,16 +15,16 @@
 
 """Tests for tokenomics pricing (ModelPrice, PricingRegistry).
 
-Module under test: src/aiq_agent/tokenomics/pricing.py
+Module under test: src/deep_researcher_agent/tokenomics/pricing.py
 """
 
 import pytest
 
-from aiq_agent.tokenomics.pricing import ModelPrice
-from aiq_agent.tokenomics.pricing import ModelPriceConfig
-from aiq_agent.tokenomics.pricing import PricingRegistry
-from aiq_agent.tokenomics.pricing import PricingRegistryConfig
-from aiq_agent.tokenomics.pricing import ToolPriceConfig
+from deep_researcher_agent.tokenomics.pricing import ModelPrice
+from deep_researcher_agent.tokenomics.pricing import ModelPriceConfig
+from deep_researcher_agent.tokenomics.pricing import PricingRegistry
+from deep_researcher_agent.tokenomics.pricing import PricingRegistryConfig
+from deep_researcher_agent.tokenomics.pricing import ToolPriceConfig
 
 
 def test_model_price_cost_uncached_and_completion():

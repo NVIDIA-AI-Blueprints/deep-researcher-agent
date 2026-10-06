@@ -3252,7 +3252,7 @@ export const useChatStore = create<ChatStore>()(
         },
       }),
       {
-        name: 'aiq-chat-store',
+        name: 'deep-researcher-chat-store',
         storage: typeof window === 'undefined' ? undefined : createResilientStorage(),
         partialize: (state) => ({
           // Persist conversations and user context, not streaming state or panel content
@@ -3310,7 +3310,7 @@ if (typeof window !== 'undefined') {
   // Monitor storage events from other tabs or browser extensions
   window.addEventListener('storage', (event) => {
     // Only log events related to our chat store
-    if (event.key === 'aiq-chat-store') {
+    if (event.key === 'deep-researcher-chat-store') {
       logExternalStorageEvent(event.key, event.oldValue, event.newValue)
 
       // If the store was cleared externally, this is critical

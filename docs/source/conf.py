@@ -65,7 +65,7 @@ html_theme_options = {
     "icon_links": [
         {
             "name": "GitHub",
-            "url": "https://github.com/NVIDIA-AI-Blueprints/aiq",
+            "url": "https://github.com/NVIDIA-AI-Blueprints/deep-researcher-agent",
             "icon": "fa-brands fa-github",
         }
     ],

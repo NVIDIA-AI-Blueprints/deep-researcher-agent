@@ -121,7 +121,7 @@ export const AppBar: FC<AppBarProps> = memo(function AppBar({
               <Logo kind="logo-only" size="small" />
 
               <Text kind="label/semibold/lg" className="text-primary whitespace-nowrap">
-                AI-Q
+                Deep Researcher Agent
               </Text>
             </Flex>
           </Button>
@@ -253,7 +253,7 @@ const APPEARANCE_SEGMENTS: { mode: ThemeMode; label: string }[] = [
   { mode: 'light', label: 'Light' },
 ]
 
-const DOCS_URL = 'https://github.com/NVIDIA-AI-Blueprints/aiq/tree/develop/docs'
+const DOCS_URL = 'https://github.com/NVIDIA-AI-Blueprints/deep-researcher-agent/tree/develop/docs'
 
 const AppearanceThemeControl: FC = () => {
   const theme = useLayoutStore((s) => s.theme)

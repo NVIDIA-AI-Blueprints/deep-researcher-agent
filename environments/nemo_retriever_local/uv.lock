@@ -163,7 +163,7 @@ wheels = [
 ]
 
 [[package]]
-name = "aiq-agent"
+name = "deep-researcher-agent"
 version = "2.2.0"
 source = { editable = "../../" }
 dependencies = [
@@ -244,10 +244,10 @@ provides-extras = ["pii", "s3", "sandboxed-python-test", "dev", "docs", "viz"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "aiq-api", editable = "../../frontends/aiq_api" },
-    { name = "aiq-debug", editable = "../../frontends/debug" },
-    { name = "aiq-gsf", editable = "../../sources/gsf" },
-    { name = "aiq-research-cli", editable = "../../frontends/cli" },
+    { name = "deep-researcher-api", editable = "../../frontends/deep_researcher_api" },
+    { name = "deep-researcher-debug", editable = "../../frontends/debug" },
+    { name = "deep-researcher-gsf", editable = "../../sources/gsf" },
+    { name = "deep-researcher-research-cli", editable = "../../frontends/cli" },
     { name = "dask", extras = ["distributed"], specifier = ">=2024.1.0" },
     { name = "duckduckgo-news-search", editable = "../../sources/duckduckgo_news_search" },
     { name = "exa-web-search", editable = "../../sources/exa_web_search" },
@@ -268,12 +268,12 @@ dev = [
 ]
 
 [[package]]
-name = "aiq-api"
+name = "deep-researcher-api"
 version = "0.1.0"
-source = { editable = "../../frontends/aiq_api" }
+source = { editable = "../../frontends/deep_researcher_api" }
 dependencies = [
     { name = "aiosqlite" },
-    { name = "aiq-agent" },
+    { name = "deep-researcher-agent" },
     { name = "asyncpg" },
     { name = "dask", extra = ["distributed"] },
     { name = "fastapi" },
@@ -288,7 +288,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "aiosqlite", specifier = ">=0.19.0" },
-    { name = "aiq-agent", editable = "../../" },
+    { name = "deep-researcher-agent", editable = "../../" },
     { name = "asyncpg", specifier = ">=0.29.0" },
     { name = "dask", extras = ["distributed"], specifier = ">=2024.1.0" },
     { name = "fastapi", specifier = ">=0.100.0" },
@@ -306,12 +306,12 @@ requires-dist = [
 provides-extras = ["postgres", "dev"]
 
 [[package]]
-name = "aiq-nemo-retriever-local-environment"
+name = "deep-researcher-nemo-retriever-local-environment"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "aiq-agent" },
-    { name = "aiq-api" },
+    { name = "deep-researcher-agent" },
+    { name = "deep-researcher-api" },
     { name = "filelock" },
     { name = "knowledge-layer" },
     { name = "nemo-retriever" },
@@ -326,8 +326,8 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiq-agent", editable = "../../" },
-    { name = "aiq-api", editable = "../../frontends/aiq_api" },
+    { name = "deep-researcher-agent", editable = "../../" },
+    { name = "deep-researcher-api", editable = "../../frontends/deep_researcher_api" },
     { name = "filelock", specifier = ">=3.20.3,<4" },
     { name = "knowledge-layer", editable = "../../sources/knowledge_layer" },
     { name = "nemo-retriever", git = "https://github.com/NVIDIA/NeMo-Retriever.git?subdirectory=nemo_retriever&rev=c80f4a5189ee10b98cbdb93e2f853ceb7b699c3b" },

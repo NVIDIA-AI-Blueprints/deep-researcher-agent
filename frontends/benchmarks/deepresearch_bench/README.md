@@ -1,4 +1,4 @@
-# Deep Research Bench Evaluation of NVIDIA AI-Q Blueprint
+# Deep Research Bench Evaluation of NVIDIA Deep Researcher Agent Blueprint
 
 [DeepResearch Bench](https://github.com/Ayanami0730/deep_research_bench/tree/main) is one of the most popular benchmarks for evaluating deep research agents. The benchmark was introduced in [DeepResearch Bench: A Comprehensive Benchmark for Deep Research Agent](https://arxiv.org/pdf/2506.11763). It contains 100 research  tasks (50 English, 50 Chinese) from 22 domains. It proposed 2 different evaluation metrics: RACE and FACT to assess the quality of the research reports.
 
@@ -77,11 +77,11 @@ workflow:
           - type: openinference
             endpoint: ${RELAY_OTEL_ENDPOINT:-http://localhost:6006/v1/traces}
             resource_attributes:
-              openinference.project.name: aiq-deepresearch-bench
+              openinference.project.name: deep-researcher-deepresearch-bench
 
 eval:
   general:
-    workflow_alias: "aiq-deepresearch-v2-baseline"
+    workflow_alias: "deep-researcher-deepresearch-v2-baseline"
 ```
 
 See the main [observability guide](../../../docs/source/deployment/observability.md)

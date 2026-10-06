@@ -18,8 +18,8 @@ general:
         level: INFO
 
   front_end:
-    _type: aiq_api
-    runner_class: aiq_api.plugin.AIQAPIWorker
+    _type: deep_researcher_api
+    runner_class: deep_researcher_api.plugin.DeepResearcherAPIWorker
     # =========================================================================
     # Knowledge API is automatically enabled when knowledge_retrieval function
     # is configured
@@ -197,9 +197,9 @@ functions:
     collection_name: ${COLLECTION_NAME:-test_collection}
     generate_summary: true
     summary_model: summary_llm                     # Required when generate_summary: true
-    summary_db: ${AIQ_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
+    summary_db: ${DEEP_RESEARCHER_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
     top_k: 5
-    chroma_dir: ${AIQ_CHROMA_DIR:-/tmp/chroma_data}
+    chroma_dir: ${DEEP_RESEARCHER_CHROMA_DIR:-/tmp/chroma_data}
 
   # Paper Search (optional - requires SERPER_API_KEY)
   # Uncomment the block below and set SERPER_API_KEY to enable academic paper search.
@@ -225,7 +225,7 @@ functions:
     # Unscoped chat requests reach the DS agent only when catalog coverage clears this
     # threshold. Tune per deployment: a test deployment measured 0.5 coverage on a
     # representative question, which falls back to shallow at the 0.6 default.
-    catalog_confidence_threshold: ${AIQ_CATALOG_CONFIDENCE_THRESHOLD:-0.6}
+    catalog_confidence_threshold: ${DEEP_RESEARCHER_CATALOG_CONFIDENCE_THRESHOLD:-0.6}
     verbose: true
 
   clarifier_agent:
@@ -279,13 +279,13 @@ workflow:
   enable_escalation: true
   enable_clarifier: true
   use_async_deep_research: true
-  checkpoint_db: ${AIQ_CHECKPOINT_DB:-./checkpoints.db}
+  checkpoint_db: ${DEEP_RESEARCHER_CHECKPOINT_DB:-./checkpoints.db}
   relay:
     observability:
       atof:
         enabled: true
         output_directory: ./relay
-        filename: aiq-relay.atof.jsonl
+        filename: deep-researcher-relay.atof.jsonl
         mode: append
       # Uncomment to export Relay traces to a local Phoenix instance.
       # opentelemetry:
@@ -293,7 +293,7 @@ workflow:
       #   endpoints:
       #     - type: openinference
       #       endpoint: http://localhost:6006/v1/traces
-      #       service_name: aiq-relay
+      #       service_name: deep-researcher-relay
       #       resource_attributes:
-      #         openinference.project.name: aiq-relay
+      #         openinference.project.name: deep-researcher-relay
       #         deployment.environment: development

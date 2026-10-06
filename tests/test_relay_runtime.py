@@ -35,22 +35,22 @@ from nemo_relay.integrations.langchain._serialization import payload_to_model_re
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 from pydantic import ValidationError
 
-from aiq_agent.agents.deep_researcher.models import ResearchQuery
-from aiq_agent.agents.deep_researcher.tools.research import _run_research_queries
-from aiq_agent.relay.bootstrap import ensure_started
-from aiq_agent.relay.bootstrap import shutdown_async
-from aiq_agent.relay.config import RelayConfig
-from aiq_agent.relay.config import RelayOpenTelemetryEndpointConfig
-from aiq_agent.relay.logging import log_event
-from aiq_agent.relay.privacy import request_privacy_context
-from aiq_agent.relay.runtime import _normalize_chat_nvidia_binding
-from aiq_agent.relay.runtime import _safe_value
-from aiq_agent.relay.runtime import ainvoke_tool_with_relay
-from aiq_agent.relay.runtime import ainvoke_with_relay
-from aiq_agent.relay.runtime import deepagents_kwargs
-from aiq_agent.relay.runtime import merge_langchain_middleware
-from aiq_agent.relay.runtime import run_agent
-from aiq_agent.relay.runtime import run_workflow
+from deep_researcher_agent.agents.deep_researcher.models import ResearchQuery
+from deep_researcher_agent.agents.deep_researcher.tools.research import _run_research_queries
+from deep_researcher_agent.relay.bootstrap import ensure_started
+from deep_researcher_agent.relay.bootstrap import shutdown_async
+from deep_researcher_agent.relay.config import RelayConfig
+from deep_researcher_agent.relay.config import RelayOpenTelemetryEndpointConfig
+from deep_researcher_agent.relay.logging import log_event
+from deep_researcher_agent.relay.privacy import request_privacy_context
+from deep_researcher_agent.relay.runtime import _normalize_chat_nvidia_binding
+from deep_researcher_agent.relay.runtime import _safe_value
+from deep_researcher_agent.relay.runtime import ainvoke_tool_with_relay
+from deep_researcher_agent.relay.runtime import ainvoke_with_relay
+from deep_researcher_agent.relay.runtime import deepagents_kwargs
+from deep_researcher_agent.relay.runtime import merge_langchain_middleware
+from deep_researcher_agent.relay.runtime import run_agent
+from deep_researcher_agent.relay.runtime import run_workflow
 
 
 def test_deepagents_integration_is_enabled() -> None:
@@ -287,7 +287,7 @@ async def test_relay_model_call_accepts_scalar_inputs(monkeypatch) -> None:
     async def passthrough(_self, request, handler):
         return await handler(request)
 
-    monkeypatch.setattr("aiq_agent.relay.runtime.NemoRelayMiddleware.awrap_model_call", passthrough)
+    monkeypatch.setattr("deep_researcher_agent.relay.runtime.NemoRelayMiddleware.awrap_model_call", passthrough)
     message = HumanMessage(content="question")
 
     await ainvoke_with_relay(Model(), "question")
@@ -313,7 +313,7 @@ async def test_relay_model_name_comes_from_bound_model(monkeypatch) -> None:
         observed_names.append(request.model.model_name)
         return await handler(request)
 
-    monkeypatch.setattr("aiq_agent.relay.runtime.NemoRelayMiddleware.awrap_model_call", capture_name)
+    monkeypatch.setattr("deep_researcher_agent.relay.runtime.NemoRelayMiddleware.awrap_model_call", capture_name)
 
     await ainvoke_with_relay(Binding(), [])
 
@@ -335,7 +335,7 @@ async def test_relay_model_middleware_fallback_does_not_retry_started_calls(monk
     async def fail_before(_self, request, handler):  # noqa: ARG001
         raise RuntimeError("private middleware detail")
 
-    monkeypatch.setattr("aiq_agent.relay.runtime.NemoRelayMiddleware.awrap_model_call", fail_before)
+    monkeypatch.setattr("deep_researcher_agent.relay.runtime.NemoRelayMiddleware.awrap_model_call", fail_before)
     assert (await ainvoke_with_relay(Model(), [])).content == "done"
     assert calls == 1
     assert "private middleware detail" not in caplog.text
@@ -344,7 +344,7 @@ async def test_relay_model_middleware_fallback_does_not_retry_started_calls(monk
         await handler(request)
         raise RuntimeError("post-invocation failure")
 
-    monkeypatch.setattr("aiq_agent.relay.runtime.NemoRelayMiddleware.awrap_model_call", fail_after)
+    monkeypatch.setattr("deep_researcher_agent.relay.runtime.NemoRelayMiddleware.awrap_model_call", fail_after)
     with pytest.raises(RuntimeError, match="post-invocation failure"):
         await ainvoke_with_relay(Model(), [])
     assert calls == 2
@@ -365,7 +365,7 @@ async def test_relay_tool_middleware_fallback_does_not_retry_started_calls(monke
     async def fail_before(_self, request, handler):  # noqa: ARG001
         raise RuntimeError("private middleware detail")
 
-    monkeypatch.setattr("aiq_agent.relay.runtime.NemoRelayMiddleware.awrap_tool_call", fail_before)
+    monkeypatch.setattr("deep_researcher_agent.relay.runtime.NemoRelayMiddleware.awrap_tool_call", fail_before)
     assert await ainvoke_tool_with_relay(Tool(), {"value": "done"}) == "done"
     assert calls == 1
     assert "private middleware detail" not in caplog.text
@@ -374,7 +374,7 @@ async def test_relay_tool_middleware_fallback_does_not_retry_started_calls(monke
         await handler(request)
         raise RuntimeError("post-invocation failure")
 
-    monkeypatch.setattr("aiq_agent.relay.runtime.NemoRelayMiddleware.awrap_tool_call", fail_after)
+    monkeypatch.setattr("deep_researcher_agent.relay.runtime.NemoRelayMiddleware.awrap_tool_call", fail_after)
     with pytest.raises(RuntimeError, match="post-invocation failure"):
         await ainvoke_tool_with_relay(Tool(), {"value": "done"})
     assert calls == 2
@@ -754,7 +754,7 @@ async def test_two_turn_parity_has_two_traces_one_session_no_duplicates_and_bala
     assert len(root_starts) == 2
     assert len({event["uuid"] for event in root_starts}) == 2
     assert {event["metadata"]["session_id"] for event in root_starts} == {"same-session"}
-    assert {event["metadata"]["aiq.framework"] for event in root_starts} == {"nemo-agent-toolkit"}
+    assert {event["metadata"]["deep-researcher.framework"] for event in root_starts} == {"nemo-agent-toolkit"}
     assert all(event["data"] is not None for event in root_starts)
     root_ends = [event for event in scope_events if event["name"] == "<workflow>" and event["scope_category"] == "end"]
     assert all(event["data"] is not None for event in root_ends)

@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# Start or reuse an authenticated OpenShell gateway and prove strict AI-Q capabilities.
+# Start or reuse an authenticated OpenShell gateway and prove strict Deep Researcher Agent capabilities.
 
 set -euo pipefail
 
@@ -10,20 +10,20 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 VENV_DIR="$REPO_ROOT/.venv"
 
-GATEWAY_NAME="${AIQ_OPENSHELL_GATEWAY_NAME:-openshell}"
-WORKSPACE_NAME="${AIQ_OPENSHELL_WORKSPACE:-default}"
+GATEWAY_NAME="${DEEP_RESEARCHER_OPENSHELL_GATEWAY_NAME:-openshell}"
+WORKSPACE_NAME="${DEEP_RESEARCHER_OPENSHELL_WORKSPACE:-default}"
 export OPENSHELL_WORKSPACE="$WORKSPACE_NAME"
-IMAGE_NAME="${AIQ_OPENSHELL_IMAGE:-aiq-openshell-demo:latest}"
-POLICY_FILE="${AIQ_OPENSHELL_POLICY_FILE:-$REPO_ROOT/configs/openshell/generated/aiq-openshell-policy.yaml}"
-SANDBOX_NAME="${AIQ_OPENSHELL_SANDBOX_NAME:-aiq-openshell-demo}"
+IMAGE_NAME="${DEEP_RESEARCHER_OPENSHELL_IMAGE:-deep-researcher-openshell-demo:latest}"
+POLICY_FILE="${DEEP_RESEARCHER_OPENSHELL_POLICY_FILE:-$REPO_ROOT/configs/openshell/generated/deep-researcher-openshell-policy.yaml}"
+SANDBOX_NAME="${DEEP_RESEARCHER_OPENSHELL_SANDBOX_NAME:-deep-researcher-openshell-demo}"
 OPENSHELL_BIN="${OPENSHELL_BIN:-}"
 PYTHON_BIN="${PYTHON_BIN:-}"
 START_SERVICE=true
 CREATE_SHARED_DEBUG_SANDBOX=false
-STATUS_ATTEMPTS="${AIQ_OPENSHELL_STATUS_ATTEMPTS:-60}"
-POLL_DELAY="${AIQ_OPENSHELL_POLL_DELAY:-1}"
-READY_TIMEOUT_SECONDS="${AIQ_OPENSHELL_READY_TIMEOUT_SECONDS:-120}"
-POLICY_LOAD_TIMEOUT_SECONDS="${AIQ_OPENSHELL_POLICY_LOAD_TIMEOUT_SECONDS:-30}"
+STATUS_ATTEMPTS="${DEEP_RESEARCHER_OPENSHELL_STATUS_ATTEMPTS:-60}"
+POLL_DELAY="${DEEP_RESEARCHER_OPENSHELL_POLL_DELAY:-1}"
+READY_TIMEOUT_SECONDS="${DEEP_RESEARCHER_OPENSHELL_READY_TIMEOUT_SECONDS:-120}"
+POLICY_LOAD_TIMEOUT_SECONDS="${DEEP_RESEARCHER_OPENSHELL_POLICY_LOAD_TIMEOUT_SECONDS:-30}"
 READINESS_CHECKER="$SCRIPT_DIR/check_openshell_readiness.py"
 VERSION_INSPECTOR="$SCRIPT_DIR/check_versions.py"
 
@@ -110,7 +110,7 @@ resolve_dependencies() {
     fi
     case "${OPENSHELL_GATEWAY_INSECURE:-}" in
         1|true|TRUE|yes|YES|on|ON)
-            fail "OPENSHELL_GATEWAY_INSECURE is forbidden for AI-Q OpenShell lifecycle checks"
+            fail "OPENSHELL_GATEWAY_INSECURE is forbidden for Deep Researcher Agent OpenShell lifecycle checks"
             ;;
     esac
     if [[ ! -f "$POLICY_FILE" ]]; then
@@ -259,7 +259,7 @@ create_shared_debug_sandbox() {
         --name "$SANDBOX_NAME" \
         --from "$IMAGE_NAME" \
         --policy "$POLICY_FILE" \
-        --label aiq=shared-debug \
+        --label deep-researcher=shared-debug \
         --no-auto-providers \
         --no-tty \
         -- true >/dev/null

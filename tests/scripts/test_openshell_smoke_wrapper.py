@@ -16,7 +16,7 @@ import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _WRAPPER = _REPO_ROOT / "scripts" / "openshell" / "smoke_openshell_isolation.py"
-_LIVE_TEST = "tests/aiq_agent/agents/deep_researcher/sandbox/test_openshell_live.py"
+_LIVE_TEST = "tests/deep_researcher_agent/agents/deep_researcher/sandbox/test_openshell_live.py"
 
 
 @pytest.fixture
@@ -38,7 +38,7 @@ def test_wrapper_translates_arguments_and_preserves_environment(
         recorded.update(command=command, **kwargs)
         return SimpleNamespace(returncode=0)
 
-    monkeypatch.setenv("AIQ_EXISTING_SETTING", "preserved")
+    monkeypatch.setenv("DEEP_RESEARCHER_EXISTING_SETTING", "preserved")
     monkeypatch.setattr(subprocess, "run", fake_run)
 
     result = wrapper.main(
@@ -63,27 +63,27 @@ def test_wrapper_translates_arguments_and_preserves_environment(
     assert recorded["check"] is False
     env = recorded["env"]
     assert isinstance(env, dict)
-    assert env["AIQ_EXISTING_SETTING"] == "preserved"
-    assert env["AIQ_OPENSHELL_LIVE_TESTS"] == "1"
-    assert env["AIQ_OPENSHELL_GATEWAY_NAME"] == "enterprise"
-    assert env["AIQ_OPENSHELL_WORKSPACE"] == "research"
-    assert env["AIQ_OPENSHELL_POLICY_FILE"] == "policy.yaml"
-    assert env["AIQ_OPENSHELL_IMAGE"] == "image:tag"
-    assert env["AIQ_OPENSHELL_EXPECTED_GATEWAY_VERSION"] == "0.0.88"
-    assert env["AIQ_OPENSHELL_LIVE_ALLOW_BEST_EFFORT"] == "1"
+    assert env["DEEP_RESEARCHER_EXISTING_SETTING"] == "preserved"
+    assert env["DEEP_RESEARCHER_OPENSHELL_LIVE_TESTS"] == "1"
+    assert env["DEEP_RESEARCHER_OPENSHELL_GATEWAY_NAME"] == "enterprise"
+    assert env["DEEP_RESEARCHER_OPENSHELL_WORKSPACE"] == "research"
+    assert env["DEEP_RESEARCHER_OPENSHELL_POLICY_FILE"] == "policy.yaml"
+    assert env["DEEP_RESEARCHER_OPENSHELL_IMAGE"] == "image:tag"
+    assert env["DEEP_RESEARCHER_OPENSHELL_EXPECTED_GATEWAY_VERSION"] == "0.0.88"
+    assert env["DEEP_RESEARCHER_OPENSHELL_LIVE_ALLOW_BEST_EFFORT"] == "1"
 
 
 def test_wrapper_uses_generated_policy_and_single_pytest_target(
     wrapper: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.delenv("AIQ_OPENSHELL_EXPECTED_GATEWAY_VERSION", raising=False)
-    monkeypatch.delenv("AIQ_OPENSHELL_POLICY_FILE", raising=False)
-    monkeypatch.setenv("AIQ_OPENSHELL_WORKSPACE", "")
+    monkeypatch.delenv("DEEP_RESEARCHER_OPENSHELL_EXPECTED_GATEWAY_VERSION", raising=False)
+    monkeypatch.delenv("DEEP_RESEARCHER_OPENSHELL_POLICY_FILE", raising=False)
+    monkeypatch.setenv("DEEP_RESEARCHER_OPENSHELL_WORKSPACE", "")
     args = wrapper._args([])
 
     assert args.workspace == "default"
-    assert args.policy == "configs/openshell/generated/aiq-openshell-policy.yaml"
+    assert args.policy == "configs/openshell/generated/deep-researcher-openshell-policy.yaml"
     assert args.expected_gateway_version is None
     assert wrapper._command()[-1] == _LIVE_TEST
     assert wrapper._command().count(_LIVE_TEST) == 1

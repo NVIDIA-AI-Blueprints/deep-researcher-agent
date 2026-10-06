@@ -51,30 +51,30 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from aiq_agent.knowledge.base import BaseIngestor
-from aiq_agent.knowledge.base import BaseRetriever
-from aiq_agent.knowledge.base import TTLCleanupMixin
-from aiq_agent.knowledge.factory import register_ingestor
-from aiq_agent.knowledge.factory import register_retriever
-from aiq_agent.knowledge.schema import Chunk
-from aiq_agent.knowledge.schema import CollectionInfo
-from aiq_agent.knowledge.schema import ContentType
-from aiq_agent.knowledge.schema import FileInfo
-from aiq_agent.knowledge.schema import FileProgress
-from aiq_agent.knowledge.schema import FileStatus
-from aiq_agent.knowledge.schema import IngestionJobStatus
-from aiq_agent.knowledge.schema import JobState
-from aiq_agent.knowledge.schema import RetrievalResult
+from deep_researcher_agent.knowledge.base import BaseIngestor
+from deep_researcher_agent.knowledge.base import BaseRetriever
+from deep_researcher_agent.knowledge.base import TTLCleanupMixin
+from deep_researcher_agent.knowledge.factory import register_ingestor
+from deep_researcher_agent.knowledge.factory import register_retriever
+from deep_researcher_agent.knowledge.schema import Chunk
+from deep_researcher_agent.knowledge.schema import CollectionInfo
+from deep_researcher_agent.knowledge.schema import ContentType
+from deep_researcher_agent.knowledge.schema import FileInfo
+from deep_researcher_agent.knowledge.schema import FileProgress
+from deep_researcher_agent.knowledge.schema import FileStatus
+from deep_researcher_agent.knowledge.schema import IngestionJobStatus
+from deep_researcher_agent.knowledge.schema import JobState
+from deep_researcher_agent.knowledge.schema import RetrievalResult
 
 logger = logging.getLogger(__name__)
 
-_CHROMA_EMBEDDING_MODEL_KEY = "aiq_embedding_model"
+_CHROMA_EMBEDDING_MODEL_KEY = "deep_researcher_embedding_model"
 
 # Default VLM model for image captioning
 # Default multimodal model used for local image and chart extraction.
-DEFAULT_VLM_MODEL = os.environ.get("AIQ_VLM_MODEL", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning")
+DEFAULT_VLM_MODEL = os.environ.get("DEEP_RESEARCHER_VLM_MODEL", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning")
 # Default VLM model base URL
-DEFAULT_VLM_BASE_URL = os.environ.get("AIQ_VLM_BASE_URL", "https://integrate.api.nvidia.com/v1")
+DEFAULT_VLM_BASE_URL = os.environ.get("DEEP_RESEARCHER_VLM_BASE_URL", "https://integrate.api.nvidia.com/v1")
 
 
 def _validate_chroma_embedding_model(collection: Any, collection_name: str, expected_model: str) -> None:
@@ -86,7 +86,8 @@ def _validate_chroma_embedding_model(collection: Any, collection_name: str, expe
 
     persisted_label = repr(persisted_model) if persisted_model else "an unknown legacy model"
     raise RuntimeError(
-        f"Chroma collection {collection_name!r} was created with {persisted_label}, but AI-Q is configured "
+        f"Chroma collection {collection_name!r} was created with {persisted_label}, "
+        f"but Deep Researcher Agent is configured "
         f"for {expected_model!r}. Delete and re-ingest the collection before using the new embedding model."
     )
 
@@ -95,21 +96,21 @@ def _validate_chroma_embedding_model(collection: Any, collection_name: str, expe
 MIN_IMAGE_WIDTH_PX = 100
 MIN_IMAGE_HEIGHT_PX = 100
 
-# @environment_variable AIQ_COLLECTION_TTL_HOURS
+# @environment_variable DEEP_RESEARCHER_COLLECTION_TTL_HOURS
 # @category Knowledge Layer
 # @type float
 # @default 24
 # @required false
 # Hours before stale collections are deleted by the TTL cleanup thread.
-COLLECTION_TTL_HOURS = float(os.environ.get("AIQ_COLLECTION_TTL_HOURS", "24"))
+COLLECTION_TTL_HOURS = float(os.environ.get("DEEP_RESEARCHER_COLLECTION_TTL_HOURS", "24"))
 
-# @environment_variable AIQ_TTL_CLEANUP_INTERVAL_SECONDS
+# @environment_variable DEEP_RESEARCHER_TTL_CLEANUP_INTERVAL_SECONDS
 # @category Knowledge Layer
 # @type int
 # @default 3600
 # @required false
 # Seconds between TTL cleanup runs.
-TTL_CLEANUP_INTERVAL_SECONDS = int(os.environ.get("AIQ_TTL_CLEANUP_INTERVAL_SECONDS", "3600"))
+TTL_CLEANUP_INTERVAL_SECONDS = int(os.environ.get("DEEP_RESEARCHER_TTL_CLEANUP_INTERVAL_SECONDS", "3600"))
 
 # Document summarization settings
 SUMMARY_MAX_INPUT_CHARS = 4000  # ~1000 tokens input
@@ -117,9 +118,9 @@ SUMMARY_MAX_INPUT_CHARS = 4000  # ~1000 tokens input
 
 def _get_nvidia_api_key() -> str:
     """Get NVIDIA API key from environment."""
-    key = os.environ.get("AIQ_EMBED_API_KEY") or os.environ.get("NVIDIA_API_KEY", "")
+    key = os.environ.get("DEEP_RESEARCHER_EMBED_API_KEY") or os.environ.get("NVIDIA_API_KEY", "")
     if not key:
-        logger.warning("AIQ_EMBED_API_KEY or NVIDIA_API_KEY not set - embeddings may fail")
+        logger.warning("DEEP_RESEARCHER_EMBED_API_KEY or NVIDIA_API_KEY not set - embeddings may fail")
     return key
 
 
@@ -462,7 +463,7 @@ class LlamaIndexIngestor(TTLCleanupMixin, BaseIngestor):
     Runs entirely in-process with no external deployments required.
 
     Configuration options:
-        persist_dir: ChromaDB persistence directory (default from AIQ_CHROMA_DIR)
+        persist_dir: ChromaDB persistence directory (default from DEEP_RESEARCHER_CHROMA_DIR)
         embed_model: NVIDIA embedding model name (default: nvidia/nemotron-3-embed-1b)
         embed_base_url: Embedding model base URL (default: https://integrate.api.nvidia.com/v1)
         chunk_size: Text chunk size (default: 1024, model supports up to 2048 tokens)
@@ -475,65 +476,65 @@ class LlamaIndexIngestor(TTLCleanupMixin, BaseIngestor):
         vlm_model: NVIDIA VLM for captioning (default: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning)
 
     Environment variables:
-        AIQ_CHROMA_DIR: Default ChromaDB persistence directory
-        AIQ_EMBED_MODEL: Default embedding model name
-        AIQ_EMBED_BASE_URL: Default embedding model base URL
-        AIQ_EXTRACT_TABLES: Enable table extraction ("true"/"false")
-        AIQ_EXTRACT_CHARTS: Enable chart extraction ("true"/"false")
-        AIQ_EXTRACT_IMAGES: Enable image extraction ("true"/"false")
-        AIQ_VLM_MODEL: VLM model for captioning
-        AIQ_VLM_BASE_URL: Default VLM base URL
-        AIQ_COLLECTION_TTL_HOURS: Hours before stale collections are deleted (default: 24)
-        AIQ_TTL_CLEANUP_INTERVAL_SECONDS: Seconds between cleanup runs (default: 3600)
+        DEEP_RESEARCHER_CHROMA_DIR: Default ChromaDB persistence directory
+        DEEP_RESEARCHER_EMBED_MODEL: Default embedding model name
+        DEEP_RESEARCHER_EMBED_BASE_URL: Default embedding model base URL
+        DEEP_RESEARCHER_EXTRACT_TABLES: Enable table extraction ("true"/"false")
+        DEEP_RESEARCHER_EXTRACT_CHARTS: Enable chart extraction ("true"/"false")
+        DEEP_RESEARCHER_EXTRACT_IMAGES: Enable image extraction ("true"/"false")
+        DEEP_RESEARCHER_VLM_MODEL: VLM model for captioning
+        DEEP_RESEARCHER_VLM_BASE_URL: Default VLM base URL
+        DEEP_RESEARCHER_COLLECTION_TTL_HOURS: Hours before stale collections are deleted (default: 24)
+        DEEP_RESEARCHER_TTL_CLEANUP_INTERVAL_SECONDS: Seconds between cleanup runs (default: 3600)
     """
 
-    # @environment_variable AIQ_CHROMA_DIR
+    # @environment_variable DEEP_RESEARCHER_CHROMA_DIR
     # @category Knowledge Layer
     # @type str
     # @default /tmp/chroma_data
     # @required false
     # ChromaDB persistence directory for LlamaIndex vector storage.
-    DEFAULT_PERSIST_DIR = os.environ.get("AIQ_CHROMA_DIR", "/tmp/chroma_data")
+    DEFAULT_PERSIST_DIR = os.environ.get("DEEP_RESEARCHER_CHROMA_DIR", "/tmp/chroma_data")
 
-    # @environment_variable AIQ_EMBED_MODEL
+    # @environment_variable DEEP_RESEARCHER_EMBED_MODEL
     # @category Knowledge Layer
     # @type str
     # @default nvidia/nemotron-3-embed-1b
     # @required false
     # NVIDIA embedding model name for LlamaIndex vector encoding.
-    DEFAULT_EMBED_MODEL = os.environ.get("AIQ_EMBED_MODEL", "nvidia/nemotron-3-embed-1b")
+    DEFAULT_EMBED_MODEL = os.environ.get("DEEP_RESEARCHER_EMBED_MODEL", "nvidia/nemotron-3-embed-1b")
 
-    # @environment_variable AIQ_EMBED_BASE_URL
+    # @environment_variable DEEP_RESEARCHER_EMBED_BASE_URL
     # @category Knowledge Layer
     # @type str
     # @default https://integrate.api.nvidia.com/v1
     # @required false
     # Embedding model base URL.
-    DEFAULT_EMBED_BASE_URL = os.environ.get("AIQ_EMBED_BASE_URL", "https://integrate.api.nvidia.com/v1")
+    DEFAULT_EMBED_BASE_URL = os.environ.get("DEEP_RESEARCHER_EMBED_BASE_URL", "https://integrate.api.nvidia.com/v1")
 
-    # @environment_variable AIQ_EXTRACT_TABLES
+    # @environment_variable DEEP_RESEARCHER_EXTRACT_TABLES
     # @category Knowledge Layer
     # @type bool
     # @default false
     # @required false
     # Enable table extraction from PDFs during ingestion.
-    DEFAULT_EXTRACT_TABLES = os.environ.get("AIQ_EXTRACT_TABLES", "false").lower() == "true"
+    DEFAULT_EXTRACT_TABLES = os.environ.get("DEEP_RESEARCHER_EXTRACT_TABLES", "false").lower() == "true"
 
-    # @environment_variable AIQ_EXTRACT_IMAGES
+    # @environment_variable DEEP_RESEARCHER_EXTRACT_IMAGES
     # @category Knowledge Layer
     # @type bool
     # @default false
     # @required false
     # Enable image extraction from PDFs during ingestion.
-    DEFAULT_EXTRACT_IMAGES = os.environ.get("AIQ_EXTRACT_IMAGES", "false").lower() == "true"
+    DEFAULT_EXTRACT_IMAGES = os.environ.get("DEEP_RESEARCHER_EXTRACT_IMAGES", "false").lower() == "true"
 
-    # @environment_variable AIQ_EXTRACT_CHARTS
+    # @environment_variable DEEP_RESEARCHER_EXTRACT_CHARTS
     # @category Knowledge Layer
     # @type bool
     # @default false
     # @required false
     # Enable chart extraction from PDFs during ingestion.
-    DEFAULT_EXTRACT_CHARTS = os.environ.get("AIQ_EXTRACT_CHARTS", "false").lower() == "true"
+    DEFAULT_EXTRACT_CHARTS = os.environ.get("DEEP_RESEARCHER_EXTRACT_CHARTS", "false").lower() == "true"
 
     backend_name = "llamaindex"
 
@@ -828,7 +829,7 @@ class LlamaIndexIngestor(TTLCleanupMixin, BaseIngestor):
                 client.delete_collection(name=name)
 
             # Clear summaries from centralized registry
-            from aiq_agent.knowledge import clear_collection_summaries
+            from deep_researcher_agent.knowledge import clear_collection_summaries
 
             clear_collection_summaries(name)
 
@@ -1101,7 +1102,7 @@ class LlamaIndexIngestor(TTLCleanupMixin, BaseIngestor):
                             self._files.pop(tid, None)
                     logger.info(f"Removed {len(tracking_ids_to_remove)} tracking entries for file {file_name}")
 
-                    from aiq_agent.knowledge import unregister_summary
+                    from deep_researcher_agent.knowledge import unregister_summary
 
                     unregister_summary(collection_name, file_name)
                     return True
@@ -1117,7 +1118,7 @@ class LlamaIndexIngestor(TTLCleanupMixin, BaseIngestor):
                         self._files.pop(tid, None)
 
             # Remove from centralized summary registry
-            from aiq_agent.knowledge import unregister_summary
+            from deep_researcher_agent.knowledge import unregister_summary
 
             unregister_summary(collection_name, file_name)
 
@@ -1507,7 +1508,7 @@ class LlamaIndexIngestor(TTLCleanupMixin, BaseIngestor):
                     # Store summary in FileInfo and centralized registry
                     if summary:
                         # Register in centralized summary registry (backend-agnostic)
-                        from aiq_agent.knowledge import register_summary
+                        from deep_researcher_agent.knowledge import register_summary
 
                         register_summary(collection_name, file_name, summary)
 
@@ -1612,28 +1613,28 @@ class LlamaIndexRetriever(BaseRetriever):
     Uses ChromaDB for vector storage and NVIDIA embeddings.
 
     Configuration options:
-        persist_dir: ChromaDB persistence directory (default from AIQ_CHROMA_DIR)
-        embed_model: NVIDIA embedding model name (default from AIQ_EMBED_MODEL)
+        persist_dir: ChromaDB persistence directory (default from DEEP_RESEARCHER_CHROMA_DIR)
+        embed_model: NVIDIA embedding model name (default from DEEP_RESEARCHER_EMBED_MODEL)
         top_k: Default number of results (default: 10)
 
     Environment variables:
-        AIQ_CHROMA_DIR: Default ChromaDB persistence directory
-        AIQ_EMBED_MODEL: Default embedding model name
-        AIQ_EMBED_BASE_URL: Default embedding model base URL
-        AIQ_RETRIEVER_TOP_K: Default top_k value
+        DEEP_RESEARCHER_CHROMA_DIR: Default ChromaDB persistence directory
+        DEEP_RESEARCHER_EMBED_MODEL: Default embedding model name
+        DEEP_RESEARCHER_EMBED_BASE_URL: Default embedding model base URL
+        DEEP_RESEARCHER_RETRIEVER_TOP_K: Default top_k value
     """
 
     # Default configuration from environment variables
-    DEFAULT_PERSIST_DIR = os.environ.get("AIQ_CHROMA_DIR", "/tmp/chroma_data")
-    DEFAULT_EMBED_MODEL = os.environ.get("AIQ_EMBED_MODEL", "nvidia/nemotron-3-embed-1b")
-    DEFAULT_EMBED_BASE_URL = os.environ.get("AIQ_EMBED_BASE_URL", "https://integrate.api.nvidia.com/v1")
-    # @environment_variable AIQ_RETRIEVER_TOP_K
+    DEFAULT_PERSIST_DIR = os.environ.get("DEEP_RESEARCHER_CHROMA_DIR", "/tmp/chroma_data")
+    DEFAULT_EMBED_MODEL = os.environ.get("DEEP_RESEARCHER_EMBED_MODEL", "nvidia/nemotron-3-embed-1b")
+    DEFAULT_EMBED_BASE_URL = os.environ.get("DEEP_RESEARCHER_EMBED_BASE_URL", "https://integrate.api.nvidia.com/v1")
+    # @environment_variable DEEP_RESEARCHER_RETRIEVER_TOP_K
     # @category Knowledge Layer
     # @type int
     # @default 10
     # @required false
     # Default number of results returned by the LlamaIndex retriever.
-    DEFAULT_TOP_K = int(os.environ.get("AIQ_RETRIEVER_TOP_K", "10"))
+    DEFAULT_TOP_K = int(os.environ.get("DEEP_RESEARCHER_RETRIEVER_TOP_K", "10"))
 
     backend_name = "llamaindex"
 
@@ -1840,10 +1841,10 @@ def list_collections(persist_dir: str | None = None) -> list[dict[str, Any]]:
 
     Args:
         persist_dir: ChromaDB persistence directory.
-                     Defaults to AIQ_CHROMA_DIR env var or /tmp/chroma_data.
+                     Defaults to DEEP_RESEARCHER_CHROMA_DIR env var or /tmp/chroma_data.
     """
     if persist_dir is None:
-        persist_dir = os.environ.get("AIQ_CHROMA_DIR", "/tmp/chroma_data")
+        persist_dir = os.environ.get("DEEP_RESEARCHER_CHROMA_DIR", "/tmp/chroma_data")
     try:
         import chromadb
         from chromadb.config import Settings

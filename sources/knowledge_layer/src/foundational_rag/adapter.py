@@ -63,20 +63,20 @@ import urllib3
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from aiq_agent.knowledge.base import BaseIngestor
-from aiq_agent.knowledge.base import BaseRetriever
-from aiq_agent.knowledge.base import TTLCleanupMixin
-from aiq_agent.knowledge.factory import register_ingestor
-from aiq_agent.knowledge.factory import register_retriever
-from aiq_agent.knowledge.schema import Chunk
-from aiq_agent.knowledge.schema import CollectionInfo
-from aiq_agent.knowledge.schema import ContentType
-from aiq_agent.knowledge.schema import FileInfo
-from aiq_agent.knowledge.schema import FileProgress
-from aiq_agent.knowledge.schema import FileStatus
-from aiq_agent.knowledge.schema import IngestionJobStatus
-from aiq_agent.knowledge.schema import JobState
-from aiq_agent.knowledge.schema import RetrievalResult
+from deep_researcher_agent.knowledge.base import BaseIngestor
+from deep_researcher_agent.knowledge.base import BaseRetriever
+from deep_researcher_agent.knowledge.base import TTLCleanupMixin
+from deep_researcher_agent.knowledge.factory import register_ingestor
+from deep_researcher_agent.knowledge.factory import register_retriever
+from deep_researcher_agent.knowledge.schema import Chunk
+from deep_researcher_agent.knowledge.schema import CollectionInfo
+from deep_researcher_agent.knowledge.schema import ContentType
+from deep_researcher_agent.knowledge.schema import FileInfo
+from deep_researcher_agent.knowledge.schema import FileProgress
+from deep_researcher_agent.knowledge.schema import FileStatus
+from deep_researcher_agent.knowledge.schema import IngestionJobStatus
+from deep_researcher_agent.knowledge.schema import JobState
+from deep_researcher_agent.knowledge.schema import RetrievalResult
 
 # Suppress InsecureRequestWarning when verify_ssl=False
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -109,8 +109,8 @@ VDB_TOP_K_MULTIPLIER = 10
 MAX_VDB_TOP_K = 100
 
 # Collection TTL settings (configurable via environment)
-COLLECTION_TTL_HOURS = float(os.environ.get("AIQ_COLLECTION_TTL_HOURS", "24"))
-TTL_CLEANUP_INTERVAL_SECONDS = int(os.environ.get("AIQ_TTL_CLEANUP_INTERVAL_SECONDS", "3600"))
+COLLECTION_TTL_HOURS = float(os.environ.get("DEEP_RESEARCHER_COLLECTION_TTL_HOURS", "24"))
+TTL_CLEANUP_INTERVAL_SECONDS = int(os.environ.get("DEEP_RESEARCHER_TTL_CLEANUP_INTERVAL_SECONDS", "3600"))
 
 # Completed jobs are retained for this long so list_files can include failed
 # files, then pruned to avoid unbounded memory growth.
@@ -862,7 +862,7 @@ class FoundationalRagIngestor(TTLCleanupMixin, BaseIngestor):
 
         # Collect summaries from parallel generation and register them
         if summary_futures:
-            from aiq_agent.knowledge import register_summary
+            from deep_researcher_agent.knowledge import register_summary
 
             for idx, (file_name, future) in summary_futures.items():
                 try:
@@ -1160,7 +1160,7 @@ class FoundationalRagIngestor(TTLCleanupMixin, BaseIngestor):
             successful = result.get("successful", [])
             if name in successful:
                 # Clear summaries from centralized registry
-                from aiq_agent.knowledge import clear_collection_summaries
+                from deep_researcher_agent.knowledge import clear_collection_summaries
 
                 clear_collection_summaries(name)
 
@@ -1366,7 +1366,7 @@ class FoundationalRagIngestor(TTLCleanupMixin, BaseIngestor):
 
                 # Register in centralized summary registry (backend-agnostic)
                 if summary:
-                    from aiq_agent.knowledge import register_summary
+                    from deep_researcher_agent.knowledge import register_summary
 
                     register_summary(collection_name, file_info.file_name, summary)
                     logger.info(f"  Summary generated ({len(summary)} chars)")
@@ -1413,7 +1413,7 @@ class FoundationalRagIngestor(TTLCleanupMixin, BaseIngestor):
             # If the file is no longer in the list, it was deleted
             if file_id not in remaining_names:
                 # Remove from centralized summary registry
-                from aiq_agent.knowledge import unregister_summary
+                from deep_researcher_agent.knowledge import unregister_summary
 
                 unregister_summary(collection_name, file_id)
 
@@ -1455,7 +1455,7 @@ class FoundationalRagIngestor(TTLCleanupMixin, BaseIngestor):
 
             # Trust FRAG's 200 response as confirmation of successful delete
             # Remove from centralized summary registry
-            from aiq_agent.knowledge import unregister_summary
+            from deep_researcher_agent.knowledge import unregister_summary
 
             for file_id in file_ids:
                 unregister_summary(collection_name, file_id)

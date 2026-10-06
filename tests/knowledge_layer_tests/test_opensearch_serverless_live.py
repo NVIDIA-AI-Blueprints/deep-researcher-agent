@@ -20,7 +20,7 @@ force SigV4 service `aoss` and use deterministic local embeddings, so they
 validate the OpenSearch Serverless data plane without requiring NVIDIA_API_KEY.
 
 Run with exported env vars or same-line shell assignments, for example:
-    AIQ_OPENSEARCH_SERVERLESS_LIVE_TESTS=1 OPENSEARCH_URL=... AWS_REGION=... uv run python -m pytest ...
+    DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_LIVE_TESTS=1 OPENSEARCH_URL=... AWS_REGION=... uv run python -m pytest ...
 """
 
 import asyncio
@@ -37,17 +37,19 @@ from botocore.exceptions import NoCredentialsError
 from knowledge_layer.opensearch.adapter import OpenSearchIngestor
 from knowledge_layer.opensearch.adapter import OpenSearchRetriever
 
-from aiq_agent.knowledge.schema import FileStatus
-from aiq_agent.knowledge.schema import JobState
+from deep_researcher_agent.knowledge.schema import FileStatus
+from deep_researcher_agent.knowledge.schema import JobState
 
 pytestmark = [
     pytest.mark.aws,
     pytest.mark.integration,
     pytest.mark.opensearch_serverless,
     pytest.mark.skipif(
-        os.environ.get("AIQ_OPENSEARCH_SERVERLESS_LIVE_TESTS", "").lower() not in {"1", "true", "yes", "on"},
+        os.environ.get("DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_LIVE_TESTS", "").lower()
+        not in {"1", "true", "yes", "on"},
         reason=(
-            "Set and export AIQ_OPENSEARCH_SERVERLESS_LIVE_TESTS=1, or pass it as a same-line env assignment, "
+            "Set and export DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_LIVE_TESTS=1, "
+            "or pass it as a same-line env assignment, "
             "to run live Amazon OpenSearch Serverless tests."
         ),
     ),
@@ -85,10 +87,12 @@ def _serverless_config() -> dict[str, Any]:
     if not endpoint:
         pytest.fail("Amazon OpenSearch Serverless live tests require OPENSEARCH_URL or AOSS_ENDPOINT.")
 
-    if ".aoss.amazonaws.com" not in endpoint and not _env_bool("AIQ_OPENSEARCH_SERVERLESS_ALLOW_CUSTOM_ENDPOINT"):
+    if ".aoss.amazonaws.com" not in endpoint and not _env_bool(
+        "DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_ALLOW_CUSTOM_ENDPOINT"
+    ):
         pytest.fail(
             "Amazon OpenSearch Serverless live tests expect an .aoss.amazonaws.com endpoint. "
-            "Set AIQ_OPENSEARCH_SERVERLESS_ALLOW_CUSTOM_ENDPOINT=1 for a custom/private endpoint."
+            "Set DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_ALLOW_CUSTOM_ENDPOINT=1 for a custom/private endpoint."
         )
 
     aws_region = (
@@ -113,7 +117,7 @@ def _serverless_config() -> dict[str, Any]:
             "AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY/AWS_SESSION_TOKEN values."
         )
 
-    prefix = os.environ.get("AIQ_OPENSEARCH_SERVERLESS_INDEX_PREFIX", "aiq-aoss-live")
+    prefix = os.environ.get("DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_INDEX_PREFIX", "deep-researcher-aoss-live")
     run_suffix = uuid.uuid4().hex[:8]
 
     return {
@@ -166,7 +170,7 @@ def _visible_doc_count_with_retry(
     timeout_seconds: int | None = None,
 ) -> int:
     """visible doc count with retry."""
-    timeout_seconds = timeout_seconds or _env_int("AIQ_OPENSEARCH_SERVERLESS_VISIBILITY_TIMEOUT", 180)
+    timeout_seconds = timeout_seconds or _env_int("DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_VISIBILITY_TIMEOUT", 180)
     index_name = retriever._index_name_for_collection(collection_name)
     client = retriever._get_client()
     deadline = time.time() + timeout_seconds
@@ -202,7 +206,7 @@ def _retrieve_with_retry(
     timeout_seconds: int | None = None,
 ):
     """retrieve with retry."""
-    timeout_seconds = timeout_seconds or _env_int("AIQ_OPENSEARCH_SERVERLESS_RETRIEVAL_TIMEOUT", 180)
+    timeout_seconds = timeout_seconds or _env_int("DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_RETRIEVAL_TIMEOUT", 180)
     deadline = time.time() + timeout_seconds
     result = None
     while time.time() < deadline:
@@ -220,7 +224,7 @@ def _list_files_with_retry(
     timeout_seconds: int | None = None,
 ):
     """list files with retry."""
-    timeout_seconds = timeout_seconds or _env_int("AIQ_OPENSEARCH_SERVERLESS_VISIBILITY_TIMEOUT", 180)
+    timeout_seconds = timeout_seconds or _env_int("DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_VISIBILITY_TIMEOUT", 180)
     deadline = time.time() + timeout_seconds
     files = []
     while time.time() < deadline:

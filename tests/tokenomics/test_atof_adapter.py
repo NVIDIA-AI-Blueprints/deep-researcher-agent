@@ -20,12 +20,12 @@ from pathlib import Path
 
 import pytest
 
-from aiq_agent.tokenomics import atof_adapter
-from aiq_agent.tokenomics.atof_adapter import parse_trace
-from aiq_agent.tokenomics.pricing import PricingRegistry
-from aiq_agent.tokenomics.profile import PHASE_ORCHESTRATOR
-from aiq_agent.tokenomics.profile import PHASE_PLANNER
-from aiq_agent.tokenomics.profile import PHASE_RESEARCHER
+from deep_researcher_agent.tokenomics import atof_adapter
+from deep_researcher_agent.tokenomics.atof_adapter import parse_trace
+from deep_researcher_agent.tokenomics.pricing import PricingRegistry
+from deep_researcher_agent.tokenomics.profile import PHASE_ORCHESTRATOR
+from deep_researcher_agent.tokenomics.profile import PHASE_PLANNER
+from deep_researcher_agent.tokenomics.profile import PHASE_RESEARCHER
 
 
 def _pricing() -> PricingRegistry:
@@ -75,7 +75,7 @@ def _write(path: Path, events: list[dict]) -> None:
 
 
 def test_parse_trace_uses_real_agent_ancestry_and_relay_cost(tmp_path: Path) -> None:
-    root_metadata = {"aiq.component.type": "workflow", "session_id": "session-1"}
+    root_metadata = {"deep-researcher.component.type": "workflow", "session_id": "session-1"}
     usage = {
         "annotated_response": {
             "model": "test-model",
@@ -157,7 +157,7 @@ def test_parse_trace_skips_invalid_json_and_uses_catalog_fallback(tmp_path: Path
             "workflow",
             "start",
             "2026-01-01T00:00:00Z",
-            metadata={"aiq.component.type": "workflow"},
+            metadata={"deep-researcher.component.type": "workflow"},
         ),
         _scope("llm", "llm", "test-model", "start", "2026-01-01T00:00:01Z", parent_uuid="root"),
         _scope("llm", "llm", "test-model", "end", "2026-01-01T00:00:02Z", parent_uuid="root", category_profile=usage),
@@ -183,7 +183,7 @@ def test_parse_trace_ignores_non_string_identifiers(tmp_path: Path) -> None:
             "workflow",
             "start",
             "2026-01-01T00:00:00Z",
-            metadata={"aiq.component.type": "workflow"},
+            metadata={"deep-researcher.component.type": "workflow"},
         ),
         _scope("root", "function", "workflow", "end", "2026-01-01T00:00:01Z"),
         {"kind": "scope", "scope_category": "start", "uuid": ["invalid"], "parent_uuid": {"invalid": True}},
@@ -204,7 +204,7 @@ def test_parse_trace_tolerates_non_mapping_category_profile(tmp_path: Path) -> N
             "workflow",
             "start",
             "2026-01-01T00:00:00Z",
-            metadata={"aiq.component.type": "workflow"},
+            metadata={"deep-researcher.component.type": "workflow"},
         ),
         _scope("llm", "llm", "test-model", "start", "2026-01-01T00:00:01Z", parent_uuid="root"),
         _scope("llm", "llm", "test-model", "end", "2026-01-01T00:00:02Z", parent_uuid="root"),
@@ -228,7 +228,7 @@ def test_parse_trace_failure_log_excludes_exception_content(tmp_path: Path, monk
             "workflow",
             "start",
             "2026-01-01T00:00:00Z",
-            metadata={"aiq.component.type": "workflow"},
+            metadata={"deep-researcher.component.type": "workflow"},
         )
     ]
     path = tmp_path / "relay.atof.jsonl"

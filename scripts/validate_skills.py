@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Validate AI-Q repo-local agent skill bundles.
+"""Validate Deep Researcher Agent repo-local agent skill bundles.
 
 Checks every skill directory under one or more roots (default ``.agents/skills``)
 for a well-formed ``SKILL.md`` and bundle layout. Runs fully offline with no
@@ -36,9 +36,9 @@ from pathlib import Path
 
 import yaml
 
-# Skill name contract: lowercase, hyphen-separated, ``aiq-`` prefixed.
-NAME_PREFIX = "aiq-"
-NAME_RE = re.compile(r"^aiq-[a-z0-9]+(?:-[a-z0-9]+)*$")
+# Skill name contract: lowercase, hyphen-separated, ``deep-researcher-`` prefixed.
+NAME_PREFIX = "deep-researcher-"
+NAME_RE = re.compile(r"^deep-researcher-[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 # Names that predate the contract and are allowed to keep their existing form.
 GRANDFATHERED_NAMES: set[str] = set()

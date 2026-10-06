@@ -26,7 +26,7 @@ llms:
       enable_thinking: false
 
   # Known limitation: Build-hosted Lightning can intermittently produce citation-incomplete shallow drafts.
-  # AI-Q fails closed; see docs/source/resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog.
+  # Deep Researcher Agent fails closed; see docs/source/resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog.
   nemotron_lightning_agent_llm:
     _type: nim
     model_name: nvidia/nemotron-3.5-lightning-30b-a3b
@@ -155,7 +155,7 @@ workflow:
   _type: chat_deepresearcher_agent
   enable_escalation: true
   enable_clarifier: true
-  checkpoint_db: ${AIQ_CHECKPOINT_DB:-./checkpoints.db}
+  checkpoint_db: ${DEEP_RESEARCHER_CHECKPOINT_DB:-./checkpoints.db}
   # Uncomment to export Relay traces to a local Phoenix instance.
   # relay:
   #   observability:
@@ -164,7 +164,7 @@ workflow:
   #       endpoints:
   #         - type: openinference
   #           endpoint: ${RELAY_OTEL_ENDPOINT:-http://localhost:6006/v1/traces}
-  #           service_name: aiq-relay
+  #           service_name: deep-researcher-relay
   #           resource_attributes:
-  #             openinference.project.name: aiq-relay
+  #             openinference.project.name: deep-researcher-relay
   #             deployment.environment: development

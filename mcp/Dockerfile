@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Build from the repository root:
-#   docker build --target release -f mcp/Dockerfile -t aiq-mcp-server:local .
+#   docker build --target release -f mcp/Dockerfile -t deep-researcher-mcp-server:local .
 
 ARG PYTHON_IMAGE=python:3.13.12-slim-bookworm
 
@@ -42,7 +42,7 @@ COPY configs/config_mcp.yml ./configs/config_mcp.yml
 # Install exactly the production dependency closure from the frozen public
 # MCP lock. Local path packages are installed as wheels, not editables, so
 # the release image needs only the virtual environment and runtime config.
-RUN --mount=type=cache,id=aiq-mcp-uv,target=/root/.cache/uv,sharing=locked \
+RUN --mount=type=cache,id=deep-researcher-mcp-uv,target=/root/.cache/uv,sharing=locked \
     uv sync \
         --project /app/mcp \
         --frozen \
@@ -51,22 +51,22 @@ RUN --mount=type=cache,id=aiq-mcp-uv,target=/root/.cache/uv,sharing=locked \
         --no-editable \
         --python /usr/local/bin/python
 
-# The import canary loads aiq_mcp.server, which resolves its workflow config at
+# The import canary loads deep_researcher_mcp.server, which resolves its workflow config at
 # import time; point it at the same config the release image ships.
-RUN AIQ_MCP_CONFIG=/app/configs/config_mcp.yml \
+RUN DEEP_RESEARCHER_MCP_CONFIG=/app/configs/config_mcp.yml \
     /opt/venv/bin/python mcp/scripts/check_runtime_dependencies.py --verify-imports
 
 FROM ${PYTHON_IMAGE} AS release
 
-LABEL org.opencontainers.image.title="NVIDIA AI-Q MCP Server" \
-      org.opencontainers.image.description="Public FastMCP server for the NVIDIA AI-Q Blueprint" \
+LABEL org.opencontainers.image.title="NVIDIA Deep Researcher Agent MCP Server" \
+      org.opencontainers.image.description="Public FastMCP server for the NVIDIA Deep Researcher Agent Blueprint" \
       org.opencontainers.image.licenses="Apache-2.0"
 
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
-    && groupadd --gid 10001 aiq \
-    && useradd --uid 10001 --gid 10001 --create-home --home-dir /home/aiq --shell /usr/sbin/nologin aiq \
+    && groupadd --gid 10001 deep-researcher \
+    && useradd --uid 10001 --gid 10001 --create-home --home-dir /home/deep-researcher --shell /usr/sbin/nologin deep-researcher \
     && install -d --owner=10001 --group=10001 /app/relay
 
 WORKDIR /app
@@ -78,20 +78,20 @@ COPY --chown=10001:10001 LICENSE LICENSE-THIRD-PARTY /licenses/
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PATH="/opt/venv/bin:$PATH"
-ENV HOME=/home/aiq
-ENV XDG_CACHE_HOME=/home/aiq/.cache
-ENV AIQ_MCP_CONFIG=/app/configs/config_mcp.yml
-ENV AIQ_MCP_HOST=0.0.0.0
-ENV AIQ_MCP_PORT=9001
-ENV AIQ_MCP_PATH=/mcp
-ENV AIQ_MCP_WORKERS=1
-ENV AIQ_MCP_LOG_LEVEL=INFO
+ENV HOME=/home/deep-researcher
+ENV XDG_CACHE_HOME=/home/deep-researcher/.cache
+ENV DEEP_RESEARCHER_MCP_CONFIG=/app/configs/config_mcp.yml
+ENV DEEP_RESEARCHER_MCP_HOST=0.0.0.0
+ENV DEEP_RESEARCHER_MCP_PORT=9001
+ENV DEEP_RESEARCHER_MCP_PATH=/mcp
+ENV DEEP_RESEARCHER_MCP_WORKERS=1
+ENV DEEP_RESEARCHER_MCP_LOG_LEVEL=INFO
 
 USER 10001:10001
 
 EXPOSE 9001
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-    CMD ["python", "-c", "import http.client, os; connection = http.client.HTTPConnection('127.0.0.1', int(os.environ.get('AIQ_MCP_PORT', '9001')), timeout=3); connection.request('GET', '/health'); response = connection.getresponse(); response.read(); connection.close(); raise SystemExit(0 if response.status == 200 else 1)"]
+    CMD ["python", "-c", "import http.client, os; connection = http.client.HTTPConnection('127.0.0.1', int(os.environ.get('DEEP_RESEARCHER_MCP_PORT', '9001')), timeout=3); connection.request('GET', '/health'); response = connection.getresponse(); response.read(); connection.close(); raise SystemExit(0 if response.status == 200 else 1)"]
 
-ENTRYPOINT ["python", "-m", "aiq_mcp.server"]
+ENTRYPOINT ["python", "-m", "deep_researcher_mcp.server"]

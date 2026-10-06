@@ -36,7 +36,7 @@ Published NVIDIA NGC artifacts:
 
 **Deployment and observability**
 
-- The repository source Helm chart honors `helm install -n <namespace>` for every namespaced resource, including GitOps-rendered deployments; chart metadata advances to `aiq2-web` 2.2.0 with the `aiq` 0.0.5 dependency
+- The repository source Helm chart honors `helm install -n <namespace>` for every namespaced resource, including GitOps-rendered deployments; chart metadata advances to `deep-researcher-web` 2.2.0 with the `deep-researcher` 0.0.5 dependency
 - NAT-exported async-job traces preserve configured workflow, task/batch, named-agent, and model/tool hierarchy across concurrent researchers without copying graph-state content into structural agent spans
 - Deep-research intake uses atomic per-principal, deployment-wide, and per-minute admission controls before Dask enqueue; each job also enforces hard input, runtime, plan, report, shared-state, query, note, todo, and source-tool budgets
 - Document ingestion enforces server-side file-count, per-file, aggregate-size, declared-type, and content validation using the same upload settings as the UI
@@ -44,7 +44,7 @@ Published NVIDIA NGC artifacts:
 
 **Agent Skills, UX, and developer workflow**
 
-- Consumer Agent Skills now include `aiq-deploy` and `aiq-research`; maintainer skills cover workflow configuration, data sources, tools, release QA, PR preparation, prompt/model customization, and CI maintenance
+- Consumer Agent Skills now include `deep-researcher-deploy` and `deep-researcher-research`; maintainer skills cover workflow configuration, data sources, tools, release QA, PR preparation, prompt/model customization, and CI maintenance
 - The UI surfaces batched researcher activity and improves research-session recovery, expiry handling, and WebSocket delivery reliability
 - Contributor governance and product-level Agent Skill evaluation checks expand release and contribution tooling
 - Pinned to NeMo Agent Toolkit (NAT) v1.8.0
@@ -53,12 +53,12 @@ The eleven checked-in workflow configurations are focused profiles; no single pr
 
 Release v2.1.0
 
-- AI-Q REST API with pluggable auth middleware, entry-point-registered token validators, and async job ownership enforcement
+- Deep Researcher Agent REST API with pluggable auth middleware, entry-point-registered token validators, and async job ownership enforcement
 - Auth extensibility hooks (`register_token_fetcher`, provider lifecycle) and auth refactor eliminating the refresh race
 - Data source registry driving UI toggles, per-message filtering, and agent tool inheritance
 - New `exa_web_search` data source with `full_text` and `highlights` controls
 - Deep researcher consumes DeepAgents skills with a job-scoped Modal sandbox; built-in `data-table-analysis` skill and `configs/config_skills.yml` example
-- AI-Q is consumable as a portable Agent Skill (`.agents/skills/aiq-research/`), with `.claude/skills/aiq-research/` retained as a Claude Code compatibility symlink for routed `/chat` and async job lifecycle against a local AI-Q server
+- Deep Researcher Agent is consumable as a portable Agent Skill (`.agents/skills/deep-researcher-research/`), with `.claude/skills/deep-researcher-research/` retained as a Claude Code compatibility symlink for routed `/chat` and async job lifecycle against a local Deep Researcher Agent server
 - Cost analysis tool with pricing configs and profiling example
 - Documented MCP client patterns scoped for 2.1: `mcp_client`, `mcp_service_account`, and user-identity tools
 - Prompt restructure across all agents for KV cache prefix reuse
@@ -68,7 +68,7 @@ Release v2.1.0
 
 Release v2.0.0
 
-Ground-up rewrite of the NVIDIA AI-Q Blueprint, built on the NVIDIA NeMo Agent Toolkit (NAT).
+Ground-up rewrite of the NVIDIA Deep Researcher Agent Blueprint, built on the NVIDIA NeMo Agent Toolkit (NAT).
 
 - Two-tier research architecture with automatic routing between shallow (fast, bounded) and deep (multi-phase, report-grade) research via a single-call Intent Classifier
 - Deep Researcher rebuilt with a three-role subagent architecture (Orchestrator, Planner, Researcher) using the `deepagents` library, with configurable research loops and per-role LLM assignment
@@ -91,7 +91,7 @@ Ground-up rewrite of the NVIDIA AI-Q Blueprint, built on the NVIDIA NeMo Agent T
 - Four pre-built configs: CLI default, Web + LlamaIndex, Web + Foundational RAG, Hybrid Frontier Model
 - uv workspace monorepo, Jupyter notebook tutorial series, and debug console at `/debug`
 - Pinned to NeMo Agent Toolkit (NAT) v1.4.0; Python 3.11–3.13; Node.js 22+
-- AI-Q holds top positions on both DeepResearch Bench and DeepResearch Bench II leaderboards (see `drb1` and `drb2` branches)
+- Deep Researcher Agent holds top positions on both DeepResearch Bench and DeepResearch Bench II leaderboards (see `drb1` and `drb2` branches)
 
 Release v1.2.1
 - Upgraded llama-3.3-70b-instruct NIM from version 1.13.1 to 1.14.0
@@ -112,7 +112,7 @@ Release v1.1.0
 
 Release v1.0.0
 
-Initial release of the NVIDIA AI-Q Research Assistant Blueprint featuring:
+Initial release of the NVIDIA Deep Researcher Agent Research Assistant Blueprint featuring:
 - Multi-modal PDF document upload and processing, compatible with the NVIDIA RAG 2.1 blueprint release
 - Demo web application
 - Deep research report writing including human-in-the-loop feedback

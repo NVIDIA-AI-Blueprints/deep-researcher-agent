@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Architecture Overview
 
-The NVIDIA AI-Q Blueprint is a multi-agent research system built on the
+The NVIDIA Deep Researcher Agent Blueprint is a multi-agent research system built on the
 [NVIDIA NeMo Agent Toolkit](https://docs.nvidia.com/nemo/agent-toolkit/latest/index.html).
 It uses a two-tier research architecture that keeps simple queries fast while
 reserving multi-phase deep research for complex topics.
@@ -17,8 +17,8 @@ final response. Every query enters through the Intent Classifier, which
 decides whether to respond directly (meta), perform a quick tool-augmented
 lookup (shallow), or initiate a comprehensive multi-agent investigation (deep).
 
-```{image} /_static/AIQ-arch-light.png
-:alt: AI-Q Architecture
+```{image} /_static/DeepResearcher-arch-light.png
+:alt: Deep Researcher Agent Architecture
 :align: center
 ```
 
@@ -38,7 +38,7 @@ lookup (shallow), or initiate a comprehensive multi-agent investigation (deep).
 - **Job-Scoped Sandbox** is optional. When configured, agent-generated code
   runs through one provider sandbox per deep-research job; Modal and OpenShell
   are alternative providers. Inference, source-tool calls, credentials, and
-  shared research state remain in the AI-Q process.
+  shared research state remain in the Deep Researcher Agent process.
 
 ## Core Components
 

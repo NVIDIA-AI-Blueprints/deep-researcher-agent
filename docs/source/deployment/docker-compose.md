@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Docker Compose
 
-Docker Compose is the recommended way to run the full AI-Q blueprint stack (backend, frontend, and database) without managing individual processes.
+Docker Compose is the recommended way to run the full Deep Researcher Agent blueprint stack (backend, frontend, and database) without managing individual processes.
 
 ## Prerequisites
 
@@ -84,9 +84,9 @@ Choose one of the following database configurations.
 **PostgreSQL (recommended for all deployments):**
 
 ```bash
-NAT_JOB_STORE_DB_URL=postgresql+asyncpg://aiq:aiq_dev@postgres:5432/aiq_jobs  # pragma: allowlist secret
-AIQ_CHECKPOINT_DB=postgresql://aiq:aiq_dev@postgres:5432/aiq_checkpoints  # pragma: allowlist secret
-AIQ_SUMMARY_DB=postgresql+psycopg://aiq:aiq_dev@postgres:5432/aiq_jobs  # pragma: allowlist secret
+NAT_JOB_STORE_DB_URL=postgresql+asyncpg://deep_researcher:deep_researcher_dev@postgres:5432/deep_researcher_jobs  # pragma: allowlist secret
+DEEP_RESEARCHER_CHECKPOINT_DB=postgresql://deep_researcher:deep_researcher_dev@postgres:5432/deep_researcher_checkpoints  # pragma: allowlist secret
+DEEP_RESEARCHER_SUMMARY_DB=postgresql+psycopg://deep_researcher:deep_researcher_dev@postgres:5432/deep_researcher_jobs  # pragma: allowlist secret
 ```
 
 These are the default values used by the compose stack when the variables are unset.
@@ -95,11 +95,11 @@ These are the default values used by the compose stack when the variables are un
 
 ```bash
 NAT_JOB_STORE_DB_URL=sqlite+aiosqlite:///./data/jobs.db
-AIQ_CHECKPOINT_DB=/app/data/checkpoints.db
-# AIQ_SUMMARY_DB defaults to sqlite+aiosqlite:///./summaries.db
+DEEP_RESEARCHER_CHECKPOINT_DB=/app/data/checkpoints.db
+# DEEP_RESEARCHER_SUMMARY_DB defaults to sqlite+aiosqlite:///./summaries.db
 ```
 
-When using SQLite, you can optionally remove the `depends_on` block for the `aiq-agent` service since the `postgres` container is no longer needed.
+When using SQLite, you can optionally remove the `depends_on` block for the `deep-researcher-agent` service since the `postgres` container is no longer needed.
 
 ### Artifact Storage
 
@@ -108,44 +108,44 @@ by default. The Compose stack does not provision an AWS S3 bucket; create the bu
 externally, then set:
 
 ```bash
-AIQ_ARTIFACT_BLOB_PROVIDER=s3
-AIQ_ARTIFACT_S3_BUCKET=YOUR_BUCKET_NAME
-AIQ_ARTIFACT_S3_REGION=us-west-2
-AIQ_ARTIFACT_S3_PREFIX=artifacts/v1
+DEEP_RESEARCHER_ARTIFACT_BLOB_PROVIDER=s3
+DEEP_RESEARCHER_ARTIFACT_S3_BUCKET=YOUR_BUCKET_NAME
+DEEP_RESEARCHER_ARTIFACT_S3_REGION=us-west-2
+DEEP_RESEARCHER_ARTIFACT_S3_PREFIX=artifacts/v1
 ```
 
 The checked-in Compose stack also does not deploy MinIO. To run a local MinIO server
 with Docker:
 
 ```bash
-export MINIO_CONTAINER=aiq-minio
+export MINIO_CONTAINER=deep-researcher-minio
 export MINIO_ROOT_USER=YOUR_ACCESS_KEY
 export MINIO_ROOT_PASSWORD=YOUR_SECRET_KEY
-export AIQ_ARTIFACT_S3_BUCKET=YOUR_BUCKET_NAME
+export DEEP_RESEARCHER_ARTIFACT_S3_BUCKET=YOUR_BUCKET_NAME
 
 docker pull minio/minio
 docker run --detach --name "$MINIO_CONTAINER" \
   --publish 9000:9000 --publish 9001:9001 \
   --env MINIO_ROOT_USER --env MINIO_ROOT_PASSWORD \
-  --volume aiq-minio-data:/data \
+  --volume deep-researcher-minio-data:/data \
   minio/minio server /data --console-address ":9001"
 ```
 
 Open the MinIO console at `http://localhost:9001` and create the bucket named by
-`AIQ_ARTIFACT_S3_BUCKET`. Then add the same bucket and credentials to `deploy/.env`.
+`DEEP_RESEARCHER_ARTIFACT_S3_BUCKET`. Then add the same bucket and credentials to `deploy/.env`.
 With Docker Desktop, the backend container reaches the host through
 `host.docker.internal`:
 
 ```bash
-AIQ_ARTIFACT_BLOB_PROVIDER=s3
-AIQ_ARTIFACT_S3_BUCKET=YOUR_BUCKET_NAME
-AIQ_ARTIFACT_S3_ENDPOINT_URL=http://host.docker.internal:9000
+DEEP_RESEARCHER_ARTIFACT_BLOB_PROVIDER=s3
+DEEP_RESEARCHER_ARTIFACT_S3_BUCKET=YOUR_BUCKET_NAME
+DEEP_RESEARCHER_ARTIFACT_S3_ENDPOINT_URL=http://host.docker.internal:9000
 AWS_ACCESS_KEY_ID=YOUR_ACCESS_KEY
 AWS_SECRET_ACCESS_KEY=YOUR_SECRET_KEY
 ```
 
 For another environment, replace the endpoint with an address reachable from the
-`aiq-agent` container.
+`deep-researcher-agent` container.
 
 The bucket is required when the provider is `s3`. Endpoint, region, and prefix are
 optional; leave the endpoint unset for AWS S3, and the prefix defaults to
@@ -154,17 +154,17 @@ the standard AWS credential chain. When the provider is `s3`, artifact bytes are
 in the configured bucket and SQL stores artifact metadata only.
 
 The access-key example above is for local MinIO development only. For production,
-use workload identity or a short-lived role, restrict bucket access to the AI-Q worker
+use workload identity or a short-lived role, restrict bucket access to the Deep Researcher Agent worker
 identity and configured prefix, enable Block Public Access and TLS-only access, and
-enable storage-layer encryption such as SSE-KMS. AI-Q API ownership checks do not
-protect direct bucket access, and AI-Q does not application-encrypt artifact blob bytes.
+enable storage-layer encryption such as SSE-KMS. Deep Researcher Agent API ownership checks do not
+protect direct bucket access, and Deep Researcher Agent does not application-encrypt artifact blob bytes.
 See [Production Considerations](./production.md#s3-security-responsibility).
 
 ### Frontend Runtime Settings
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `BACKEND_URL` | `http://aiq-agent:8000` | Backend API URL as seen from the frontend container. |
+| `BACKEND_URL` | `http://deep-researcher-agent:8000` | Backend API URL as seen from the frontend container. |
 
 ### Dask Worker Settings
 
@@ -189,9 +189,9 @@ This starts three services:
 
 | Service | Container name | Port | Description |
 |---------|---------------|------|-------------|
-| `aiq-agent` | `aiq-agent` | 8000 | Backend API server with embedded Dask cluster |
-| `frontend` | `aiq-blueprint-ui` | 3000 | [Next.js](https://nextjs.org/) web UI |
-| `postgres` | `aiq-postgres` | 5432 | PostgreSQL database |
+| `deep-researcher-agent` | `deep-researcher-agent` | 8000 | Backend API server with embedded Dask cluster |
+| `frontend` | `deep-researcher-blueprint-ui` | 3000 | [Next.js](https://nextjs.org/) web UI |
+| `postgres` | `deep-researcher-postgres` | 5432 | PostgreSQL database |
 
 Open [http://localhost:3000](http://localhost:3000) to access the web UI.
 
@@ -263,12 +263,12 @@ Deploy the RAG services using the NVIDIA RAG Blueprint Docker guides:
 
 ### Cross-Stack Networking
 
-When AI-Q and RAG are deployed as separate Docker Compose stacks, the AI-Q backend cannot resolve RAG service names (`rag-server`, `ingestor-server`) because the containers are on different Docker networks.
+When Deep Researcher Agent and RAG are deployed as separate Docker Compose stacks, the Deep Researcher Agent backend cannot resolve RAG service names (`rag-server`, `ingestor-server`) because the containers are on different Docker networks.
 
-Connect the AI-Q backend container to the RAG network after both stacks are running:
+Connect the Deep Researcher Agent backend container to the RAG network after both stacks are running:
 
 ```bash
-docker network connect nvidia-rag aiq-agent
+docker network connect nvidia-rag deep-researcher-agent
 ```
 
 Then use the RAG service names directly in `deploy/.env`:
@@ -278,7 +278,7 @@ RAG_SERVER_URL=http://rag-server:8081/v1
 RAG_INGEST_URL=http://ingestor-server:8082/v1
 ```
 
-This must be re-run if the `aiq-agent` container is recreated (for example, after `docker compose down && up`).
+This must be re-run if the `deep-researcher-agent` container is recreated (for example, after `docker compose down && up`).
 
 ## Database Setup
 
@@ -286,16 +286,16 @@ This must be re-run if the `aiq-agent` container is recreated (for example, afte
 
 The compose stack includes a PostgreSQL 16 container (`postgres:16-alpine`). On first startup with a fresh volume, the `init-db.sql` script runs automatically and:
 
-1. Creates the `aiq_checkpoints` database (the `aiq_jobs` database is created by the `POSTGRES_DB` environment variable).
-2. Grants permissions to the `aiq` user.
-3. Creates the `job_info` table in `aiq_jobs` with performance indices.
+1. Creates the `deep_researcher_checkpoints` database (the `deep_researcher_jobs` database is created by the `POSTGRES_DB` environment variable).
+2. Grants permissions to the `deep-researcher` user.
+3. Creates the `job_info` table in `deep_researcher_jobs` with performance indices.
 
 Tables created automatically by the application at runtime:
 - `job_events` -- created by `event_store.py` using SQLAlchemy.
 - [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview) checkpoint tables -- created by `AsyncPostgresSaver`.
 - `summaries` -- created by `summary_store.py` if not present.
 
-The PostgreSQL healthcheck verifies both `aiq_jobs` and `aiq_checkpoints` databases are ready before the backend starts.
+The PostgreSQL healthcheck verifies both `deep_researcher_jobs` and `deep_researcher_checkpoints` databases are ready before the backend starts.
 
 ### SQLite Alternative
 
@@ -306,7 +306,7 @@ For lightweight development without PostgreSQL, configure SQLite connection stri
 | Volume | Mount point | Purpose |
 |--------|-------------|---------|
 | `../../configs` (bind mount, read-only) | `/app/configs` | Workflow configuration files |
-| `aiq-data` (named volume) | `/app/data` | LlamaIndex persistence (ChromaDB), SQLite databases |
+| `deep-researcher-data` (named volume) | `/app/data` | LlamaIndex persistence (ChromaDB), SQLite databases |
 | `postgres-data` (named volume) | `/var/lib/postgresql/data` | PostgreSQL data directory |
 
 ## Stopping and Cleanup
@@ -326,9 +326,9 @@ docker compose --env-file ../.env -f docker-compose.yaml down -v
 ### Check Container Logs
 
 ```bash
-docker logs aiq-agent -f
-docker logs aiq-blueprint-ui -f
-docker logs aiq-postgres -f
+docker logs deep-researcher-agent -f
+docker logs deep-researcher-blueprint-ui -f
+docker logs deep-researcher-postgres -f
 ```
 
 ### Verify the Backend Is Healthy
@@ -340,7 +340,7 @@ curl http://localhost:8000/health
 ### Connect to the Database
 
 ```bash
-docker exec -it aiq-postgres psql -U aiq -d aiq_jobs
+docker exec -it deep-researcher-postgres psql -U deep_researcher -d deep_researcher_jobs
 ```
 
 ### Rebuild Without Cache
@@ -359,7 +359,7 @@ docker compose --env-file ../.env -f docker-compose.yaml up -d
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | Backend fails to start | Missing API keys in `deploy/.env` | Verify `NVIDIA_API_KEY` and at least one search key are set. |
-| Frontend shows connection error | Backend not yet ready | Wait for the backend healthcheck to pass; check `docker logs aiq-agent`. |
+| Frontend shows connection error | Backend not yet ready | Wait for the backend healthcheck to pass; check `docker logs deep-researcher-agent`. |
 | Port already in use | Another service occupies 3000, 8000, or 5432 | Override with `PORT` or `FRONTEND_PORT` variables. |
-| Database connection refused | PostgreSQL not healthy | Check `docker logs aiq-postgres`; verify `init-db.sql` ran correctly. |
-| FRAG mode fails to connect to RAG | Separate Docker networks | Run `docker network connect nvidia-rag aiq-agent`. |
+| Database connection refused | PostgreSQL not healthy | Check `docker logs deep-researcher-postgres`; verify `init-db.sql` ran correctly. |
+| FRAG mode fails to connect to RAG | Separate Docker networks | Run `docker network connect nvidia-rag deep-researcher-agent`. |

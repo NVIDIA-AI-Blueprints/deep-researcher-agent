@@ -17,7 +17,7 @@ import httpx
 import pytest
 from mcp.shared.version import LATEST_PROTOCOL_VERSION
 
-from aiq_mcp import server
+from deep_researcher_mcp import server
 
 
 def _settings(tmp_path: Path, **overrides: Any) -> server.ServerSettings:
@@ -131,7 +131,7 @@ def _initialize_request(request_id: int) -> dict[str, Any]:
         "params": {
             "protocolVersion": LATEST_PROTOCOL_VERSION,
             "capabilities": {},
-            "clientInfo": {"name": "aiq-mcp-test", "version": "1.0"},
+            "clientInfo": {"name": "deep-researcher-mcp-test", "version": "1.0"},
         },
     }
 
@@ -182,17 +182,17 @@ def test_settings_defaults_and_overrides(tmp_path: Path) -> None:
     config_path = tmp_path / "workflow.yml"
     overridden = server.ServerSettings.from_env(
         {
-            "AIQ_MCP_HOST": "127.0.0.1",
-            "AIQ_MCP_PORT": "9100",
-            "AIQ_MCP_PATH": "/legacy/research/mcp/",
-            "AIQ_MCP_WORKERS": "3",
-            "AIQ_MCP_LOG_LEVEL": "warning",
-            "AIQ_MCP_CONFIG": str(config_path),
-            "AIQ_MCP_SHALLOW_INLINE_WAIT_SECONDS": "4.5",
-            "AIQ_MCP_MAX_QUERY_CHARS": "2000",
-            "AIQ_MCP_CORS_ORIGINS": "http://localhost:6274, https://inspector.example",
-            "AIQ_MCP_ALLOWED_HOSTS": "research.example.com,research.example.com:*",
-            "AIQ_MCP_ALLOWED_ORIGINS": "https://research.example.com",
+            "DEEP_RESEARCHER_MCP_HOST": "127.0.0.1",
+            "DEEP_RESEARCHER_MCP_PORT": "9100",
+            "DEEP_RESEARCHER_MCP_PATH": "/legacy/research/mcp/",
+            "DEEP_RESEARCHER_MCP_WORKERS": "3",
+            "DEEP_RESEARCHER_MCP_LOG_LEVEL": "warning",
+            "DEEP_RESEARCHER_MCP_CONFIG": str(config_path),
+            "DEEP_RESEARCHER_MCP_SHALLOW_INLINE_WAIT_SECONDS": "4.5",
+            "DEEP_RESEARCHER_MCP_MAX_QUERY_CHARS": "2000",
+            "DEEP_RESEARCHER_MCP_CORS_ORIGINS": "http://localhost:6274, https://inspector.example",
+            "DEEP_RESEARCHER_MCP_ALLOWED_HOSTS": "research.example.com,research.example.com:*",
+            "DEEP_RESEARCHER_MCP_ALLOWED_ORIGINS": "https://research.example.com",
         }
     )
     assert overridden == server.ServerSettings(
@@ -212,7 +212,7 @@ def test_settings_defaults_and_overrides(tmp_path: Path) -> None:
             "https://inspector.example",
         ),
     )
-    assert server.ServerSettings.from_env({"AIQ_MCP_CORS_ORIGINS": ""}).cors_origins == ()
+    assert server.ServerSettings.from_env({"DEEP_RESEARCHER_MCP_CORS_ORIGINS": ""}).cors_origins == ()
 
 
 def test_installed_layout_disables_checkout_defaults(
@@ -221,7 +221,7 @@ def test_installed_layout_disables_checkout_defaults(
 ) -> None:
     """An installed package must not point defaults at site-packages paths."""
     site_packages = tmp_path / "venv" / "lib" / "python3.13" / "site-packages"
-    module_path = site_packages / "aiq_mcp" / "server.py"
+    module_path = site_packages / "deep_researcher_mcp" / "server.py"
     module_path.parent.mkdir(parents=True)
     module_path.write_text("")
     monkeypatch.setattr(server, "__file__", str(module_path))
@@ -229,13 +229,15 @@ def test_installed_layout_disables_checkout_defaults(
     assert server._find_source_checkout_root() is None
 
     monkeypatch.setattr(server, "DEFAULT_CONFIG", None)
-    with pytest.raises(ValueError, match="AIQ_MCP_CONFIG must point to a workflow config"):
+    with pytest.raises(ValueError, match="DEEP_RESEARCHER_MCP_CONFIG must point to a workflow config"):
         server.ServerSettings.from_env({})
 
     explicit = tmp_path / "workflow.yml"
-    assert server.ServerSettings.from_env({"AIQ_MCP_CONFIG": str(explicit)}).config_path == explicit.resolve()
+    assert (
+        server.ServerSettings.from_env({"DEEP_RESEARCHER_MCP_CONFIG": str(explicit)}).config_path == explicit.resolve()
+    )
 
-    monkeypatch.delenv("AIQ_MCP_ENV_FILE", raising=False)
+    monkeypatch.delenv("DEEP_RESEARCHER_MCP_ENV_FILE", raising=False)
     monkeypatch.setattr(server, "_DEFAULT_ENV_FILE", None)
     server._load_env_file()
 
@@ -255,7 +257,7 @@ def test_load_env_file_uses_public_name_without_overriding_process_env(
     env_file.write_text(
         "PHASE4_FROM_FILE=loaded\nPHASE4_EXISTING=file-value\n"  # pragma: allowlist secret
     )
-    monkeypatch.setenv("AIQ_MCP_ENV_FILE", str(env_file))
+    monkeypatch.setenv("DEEP_RESEARCHER_MCP_ENV_FILE", str(env_file))
     monkeypatch.setenv("PHASE4_EXISTING", "process-value")
     monkeypatch.delenv("PHASE4_FROM_FILE", raising=False)
 
@@ -271,7 +273,7 @@ def test_load_env_file_warns_for_missing_explicit_path(
     caplog,
 ) -> None:
     missing = tmp_path / "missing.env"
-    monkeypatch.setenv("AIQ_MCP_ENV_FILE", str(missing))
+    monkeypatch.setenv("DEEP_RESEARCHER_MCP_ENV_FILE", str(missing))
 
     server._load_env_file()
 
@@ -281,24 +283,24 @@ def test_load_env_file_warns_for_missing_explicit_path(
 @pytest.mark.parametrize(
     ("environment", "message"),
     [
-        ({"AIQ_MCP_HOST": " "}, "AIQ_MCP_HOST"),
-        ({"AIQ_MCP_PORT": "0"}, "AIQ_MCP_PORT"),
-        ({"AIQ_MCP_PORT": "65536"}, "AIQ_MCP_PORT"),
-        ({"AIQ_MCP_PORT": "not-a-port"}, "AIQ_MCP_PORT"),
-        ({"AIQ_MCP_PATH": "mcp"}, "AIQ_MCP_PATH"),
-        ({"AIQ_MCP_PATH": "/"}, "AIQ_MCP_PATH"),
-        ({"AIQ_MCP_PATH": "//"}, "AIQ_MCP_PATH"),
-        ({"AIQ_MCP_PATH": "/health"}, "reserved route"),
-        ({"AIQ_MCP_PATH": "/live/"}, "reserved route"),
-        ({"AIQ_MCP_PATH": "/mcp?debug=1"}, "AIQ_MCP_PATH"),
-        ({"AIQ_MCP_PATH": "/mcp/{tenant}"}, "literal path"),
-        ({"AIQ_MCP_WORKERS": "0"}, "AIQ_MCP_WORKERS"),
-        ({"AIQ_MCP_LOG_LEVEL": "verbose"}, "AIQ_MCP_LOG_LEVEL"),
-        ({"AIQ_MCP_SHALLOW_INLINE_WAIT_SECONDS": "-1"}, "AIQ_MCP_SHALLOW_INLINE_WAIT_SECONDS"),
-        ({"AIQ_MCP_SHALLOW_INLINE_WAIT_SECONDS": "nan"}, "finite"),
-        ({"AIQ_MCP_MAX_QUERY_CHARS": "0"}, "AIQ_MCP_MAX_QUERY_CHARS"),
-        ({"AIQ_MCP_MAX_QUERY_CHARS": "not-a-count"}, "AIQ_MCP_MAX_QUERY_CHARS"),
-        ({"AIQ_MCP_ALLOWED_HOSTS": ""}, "AIQ_MCP_ALLOWED_HOSTS"),
+        ({"DEEP_RESEARCHER_MCP_HOST": " "}, "DEEP_RESEARCHER_MCP_HOST"),
+        ({"DEEP_RESEARCHER_MCP_PORT": "0"}, "DEEP_RESEARCHER_MCP_PORT"),
+        ({"DEEP_RESEARCHER_MCP_PORT": "65536"}, "DEEP_RESEARCHER_MCP_PORT"),
+        ({"DEEP_RESEARCHER_MCP_PORT": "not-a-port"}, "DEEP_RESEARCHER_MCP_PORT"),
+        ({"DEEP_RESEARCHER_MCP_PATH": "mcp"}, "DEEP_RESEARCHER_MCP_PATH"),
+        ({"DEEP_RESEARCHER_MCP_PATH": "/"}, "DEEP_RESEARCHER_MCP_PATH"),
+        ({"DEEP_RESEARCHER_MCP_PATH": "//"}, "DEEP_RESEARCHER_MCP_PATH"),
+        ({"DEEP_RESEARCHER_MCP_PATH": "/health"}, "reserved route"),
+        ({"DEEP_RESEARCHER_MCP_PATH": "/live/"}, "reserved route"),
+        ({"DEEP_RESEARCHER_MCP_PATH": "/mcp?debug=1"}, "DEEP_RESEARCHER_MCP_PATH"),
+        ({"DEEP_RESEARCHER_MCP_PATH": "/mcp/{tenant}"}, "literal path"),
+        ({"DEEP_RESEARCHER_MCP_WORKERS": "0"}, "DEEP_RESEARCHER_MCP_WORKERS"),
+        ({"DEEP_RESEARCHER_MCP_LOG_LEVEL": "verbose"}, "DEEP_RESEARCHER_MCP_LOG_LEVEL"),
+        ({"DEEP_RESEARCHER_MCP_SHALLOW_INLINE_WAIT_SECONDS": "-1"}, "DEEP_RESEARCHER_MCP_SHALLOW_INLINE_WAIT_SECONDS"),
+        ({"DEEP_RESEARCHER_MCP_SHALLOW_INLINE_WAIT_SECONDS": "nan"}, "finite"),
+        ({"DEEP_RESEARCHER_MCP_MAX_QUERY_CHARS": "0"}, "DEEP_RESEARCHER_MCP_MAX_QUERY_CHARS"),
+        ({"DEEP_RESEARCHER_MCP_MAX_QUERY_CHARS": "not-a-count"}, "DEEP_RESEARCHER_MCP_MAX_QUERY_CHARS"),
+        ({"DEEP_RESEARCHER_MCP_ALLOWED_HOSTS": ""}, "DEEP_RESEARCHER_MCP_ALLOWED_HOSTS"),
     ],
 )
 def test_settings_reject_invalid_values(environment: dict[str, str], message: str) -> None:
@@ -310,12 +312,12 @@ def test_validate_startup_configuration(tmp_path: Path, monkeypatch: pytest.Monk
     config_path = tmp_path / "config.yml"
     config_path.write_text("functions: {}\n")
     settings = _settings(tmp_path, config_path=config_path)
-    monkeypatch.setenv("AIQ_CHECKPOINT_DB", "postgresql+asyncpg://db.example/aiq_jobs")
+    monkeypatch.setenv("DEEP_RESEARCHER_CHECKPOINT_DB", "postgresql+asyncpg://db.example/deep_researcher_jobs")
 
     server._validate_startup_configuration(settings)
 
-    assert server._resolve_checkpoint_db_url() == "postgresql://db.example/aiq_jobs"
-    assert server.os.environ["AIQ_CHECKPOINT_DB"] == "postgresql://db.example/aiq_jobs"
+    assert server._resolve_checkpoint_db_url() == "postgresql://db.example/deep_researcher_jobs"
+    assert server.os.environ["DEEP_RESEARCHER_CHECKPOINT_DB"] == "postgresql://db.example/deep_researcher_jobs"
 
 
 def test_validate_startup_configuration_requires_config_and_postgres(
@@ -323,13 +325,13 @@ def test_validate_startup_configuration_requires_config_and_postgres(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     settings = _settings(tmp_path)
-    monkeypatch.delenv("AIQ_CHECKPOINT_DB", raising=False)
+    monkeypatch.delenv("DEEP_RESEARCHER_CHECKPOINT_DB", raising=False)
 
     with pytest.raises(ValueError, match="config does not exist"):
         server._validate_startup_configuration(settings)
 
     settings.config_path.write_text("functions: {}\n")
-    with pytest.raises(ValueError, match="AIQ_CHECKPOINT_DB"):
+    with pytest.raises(ValueError, match="DEEP_RESEARCHER_CHECKPOINT_DB"):
         server._validate_startup_configuration(settings)
 
 
@@ -337,7 +339,7 @@ def test_job_manager_uses_one_normalized_checkpoint_dsn_for_ledger_and_todos(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("AIQ_CHECKPOINT_DB", "postgresql+asyncpg://db.example/aiq_jobs")
+    monkeypatch.setenv("DEEP_RESEARCHER_CHECKPOINT_DB", "postgresql+asyncpg://db.example/deep_researcher_jobs")
     runtime = server.MCPRuntime(
         _settings(tmp_path),
         runner=_Service("runner", []),
@@ -346,8 +348,8 @@ def test_job_manager_uses_one_normalized_checkpoint_dsn_for_ledger_and_todos(
 
     manager = runtime._create_job_manager()
 
-    assert manager._store._db_url == "postgresql://db.example/aiq_jobs"
-    assert manager._checkpoint_todo_reader._db_url == "postgresql://db.example/aiq_jobs"
+    assert manager._store._db_url == "postgresql://db.example/deep_researcher_jobs"
+    assert manager._checkpoint_todo_reader._db_url == "postgresql://db.example/deep_researcher_jobs"
     assert manager._store._schema == "public"
     assert manager._checkpoint_todo_reader._checkpoints_table == '"public".checkpoints'
 
@@ -356,7 +358,7 @@ def test_job_manager_uses_one_normalized_checkpoint_dsn_for_ledger_and_todos(
 async def test_fastmcp_settings_and_exact_tool_schemas(tmp_path: Path) -> None:
     runtime = server.MCPRuntime(_settings(tmp_path), validate_startup=lambda: None)
 
-    assert runtime.mcp.name == "aiq_deep_research"
+    assert runtime.mcp.name == "deep_researcher_deep_research"
     assert runtime.mcp.settings.host == "0.0.0.0"
     assert runtime.mcp.settings.port == 9001
     assert runtime.mcp.settings.streamable_http_path == "/mcp"
@@ -544,7 +546,7 @@ async def test_outer_lifespan_owns_services_once_across_stateless_requests(
         assert called.status_code == 200
         assert first.headers["content-type"].startswith("application/json")
         assert "mcp-session-id" not in first.headers
-        assert first.json()["result"]["serverInfo"]["name"] == "aiq_deep_research"
+        assert first.json()["result"]["serverInfo"]["name"] == "deep_researcher_deep_research"
         assert {tool["name"] for tool in listed.json()["result"]["tools"]} == {
             "submit_query",
             "poll_query",
@@ -1029,7 +1031,7 @@ async def test_transport_sanitizes_job_service_exceptions(
         validate_startup=lambda: None,
     )
     transport = httpx.ASGITransport(app=runtime.app)
-    caplog.set_level("ERROR", logger="aiq_mcp.server")
+    caplog.set_level("ERROR", logger="deep_researcher_mcp.server")
 
     async with runtime.app.router.lifespan_context(runtime.app):
         async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as client:
@@ -1078,7 +1080,7 @@ async def test_transport_sanitizes_submit_response_processing_exceptions(
         validate_startup=lambda: None,
     )
     transport = httpx.ASGITransport(app=runtime.app)
-    caplog.set_level("ERROR", logger="aiq_mcp.server")
+    caplog.set_level("ERROR", logger="deep_researcher_mcp.server")
 
     async with runtime.app.router.lifespan_context(runtime.app):
         async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as client:
@@ -1153,7 +1155,7 @@ async def test_transport_sanitizes_malformed_queued_submit_response(
         validate_startup=lambda: None,
     )
     transport = httpx.ASGITransport(app=runtime.app)
-    caplog.set_level("ERROR", logger="aiq_mcp.server")
+    caplog.set_level("ERROR", logger="deep_researcher_mcp.server")
 
     async with runtime.app.router.lifespan_context(runtime.app):
         async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as client:
@@ -1197,7 +1199,7 @@ async def test_inline_wait_exception_preserves_queued_capability_without_exposin
         validate_startup=lambda: None,
     )
     transport = httpx.ASGITransport(app=runtime.app)
-    caplog.set_level("ERROR", logger="aiq_mcp.server")
+    caplog.set_level("ERROR", logger="deep_researcher_mcp.server")
 
     async with runtime.app.router.lifespan_context(runtime.app):
         async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as client:
@@ -1256,14 +1258,17 @@ async def test_classifier_failure_becomes_mcp_tool_error_without_business_payloa
 
 
 def test_create_app_returns_fresh_worker_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("AIQ_MCP_CORS_ORIGINS", "")
+    monkeypatch.setenv("DEEP_RESEARCHER_MCP_CORS_ORIGINS", "")
 
     first = server.create_app()
     second = server.create_app()
 
     assert first is not second
-    assert first.state.aiq_mcp_runtime is not second.state.aiq_mcp_runtime
-    assert first.state.aiq_mcp_runtime.mcp.session_manager is not second.state.aiq_mcp_runtime.mcp.session_manager
+    assert first.state.deep_researcher_mcp_runtime is not second.state.deep_researcher_mcp_runtime
+    assert (
+        first.state.deep_researcher_mcp_runtime.mcp.session_manager
+        is not second.state.deep_researcher_mcp_runtime.mcp.session_manager
+    )
 
 
 def test_main_uses_uvicorn_import_string(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1271,10 +1276,10 @@ def test_main_uses_uvicorn_import_string(monkeypatch: pytest.MonkeyPatch) -> Non
 
     calls: list[tuple[str, dict[str, Any]]] = []
     logging_calls: list[dict[str, Any]] = []
-    monkeypatch.setenv("AIQ_MCP_HOST", "127.0.0.1")
-    monkeypatch.setenv("AIQ_MCP_PORT", "9100")
-    monkeypatch.setenv("AIQ_MCP_WORKERS", "3")
-    monkeypatch.setenv("AIQ_MCP_LOG_LEVEL", "warning")
+    monkeypatch.setenv("DEEP_RESEARCHER_MCP_HOST", "127.0.0.1")
+    monkeypatch.setenv("DEEP_RESEARCHER_MCP_PORT", "9100")
+    monkeypatch.setenv("DEEP_RESEARCHER_MCP_WORKERS", "3")
+    monkeypatch.setenv("DEEP_RESEARCHER_MCP_LOG_LEVEL", "warning")
     monkeypatch.setattr(server.logging, "basicConfig", lambda **kwargs: logging_calls.append(kwargs))
     monkeypatch.setattr(uvicorn, "run", lambda app_path, **kwargs: calls.append((app_path, kwargs)))
 
@@ -1282,7 +1287,7 @@ def test_main_uses_uvicorn_import_string(monkeypatch: pytest.MonkeyPatch) -> Non
 
     assert calls == [
         (
-            "aiq_mcp.server:app",
+            "deep_researcher_mcp.server:app",
             {
                 "host": "127.0.0.1",
                 "port": 9100,

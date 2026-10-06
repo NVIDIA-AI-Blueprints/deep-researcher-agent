@@ -1,10 +1,10 @@
-# NVIDIA AI-Q Blueprint UI
+# NVIDIA Deep Researcher Agent Blueprint UI
 
 A modern research assistant interface built with Next.js, React, TypeScript, TailwindCSS, and NVIDIA KUI Foundations.
 
 ## Overview
 
-The AI-Q Blueprint UI provides an accessible, feature-rich frontend for the AI-Q backend. It features:
+The Deep Researcher Agent Blueprint UI provides an accessible, feature-rich frontend for the Deep Researcher Agent backend. It features:
 
 - **Next.js** with App Router and Turbopack
 - **React** with TypeScript (strict mode)
@@ -17,7 +17,7 @@ The AI-Q Blueprint UI provides an accessible, feature-rich frontend for the AI-Q
 
 - Node.js
 - npm
-- AI-Q Blueprint running (default: `http://localhost:8000`)
+- Deep Researcher Agent Blueprint running (default: `http://localhost:8000`)
 
 ## Quick Start
 
@@ -133,7 +133,7 @@ This architecture ensures the backend doesn't need public exposure - only the UI
 
 ## Session Storage Management
 
-The AI-Q UI uses localStorage to persist chat sessions across page refreshes. To prevent quota exceeded errors and ensure optimal performance, the app implements automatic storage management.
+The Deep Researcher Agent UI uses localStorage to persist chat sessions across page refreshes. To prevent quota exceeded errors and ensure optimal performance, the app implements automatic storage management.
 
 ### Storage Limits
 
@@ -200,7 +200,7 @@ frontend-only and does not add model calls or change the backend event contract.
 From the **UI directory** (`frontends/ui/`):
 
 ```bash
-docker build -f deploy/Dockerfile -t aiq-blueprint-ui:latest .
+docker build -f deploy/Dockerfile -t deep-researcher-blueprint-ui:latest .
 ```
 
 ### Run
@@ -211,7 +211,7 @@ docker build -f deploy/Dockerfile -t aiq-blueprint-ui:latest .
 docker run -p 3000:3000 \
   -e BACKEND_URL=http://localhost:8000 \
   -e REQUIRE_AUTH=false \
-  aiq-blueprint-ui:latest
+  deep-researcher-blueprint-ui:latest
 ```
 
 **With OAuth authentication:**
@@ -225,7 +225,7 @@ docker run -p 3000:3000 \
   -e OAUTH_CLIENT_ID=your-client-id \
   -e OAUTH_CLIENT_SECRET=your-client-secret \
   -e OAUTH_ISSUER=https://your-oidc-provider.com \
-  aiq-blueprint-ui:latest
+  deep-researcher-blueprint-ui:latest
 ```
 
 ### Docker Compose Example
@@ -233,7 +233,7 @@ docker run -p 3000:3000 \
 ```yaml
 services:
   frontend:
-    image: aiq-blueprint-ui:latest
+    image: deep-researcher-blueprint-ui:latest
     environment:
       # Backend
       - BACKEND_URL=http://backend:8000
@@ -267,7 +267,7 @@ When running in Docker and connecting to services on the host machine:
 docker run -p 3000:3000 \
   -e BACKEND_URL=http://host.docker.internal:8000 \
   -e REQUIRE_AUTH=false \
-  aiq-blueprint-ui:latest
+  deep-researcher-blueprint-ui:latest
 ```
 
 #### Docker Network

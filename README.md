@@ -15,11 +15,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 -->
-<h1>NVIDIA AI-Q Blueprint</h1>
+<h1>NVIDIA Deep Researcher Agent Blueprint</h1>
 
 > **🏆 BENCHMARK NOTE 🏆**
 >
-> To obtain results consistent with the **nvidia-aiq** [DeepResearch Bench](https://huggingface.co/spaces/muset-ai/DeepResearch-Bench-Leaderboard) leaderboard and [DeepResearch Bench II](https://github.com/imlrz/DeepResearch-Bench-II) benchmark repository results, please use the [`drb1`](https://github.com/NVIDIA-AI-Blueprints/aiq/tree/drb1) and [`drb2`](https://github.com/NVIDIA-AI-Blueprints/aiq/tree/drb2) branches, respectively.
+> To obtain results consistent with the **nvidia-deep-researcher** [DeepResearch Bench](https://huggingface.co/spaces/muset-ai/DeepResearch-Bench-Leaderboard) leaderboard and [DeepResearch Bench II](https://github.com/imlrz/DeepResearch-Bench-II) benchmark repository results, please use the [`drb1`](https://github.com/NVIDIA-AI-Blueprints/deep-researcher-agent/tree/drb1) and [`drb2`](https://github.com/NVIDIA-AI-Blueprints/deep-researcher-agent/tree/drb2) branches, respectively.
 
 
 ## Table of Contents
@@ -52,10 +52,10 @@ limitations under the License.
 
 ## Overview
 
-The NVIDIA AI-Q Blueprint is a deployable research backend built on the [NVIDIA NeMo Agent Toolkit](https://docs.nvidia.com/nemo/agent-toolkit/latest/) and [LangChain Deep Agents](https://docs.langchain.com/oss/python/deepagents/overview). Teams can self-host the application boundary and connect deployment-owned models, data sources, authentication, policy controls, storage, and observability. It provides both **quick, cited answers** and **in-depth, report-style research**, plus benchmarks and evaluation harnesses for measuring quality. AI-Q is focused on governed research workflows; it is not a general-purpose coding-agent harness.
+The NVIDIA Deep Researcher Agent Blueprint is a deployable research backend built on the [NVIDIA NeMo Agent Toolkit](https://docs.nvidia.com/nemo/agent-toolkit/latest/) and [LangChain Deep Agents](https://docs.langchain.com/oss/python/deepagents/overview). Teams can self-host the application boundary and connect deployment-owned models, data sources, authentication, policy controls, storage, and observability. It provides both **quick, cited answers** and **in-depth, report-style research**, plus benchmarks and evaluation harnesses for measuring quality. Deep Researcher Agent is focused on governed research workflows; it is not a general-purpose coding-agent harness.
 
 <p align="center">
-<img src="./docs/assets/AIQ-arch-light.png" alt="AI-Q Architecture" width="800">
+<img src="./docs/assets/DeepResearcher-arch-light.png" alt="Deep Researcher Agent Architecture" width="800">
 </p>
 
 **Key features:**
@@ -67,7 +67,7 @@ The NVIDIA AI-Q Blueprint is a deployable research backend built on the [NVIDIA 
 - **Workflow configuration** — YAML configs define agents, tools, LLMs, and routing behavior so you can tune workflows without code changes.
 - **Modular workflows** — All agents (orchestration node, shallow researcher, deep researcher, clarifier) are composable; each can run standalone or as part of the full pipeline.
 - **Skills, sandbox execution, and durable outputs** — Built-in research/synthesis skills are exposed as host-side, read-only definitions. Skills that invoke code use a provider-neutral sandbox contract; Modal and OpenShell create one physical sandbox per deep-research job. Opt-in rich-file capture checkpoints manifest-declared files after successful sandbox commands, finalizes on success/failure, stores bytes in SQL or S3-compatible storage, and delivers metadata to the Files tab live and on replay.
-- **Portable Agent Skills** — `aiq-deploy` selects, starts, and validates an AI-Q deployment; `aiq-research` calls routed chat and async research from compatible coding harnesses.
+- **Portable Agent Skills** — `deep-researcher-deploy` selects, starts, and validates an Deep Researcher Agent deployment; `deep-researcher-research` calls routed chat and async research from compatible coding harnesses.
 - **Data source registry** — UI toggles and request payloads can select web, paper, enterprise, collaboration, and knowledge-layer sources per message.
 - **Expanded sources** — Paper search supports Serper, SerpAPI, and SearchAPI; You.com adds web, contents, general-research, and finance-research tools; Nimble adds configurable web search; focused profiles demonstrate DuckDuckGo news, Polymarket, OpenSearch, and Azure AI Search knowledge retrieval.
 - **Production API and auth** — REST endpoints, async job ownership, per-user OAuth-protected MCP sources, token validator entry points, and provider lifecycle hooks support authenticated deployments; a separate public MCP server exposes stateless research tools for trusted networks.
@@ -87,7 +87,7 @@ Recent changes include:
 - **Work that continues from a completed report** — Users can ask questions against an existing
   report, create child-job rewrites, or run delta research with the parent report as context.
 - **Portable skills, sandboxes, and durable files** — Provider-neutral sandbox execution,
-  the new `aiq-deploy` skill, expanded `aiq-research` workflows, opt-in artifact capture, SQL or
+  the new `deep-researcher-deploy` skill, expanded `deep-researcher-research` workflows, opt-in artifact capture, SQL or
   S3-compatible storage, and live or replayed Files-tab access turn generated files into durable
   outputs.
 - **Sources, integrations, and policy controls** — OpenSearch and Azure AI Search join the knowledge backends;
@@ -98,10 +98,10 @@ Recent changes include:
   chart honors the selected release namespace, and the UI improves concurrent-research activity,
   session recovery, and WebSocket reliability.
 
-AI-Q v2.2.0 is published on NVIDIA NGC as the
-[`aiq-agent` backend container](https://catalog.ngc.nvidia.com/orgs/nvidia/blueprint/containers/aiq-agent/2.2.0),
-[`aiq-frontend` web container](https://catalog.ngc.nvidia.com/orgs/nvidia/blueprint/containers/aiq-frontend/2.2.0),
-and [`aiq2-web` Helm chart](https://catalog.ngc.nvidia.com/orgs/nvidia/blueprint/helm-charts/aiq2-web/2.2.0).
+Deep Researcher Agent v2.2.0 is published on NVIDIA NGC as the
+[`deep-researcher-agent` backend container](https://catalog.ngc.nvidia.com/orgs/nvidia/blueprint/containers/aiq-agent/2.2.0),
+[`deep-researcher-frontend` web container](https://catalog.ngc.nvidia.com/orgs/nvidia/blueprint/containers/aiq-frontend/2.2.0),
+and [`deep-researcher-web` Helm chart](https://catalog.ngc.nvidia.com/orgs/nvidia/blueprint/helm-charts/aiq2-web/2.2.0).
 Each artifact uses version `2.2.0`.
 
 See the [changelog](CHANGELOG.md) for detailed release history; the linked feature docs describe
@@ -123,7 +123,7 @@ The checked-in default CLI and web profiles use these core components:
 - Serper, SerpAPI, or SearchAPI for Google Scholar paper search
 
 > **Known hosted-serving limitation:** Nemotron 3.5 Lightning can intermittently produce citation-incomplete or
-> malformed shallow drafts when served through NVIDIA API Catalog. AI-Q fails closed instead of publishing those
+> malformed shallow drafts when served through NVIDIA API Catalog. Deep Researcher Agent fails closed instead of publishing those
 > drafts. The Brev getting-started launchable uses Nemotron Ultra for shallow research; the general-purpose shipped
 > profiles retain Lightning. See [Troubleshooting](docs/source/resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog)
 > for details and the self-hosted Lightning option.
@@ -176,7 +176,7 @@ For detailed installation instructions, refer to [Installation -- Hardware Requi
 
 ## Architecture
 
-AI-Q uses a [LangGraph](https://www.langchain.com/langgraph)-based state machine with the following key components:
+Deep Researcher Agent uses a [LangGraph](https://www.langchain.com/langgraph)-based state machine with the following key components:
 
 - **Orchestration node**: Classifies intent (meta vs. research), produces meta responses when needed, and sets depth (shallow vs. deep) in one step
 - **Shallow research agent**: Bounded tool-augmented research optimized for speed
@@ -189,7 +189,7 @@ Each agent can be run individually or as part of the orchestrated workflow. For 
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/NVIDIA-AI-Blueprints/aiq.git && cd aiq
+git clone https://github.com/NVIDIA-AI-Blueprints/deep-researcher-agent.git deep-researcher && cd deep-researcher
 ```
 
 ### Automated Setup
@@ -220,7 +220,7 @@ uv pip install -e ".[dev]"
 # Install frontends (pick what you need)
 uv pip install -e ./frontends/cli          # CLI frontend
 uv pip install -e ./frontends/debug        # Debug console
-uv pip install -e ./frontends/aiq_api      # Unified API (includes debug)
+uv pip install -e ./frontends/deep_researcher_api      # Unified API (includes debug)
 
 # Install benchmarks (pick what you need)
 uv pip install -e ./frontends/benchmarks/freshqa
@@ -308,11 +308,11 @@ The `configs/` directory holds YAML workflow configs that define agents, tools, 
 | `config_web_opensearch.yml` | Nemotron 3.5 Lightning; Nemotron 3 Ultra; Nemotron 3 Embed | Web/API with built-in OpenSearch knowledge retrieval plus Tavily; supports self-hosted, `es`, and `aoss` authentication modes. |
 | `config_web_azure_ai_search.yml` | Nemotron 3.5 Lightning; Nemotron 3 Ultra; Nemotron 3 Embed | Web/API with Azure AI Search knowledge retrieval plus Tavily; supports API-key and Azure identity authentication. |
 | `config_frontier_models.yml` | GPT Sol/Luna; Gemma 4 summary | LlamaIndex frontier profile using GPT Luna for intent, shallow research, source routing, and research, with GPT Sol for clarification, orchestration, planning, and writing. Requires `OPENAI_API_KEY`, `NVIDIA_API_KEY`, and `TAVILY_API_KEY` for the enabled Tavily tools. |
-| `config_web_default_guardrails.yml` | Nemotron 3.5 Lightning; Nemotron 3 Ultra; Gemma 4 summary | LlamaIndex profile with workflow Guardrails explicitly attached, shallow-agent Guardrails dynamically attached through `workflow_functions`, and async deep-agent Guardrails applied by the AI-Q runner from the same target configuration. |
+| `config_web_default_guardrails.yml` | Nemotron 3.5 Lightning; Nemotron 3 Ultra; Gemma 4 summary | LlamaIndex profile with workflow Guardrails explicitly attached, shallow-agent Guardrails dynamically attached through `workflow_functions`, and async deep-agent Guardrails applied by the Deep Researcher Agent runner from the same target configuration. |
 | `config_web_frag_mcp_auth.yml` | Nemotron 3.5 Lightning; Nemotron 3 Ultra | Foundational RAG plus an opt-in protected per-user OAuth MCP source example. Requires a real MCP endpoint and shared token store. |
 | `config_domain_routing_and_skills.yml` | Nemotron 3 Ultra; Gemma 4 summary | Direct deep-research profile with domain routing, DuckDuckGo news, Polymarket, enabled Serper paper search, LlamaIndex, built-in skills, and a fresh per-job Modal sandbox. |
 | `config_openshell.yml` | Nemotron 3.5 Lightning; Nemotron 3 Ultra; Gemma 4 summary | Experimental web/API skills profile with artifact capture, fail-closed policy attestation, and one OpenShell sandbox per deep-research job. |
-| `config_mcp.yml` | Nemotron 3.5 Lightning; Nemotron 3 Ultra | Standalone MCP server. Public NIM + Tavily research with PostgreSQL-backed stateless submit/poll/report. Requires `NVIDIA_API_KEY`, `TAVILY_API_KEY`, and `AIQ_CHECKPOINT_DB`. |
+| `config_mcp.yml` | Nemotron 3.5 Lightning; Nemotron 3 Ultra | Standalone MCP server. Public NIM + Tavily research with PostgreSQL-backed stateless submit/poll/report. Requires `NVIDIA_API_KEY`, `TAVILY_API_KEY`, and `DEEP_RESEARCHER_CHECKPOINT_DB`. |
 
 ## Ways to Run the Agents
 
@@ -376,19 +376,19 @@ For public endpoints, SSE replay, report follow-up, and durable artifact access,
 
 ### MCP Server
 
-Expose AI-Q to MCP clients through the standalone, stateless Streamable HTTP server:
+Expose Deep Researcher Agent to MCP clients through the standalone, stateless Streamable HTTP server:
 
 ```bash
 : "${NVIDIA_API_KEY:?Set NVIDIA_API_KEY}"
 : "${TAVILY_API_KEY:?Set TAVILY_API_KEY}"
 uv sync --project mcp --frozen
-AIQ_CHECKPOINT_DB=postgresql://localhost/aiq_jobs \
-  uv run --project mcp --frozen aiq-mcp-server
+DEEP_RESEARCHER_CHECKPOINT_DB=postgresql://localhost/deep_researcher_jobs \
+  uv run --project mcp --frozen deep-researcher-mcp-server
 ```
 
 The endpoint defaults to `http://localhost:9001/mcp` and advertises exactly `submit_query`, `poll_query`, and
 `get_final_report`. This public server intentionally has no authentication; job UUIDs are bearer capabilities and
-the endpoint must not be exposed directly to an untrusted network. See [Expose AI-Q as an MCP Server](docs/source/integration/mcp-server.md)
+the endpoint must not be exposed directly to an untrusted network. See [Expose Deep Researcher Agent as an MCP Server](docs/source/integration/mcp-server.md)
 for the exact JSON protocol, health contracts, security model, and container deployment.
 
 MCP is an independent uv project with its own `mcp/uv.lock`. The root lock remains compatible with NAT's
@@ -410,7 +410,7 @@ The `docs/notebooks/` directory contains a three-part series that walks through 
 
 | # | Notebook | What it covers | Prerequisites |
 |---|----------|----------------|---------------|
-| 0 | [Getting Started with AI-Q](docs/notebooks/0_Getting_Started_with_AIQ.ipynb) | Full blueprint overview — environment setup, orchestrated workflow (intent routing, shallow and deep research), and Docker Compose deployment | `NVIDIA_API_KEY`; optionally `TAVILY_API_KEY`, `SERPER_API_KEY` |
+| 0 | [Getting Started with Deep Researcher Agent](docs/notebooks/0_Getting_Started_with_Deep_Researcher_Agent.ipynb) | Full blueprint overview — environment setup, orchestrated workflow (intent routing, shallow and deep research), and Docker Compose deployment | `NVIDIA_API_KEY`; optionally `TAVILY_API_KEY`, `SERPER_API_KEY` |
 | 1 | [Deep Researcher — Web Search](docs/notebooks/1_Deep_Researcher_Web_Search.ipynb) | Deep researcher in depth — Python API, `nat run`, and end-to-end evaluation against the DeepResearch Bench with `nat eval` | Notebook 0 completed; `NVIDIA_API_KEY`, `TAVILY_API_KEY`, `SERPER_API_KEY`; OpenAI or Gemini key for the judge model |
 | 2 | [Deep Researcher — Customization](docs/notebooks/2_Deep_Researcher_Customization.ipynb) | Extending the deep researcher — adding paper search, assigning different LLMs per agent role, editing prompts, and enabling the knowledge layer | Notebooks 0 and 1 completed; `NVIDIA_API_KEY`, `TAVILY_API_KEY`, `SERPER_API_KEY` |
 
@@ -476,7 +476,7 @@ For development, contribution, and documentation, refer to:
 - **[Architecture](docs/source/architecture/overview.md)**: Component details and data flow
 - **[Customization](docs/source/customization/index.md)**: Configuration and customization options
 - **[Knowledge Layer Setup](sources/knowledge_layer/KNOWLEDGE-LAYER-SETUP.md)**: RAG backends and document ingestion
-- **[Agent Skills](docs/source/integration/agent-skills.md)**: Install the portable AI-Q research skill in compatible coding harnesses
+- **[Agent Skills](docs/source/integration/agent-skills.md)**: Install the portable Deep Researcher Agent research skill in compatible coding harnesses
 - **[Skills and Sandbox Example](docs/source/examples/skills-sandbox/index.md)**: Run deep research with built-in skills and Modal sandbox execution
 - **[Profiling and Cost Analysis](docs/source/profiling/index.md)**: Generate tokenomics and latency reports from Relay ATOF traces
 - **[Docs index](docs/README.md)**: Full documentation list and component docs
@@ -503,11 +503,11 @@ indicate availability in a published release.
 
 ## Security Considerations
 
-- The AI-Q Blueprint is shared as a reference and is provided "as is". The security in the production environment is the responsibility of the end users deploying it. When deploying in a production environment, please have security experts review any potential risks and threats; define the trust boundaries, implement logging and monitoring capabilities, secure the communication channels, integrate AuthN & AuthZ with appropriate access controls, keep the deployment up to date, ensure the containers/source code are secure and free of known vulnerabilities.
+- The Deep Researcher Agent Blueprint is shared as a reference and is provided "as is". The security in the production environment is the responsibility of the end users deploying it. When deploying in a production environment, please have security experts review any potential risks and threats; define the trust boundaries, implement logging and monitoring capabilities, secure the communication channels, integrate AuthN & AuthZ with appropriate access controls, keep the deployment up to date, ensure the containers/source code are secure and free of known vulnerabilities.
 - A robust frontend that handles AuthN & AuthZ is highly recommended. Missing AuthN & AuthZ will result in ungated access to customer models if directly exposed e.g. the internet, resulting in either cost to the customer, resource exhaustion, or denial of service.
-- AI-Q includes opt-in [NeMo Guardrails middleware](docs/source/customization/guardrails.md) for selected workflow and agent boundaries. Guardrails are not enabled universally; operators must attach and test the policies required for their deployment.
+- Deep Researcher Agent includes opt-in [NeMo Guardrails middleware](docs/source/customization/guardrails.md) for selected workflow and agent boundaries. Guardrails are not enabled universally; operators must attach and test the policies required for their deployment.
 - Optional [async job content encryption](docs/source/deployment/content-encryption.md) protects final job output and selected artifact-event content only. It is off by default and is not full database-level job-content encryption.
-- The AI-Q Blueprint doesn't require any privileged access to the system.
+- The Deep Researcher Agent Blueprint doesn't require any privileged access to the system.
 - Deep research skills can invoke sandboxed code execution for analysis workflows. Keep sandbox credentials, quotas, lifecycle cleanup, attestation, and network policy aligned with your deployment's trust boundaries. Shared OpenShell attachment is an explicit debug-only mode and is not job-isolated.
 - End users are responsible for ensuring the availability of their deployment.
 - End users are responsible for building, and patching, the container images to keep them up to date.
@@ -519,4 +519,4 @@ indicate availability in a published release.
 
 This project will download and install additional third-party open source software projects. Review the license terms of these open source projects before use, found in [LICENSE-THIRD-PARTY](LICENSE-THIRD-PARTY).
 
-GOVERNING TERMS: AIQ blueprint software and materials are governed by the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+GOVERNING TERMS: Deep Researcher Agent blueprint software and materials are governed by the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)

@@ -28,7 +28,7 @@ TAVILY_API_KEY=tvly-...
 
 ## Step 2: Choose a Mode
 
-The AI-Q blueprint supports two primary modes for interactive use: a terminal-based CLI and a browser-based web UI.
+The Deep Researcher Agent blueprint supports two primary modes for interactive use: a terminal-based CLI and a browser-based web UI.
 
 ### Option A: CLI Mode
 
@@ -41,10 +41,10 @@ source .venv/bin/activate
 ./scripts/start_cli.sh
 
 # Or run directly with the custom CLI entry point
-dotenv -f deploy/.env run .venv/bin/aiq-research --config_file configs/config_cli_default.yml
+dotenv -f deploy/.env run .venv/bin/deep-researcher-research --config_file configs/config_cli_default.yml
 ```
 
-> **Note:** `start_cli.sh` runs `.venv/bin/aiq-research` (a custom CLI entry point registered by this project), not `nat run`. The custom entry point adds interactive features like conversation history that are not part of the standard NeMo Agent Toolkit CLI.
+> **Note:** `start_cli.sh` runs `.venv/bin/deep-researcher-research` (a custom CLI entry point registered by this project), not `nat run`. The custom entry point adds interactive features like conversation history that are not part of the standard NeMo Agent Toolkit CLI.
 
 You should observe the agent start up and present an input prompt where you can type questions.
 
@@ -101,7 +101,7 @@ The system automatically routes queries to the appropriate depth based on comple
 ```
 $ ./scripts/start_cli.sh
 ============================================
-  AI-Q Blueprint - CLI Mode
+  Deep Researcher Agent Blueprint - CLI Mode
 ============================================
 
 Config: config_cli_default.yml
@@ -110,10 +110,10 @@ Verbose: OFF (use -v to enable)
 Type 'exit' or 'quit' to exit
 --------------------------------------------
 
-   NVIDIA AI-Q Blueprint
+   NVIDIA Deep Researcher Agent Blueprint
    Research Assistant powered by NVIDIA NeMo Agent Toolkit
 
-AI-Q initialized!
+Deep Researcher Agent initialized!
 Type 'exit', 'quit', or 'q' to quit.
 
 You: What is the NVIDIA NeMo Agent Toolkit?
@@ -140,7 +140,7 @@ To view detailed agent execution logs (tool calls, routing decisions, LLM intera
 Now that you have the system running, explore these topics:
 
 - **[Review recent changes](../resources/changelog.md)** -- See what has changed and choose among the focused [configuration profiles](../customization/configuration-reference.md#provided-config-files)
-- **[Agent Skills](../integration/agent-skills.md)** -- Deploy and call AI-Q from a compatible coding harness
+- **[Agent Skills](../integration/agent-skills.md)** -- Deploy and call Deep Researcher Agent from a compatible coding harness
 - **[Architecture Overview](../architecture/overview.md)** -- Understand how the orchestrator, shallow researcher, and deep researcher work together
 - **[Customization](../customization/index.md)** -- Swap models, configure tools, adjust prompts, and tune agent behavior
 - **[Deployment](../deployment/index.md)** -- Run with Docker Compose

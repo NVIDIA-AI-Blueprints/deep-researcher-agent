@@ -1568,7 +1568,7 @@ Agent startup -> get_available_documents_async(collection) -> System prompt inje
 
 ### Summary API
 
-The summary system uses three functions in `aiq_agent.knowledge.factory`:
+The summary system uses three functions in `deep_researcher_agent.knowledge.factory`:
 
 | Function | Purpose |
 |----------|---------|
@@ -1581,7 +1581,7 @@ The summary system uses three functions in `aiq_agent.knowledge.factory`:
 Call `register_summary()` after successful ingestion:
 
 ```python
-from aiq_agent.knowledge import register_summary
+from deep_researcher_agent.knowledge import register_summary
 
 # In your ingestion worker, after processing a file:
 if self.generate_summary_enabled and summary_text:
@@ -1591,7 +1591,7 @@ if self.generate_summary_enabled and summary_text:
 Call `unregister_summary()` when deleting files:
 
 ```python
-from aiq_agent.knowledge import unregister_summary
+from deep_researcher_agent.knowledge import unregister_summary
 
 def delete_file(self, file_id, collection_name):
     # ... delete chunks from your backend ...
@@ -1609,7 +1609,7 @@ functions:
     _type: knowledge_retrieval
     generate_summary: true
     summary_model: summary_llm
-    summary_db: ${AIQ_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
+    summary_db: ${DEEP_RESEARCHER_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
 ```
 
 The following drivers are supported:
@@ -2385,13 +2385,13 @@ Use this checklist to ensure your implementation is complete:
 
 > **Note:** This section is provided for reference only. You do not need to implement or integrate the HTTP layer yourself--the host application handles this automatically once your adapter is registered. This documentation helps you understand how your adapter methods are called in production.
 
-Once your adapter is registered, the host application exposes it through HTTP endpoints. This section describes how your adapter methods map to REST API calls that clients (like AI-Q) consume.
+Once your adapter is registered, the host application exposes it through HTTP endpoints. This section describes how your adapter methods map to REST API calls that clients (like Deep Researcher Agent) consume.
 
 ### Architecture Overview
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                     Client Application (AI-Q)                   │
+│                     Client Application (Deep Researcher Agent)                   │
 │                    (React/Web UI, CLI, etc.)                    │
 └─────────────────────────────────────────────────────────────────┘
                                 │

@@ -24,9 +24,9 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CHART_PATH = REPO_ROOT / "deploy" / "helm" / "deployment-k8s"
-CHILD_CHART_DIR = REPO_ROOT / "deploy" / "helm" / "helm-charts-k8s" / "aiq"
+CHILD_CHART_DIR = REPO_ROOT / "deploy" / "helm" / "helm-charts-k8s" / "deep-researcher"
 CHILD_CHART_PATH = CHILD_CHART_DIR / "Chart.yaml"
-PACKAGED_CHILD_CHART_PATH = CHART_PATH / "charts" / "aiq-0.0.5.tgz"
+PACKAGED_CHILD_CHART_PATH = CHART_PATH / "charts" / "deep-researcher-0.0.5.tgz"
 HELM_README_PATH = REPO_ROOT / "deploy" / "helm" / "README.md"
 KUBERNETES_DOCS_PATH = REPO_ROOT / "docs" / "source" / "deployment" / "kubernetes.md"
 OPENSEARCH_VALUES_PATH = REPO_ROOT / "deploy" / "helm" / "examples" / "aws-opensearch-serverless-values.yaml"
@@ -35,9 +35,9 @@ EXPECTED_RELEASE_VERSION = "2.2.0"
 EXPECTED_CHILD_CHART_VERSION = "0.0.5"
 
 
-def render_chart(*extra_args: str, namespace: str = "ns-aiq") -> list[dict[str, Any]]:
+def render_chart(*extra_args: str, namespace: str = "ns-deep-researcher") -> list[dict[str, Any]]:
     result = subprocess.run(
-        ["helm", "template", "aiq", str(CHART_PATH), "-n", namespace, *extra_args],
+        ["helm", "template", "deep-researcher", str(CHART_PATH), "-n", namespace, *extra_args],
         check=True,
         capture_output=True,
         text=True,
@@ -71,7 +71,7 @@ def test_release_version_matches_helm_chart_images_and_docs():
                 continue
             packaged_file = archive.extractfile(member)
             assert packaged_file is not None
-            relative_path = Path(member.name).relative_to("aiq").as_posix()
+            relative_path = Path(member.name).relative_to("deep-researcher").as_posix()
             packaged_files[relative_path] = packaged_file.read()
 
     source_files = {
@@ -92,24 +92,29 @@ def test_release_version_matches_helm_chart_images_and_docs():
         path: content for path, content in source_files.items() if path != "Chart.yaml"
     }
     assert parent_chart["dependencies"][0]["version"] == EXPECTED_CHILD_CHART_VERSION
-    assert values["aiq"]["apps"]["backend"]["image"]["tag"] == EXPECTED_RELEASE_VERSION
-    assert values["aiq"]["apps"]["frontend"]["image"]["tag"] == EXPECTED_RELEASE_VERSION
-    assert opensearch_values["aiq"]["apps"]["backend"]["image"]["tag"] == EXPECTED_RELEASE_VERSION
+    assert values["deep-researcher"]["apps"]["backend"]["image"]["tag"] == EXPECTED_RELEASE_VERSION
+    assert values["deep-researcher"]["apps"]["frontend"]["image"]["tag"] == EXPECTED_RELEASE_VERSION
+    assert opensearch_values["deep-researcher"]["apps"]["backend"]["image"]["tag"] == EXPECTED_RELEASE_VERSION
 
     rendered_images = {
         manifest["metadata"]["name"]: manifest["spec"]["template"]["spec"]["containers"][0]["image"]
         for manifest in render_chart()
         if manifest.get("kind") == "Deployment"
     }
-    assert rendered_images["aiq-backend"] == f"nvcr.io/nvidia/blueprint/aiq-agent:{EXPECTED_RELEASE_VERSION}"
-    assert rendered_images["aiq-frontend"] == f"nvcr.io/nvidia/blueprint/aiq-frontend:{EXPECTED_RELEASE_VERSION}"
+    assert (
+        rendered_images["deep-researcher-backend"] == f"nvcr.io/nvidia/blueprint/aiq-agent:{EXPECTED_RELEASE_VERSION}"
+    )
+    assert (
+        rendered_images["deep-researcher-frontend"]
+        == f"nvcr.io/nvidia/blueprint/aiq-frontend:{EXPECTED_RELEASE_VERSION}"
+    )
 
-    expected_chart_archive = f"aiq2-web-{EXPECTED_RELEASE_VERSION}.tgz"
-    chart_archive_pattern = re.compile(r"aiq2-web-[\w.-]+\.tgz")
+    expected_chart_archive = f"deep-researcher-web-{EXPECTED_RELEASE_VERSION}.tgz"
+    chart_archive_pattern = re.compile(r"deep-researcher-web-[\w.-]+\.tgz")
     for documentation_path in (HELM_README_PATH, KUBERNETES_DOCS_PATH):
         documentation = documentation_path.read_text(encoding="utf-8")
         assert set(chart_archive_pattern.findall(documentation)) == {expected_chart_archive}
-        assert f"**aiq2-web** version **{EXPECTED_RELEASE_VERSION}**" in documentation
+        assert f"**deep-researcher-web** version **{EXPECTED_RELEASE_VERSION}**" in documentation
 
 
 def test_default_chart_renders_referenced_configmaps_and_uses_user_supplied_secret():
@@ -133,13 +138,13 @@ def test_default_chart_renders_referenced_configmaps_and_uses_user_supplied_secr
                 referenced_secrets.add(node["secretKeyRef"]["name"])
 
     assert referenced_configmaps <= rendered_configmaps
-    assert referenced_secrets == {"aiq-credentials"}
-    assert "aiq-credentials" not in rendered_secrets
+    assert referenced_secrets == {"deep-researcher-credentials"}
+    assert "deep-researcher-credentials" not in rendered_secrets
 
 
 def test_all_namespaced_resources_honor_release_namespace():
     """Regression test for #290: resources must use the Helm release namespace
-    (``helm install -n <ns>``) instead of a hardcoded ``ns-aiq``, so ``helm
+    (``helm install -n <ns>``) instead of a hardcoded ``ns-deep-researcher``, so ``helm
     install -n`` and GitOps operators (ArgoCD, Fleet) target the right namespace.
     """
     release_namespace = "my-namespace"
@@ -163,13 +168,13 @@ def test_chart_renders_app_host_aliases(tmp_path: Path):
     values_file = tmp_path / "host-aliases.yaml"
     values_file.write_text(
         """
-aiq:
+deep-researcher:
   apps:
     backend:
       hostAliases:
         - ip: "127.0.0.1"
           hostnames:
-            - "aiq.local"
+            - "deep-researcher.local"
 """,
         encoding="utf-8",
     )
@@ -179,11 +184,11 @@ aiq:
     backend_deployment = next(
         manifest
         for manifest in manifests
-        if manifest.get("kind") == "Deployment" and manifest["metadata"]["name"] == "aiq-backend"
+        if manifest.get("kind") == "Deployment" and manifest["metadata"]["name"] == "deep-researcher-backend"
     )
 
     assert backend_deployment["spec"]["template"]["spec"]["hostAliases"] == [
-        {"ip": "127.0.0.1", "hostnames": ["aiq.local"]}
+        {"ip": "127.0.0.1", "hostnames": ["deep-researcher.local"]}
     ]
 
 
@@ -193,14 +198,14 @@ def test_default_chart_does_not_provision_or_configure_redis():
     redis_resources = {
         (manifest.get("kind"), manifest.get("metadata", {}).get("name"))
         for manifest in manifests
-        if manifest.get("metadata", {}).get("name", "").startswith("aiq-redis")
+        if manifest.get("metadata", {}).get("name", "").startswith("deep-researcher-redis")
     }
     assert redis_resources == set()
 
     backend_deployment = next(
         manifest
         for manifest in manifests
-        if manifest.get("kind") == "Deployment" and manifest["metadata"]["name"] == "aiq-backend"
+        if manifest.get("kind") == "Deployment" and manifest["metadata"]["name"] == "deep-researcher-backend"
     )
     backend_env = {
         item["name"] for item in backend_deployment["spec"]["template"]["spec"]["containers"][0].get("env", [])
@@ -210,8 +215,8 @@ def test_default_chart_does_not_provision_or_configure_redis():
 
 def test_upload_limits_are_aligned_between_backend_and_frontend():
     values = yaml.safe_load((CHART_PATH / "values.yaml").read_text(encoding="utf-8"))
-    backend_env = values["aiq"]["apps"]["backend"]["env"]
-    frontend_env = values["aiq"]["apps"]["frontend"]["env"]
+    backend_env = values["deep-researcher"]["apps"]["backend"]["env"]
+    frontend_env = values["deep-researcher"]["apps"]["frontend"]["env"]
     upload_variables = {
         "FILE_UPLOAD_ACCEPTED_TYPES",
         "FILE_UPLOAD_MAX_SIZE_MB",
@@ -225,12 +230,12 @@ def test_upload_limits_are_aligned_between_backend_and_frontend():
 
 def test_backend_wires_default_on_deep_research_admission_limits():
     values = yaml.safe_load((CHART_PATH / "values.yaml").read_text(encoding="utf-8"))
-    backend_env = values["aiq"]["apps"]["backend"]["env"]
+    backend_env = values["deep-researcher"]["apps"]["backend"]["env"]
 
-    assert backend_env["AIQ_MAX_DEEP_RESEARCH_INPUT_CHARS"] == "32768"
-    assert backend_env["AIQ_MAX_ACTIVE_DEEP_RESEARCH_JOBS_PER_PRINCIPAL"] == "5"
-    assert backend_env["AIQ_MAX_ACTIVE_DEEP_RESEARCH_JOBS_GLOBAL"] == "50"
-    assert backend_env["AIQ_MAX_DEEP_RESEARCH_SUBMISSIONS_PER_MINUTE"] == "20"
+    assert backend_env["DEEP_RESEARCHER_MAX_DEEP_RESEARCH_INPUT_CHARS"] == "32768"
+    assert backend_env["DEEP_RESEARCHER_MAX_ACTIVE_DEEP_RESEARCH_JOBS_PER_PRINCIPAL"] == "5"
+    assert backend_env["DEEP_RESEARCHER_MAX_ACTIVE_DEEP_RESEARCH_JOBS_GLOBAL"] == "50"
+    assert backend_env["DEEP_RESEARCHER_MAX_DEEP_RESEARCH_SUBMISSIONS_PER_MINUTE"] == "20"
 
 
 def test_backend_uses_separate_liveness_and_readiness_endpoints():
@@ -239,7 +244,7 @@ def test_backend_uses_separate_liveness_and_readiness_endpoints():
     backend_deployment = next(
         manifest
         for manifest in manifests
-        if manifest.get("kind") == "Deployment" and manifest["metadata"]["name"] == "aiq-backend"
+        if manifest.get("kind") == "Deployment" and manifest["metadata"]["name"] == "deep-researcher-backend"
     )
     backend_container = backend_deployment["spec"]["template"]["spec"]["containers"][0]
 
@@ -257,18 +262,18 @@ def test_shared_dask_example_renders_secured_external_scheduler_and_workers():
         manifest["metadata"]["name"]: manifest for manifest in manifests if manifest.get("kind") == "NetworkPolicy"
     }
 
-    backend = deployments["aiq-backend"]["spec"]["template"]["spec"]["containers"][0]
-    scheduler = deployments["aiq-dask-scheduler"]["spec"]["template"]["spec"]["containers"][0]
-    worker_deployment = deployments["aiq-dask-worker"]
+    backend = deployments["deep-researcher-backend"]["spec"]["template"]["spec"]["containers"][0]
+    scheduler = deployments["deep-researcher-dask-scheduler"]["spec"]["template"]["spec"]["containers"][0]
+    worker_deployment = deployments["deep-researcher-dask-worker"]
     worker = worker_deployment["spec"]["template"]["spec"]["containers"][0]
 
     backend_env = {item["name"]: item["value"] for item in backend["env"] if "value" in item}
     scheduler_env = {item["name"]: item["value"] for item in scheduler["env"] if "value" in item}
     worker_env = {item["name"]: item["value"] for item in worker["env"] if "value" in item}
     for deployment_name, container, volume_name, secret_name in (
-        ("aiq-backend", backend, "dask-client-tls", "aiq-dask-client-tls"),
-        ("aiq-dask-scheduler", scheduler, "dask-scheduler-tls", "aiq-dask-scheduler-tls"),
-        ("aiq-dask-worker", worker, "dask-worker-tls", "aiq-dask-worker-tls"),
+        ("deep-researcher-backend", backend, "dask-client-tls", "deep-researcher-dask-client-tls"),
+        ("deep-researcher-dask-scheduler", scheduler, "dask-scheduler-tls", "deep-researcher-dask-scheduler-tls"),
+        ("deep-researcher-dask-worker", worker, "dask-worker-tls", "deep-researcher-dask-worker-tls"),
     ):
         pod_spec = deployments[deployment_name]["spec"]["template"]["spec"]
         tls_volume = next(volume for volume in pod_spec["volumes"] if volume["name"] == volume_name)
@@ -276,7 +281,7 @@ def test_shared_dask_example_renders_secured_external_scheduler_and_workers():
         assert tls_volume["secret"]["secretName"] == secret_name
         assert tls_mount == {"name": volume_name, "mountPath": "/etc/dask-tls", "readOnly": True}
 
-    assert backend_env["NAT_DASK_SCHEDULER_ADDRESS"] == "tls://aiq-dask-scheduler:8786"
+    assert backend_env["NAT_DASK_SCHEDULER_ADDRESS"] == "tls://deep-researcher-dask-scheduler:8786"
     assert backend_env["DASK_DISTRIBUTED__COMM__REQUIRE_ENCRYPTION"] == "true"
     assert scheduler["command"] == ["dask-scheduler"]
     assert scheduler["args"][scheduler["args"].index("--protocol") + 1] == "tls"
@@ -285,17 +290,17 @@ def test_shared_dask_example_renders_secured_external_scheduler_and_workers():
     assert "envFrom" not in scheduler
     assert worker_deployment["spec"]["replicas"] == 4
     assert worker["command"] == ["dask-worker"]
-    assert worker["args"][0] == "tls://aiq-dask-scheduler:8786"
+    assert worker["args"][0] == "tls://deep-researcher-dask-scheduler:8786"
     assert "--tls-ca-file" in worker["args"]
-    assert worker_env["NAT_DASK_SCHEDULER_ADDRESS"] == "tls://aiq-dask-scheduler:8786"
+    assert worker_env["NAT_DASK_SCHEDULER_ADDRESS"] == "tls://deep-researcher-dask-scheduler:8786"
     assert worker_env["CONFIG_FILE"] == "configs/config_web_default_llamaindex.yml"
-    assert "aiq-dask-scheduler" in services
-    assert "aiq-dask-worker" not in services
+    assert "deep-researcher-dask-scheduler" in services
+    assert "deep-researcher-dask-worker" not in services
 
-    scheduler_policy = network_policies["aiq-dask-scheduler"]["spec"]
+    scheduler_policy = network_policies["deep-researcher-dask-scheduler"]["spec"]
     allowed_apps = {peer["podSelector"]["matchLabels"]["app"] for peer in scheduler_policy["ingress"][0]["from"]}
-    assert scheduler_policy["podSelector"]["matchLabels"]["app"] == "aiq-dask-scheduler"
-    assert allowed_apps == {"aiq-backend", "aiq-dask-worker"}
+    assert scheduler_policy["podSelector"]["matchLabels"]["app"] == "deep-researcher-dask-scheduler"
+    assert allowed_apps == {"deep-researcher-backend", "deep-researcher-dask-worker"}
     assert scheduler_policy["ingress"][0]["ports"] == [{"protocol": "TCP", "port": 8786}]
 
 
@@ -304,12 +309,12 @@ def test_network_policy_rejects_missing_port_allowlist():
         [
             "helm",
             "template",
-            "aiq",
+            "deep-researcher",
             str(CHART_PATH),
             "-f",
             str(REPO_ROOT / "deploy" / "helm" / "examples" / "shared-dask-values.yaml"),
             "--set-json",
-            "aiq.apps.dask-scheduler.networkPolicy.ports=[]",
+            "deep-researcher.apps.dask-scheduler.networkPolicy.ports=[]",
         ],
         check=False,
         capture_output=True,
@@ -325,15 +330,15 @@ def test_shared_dask_scheduler_excludes_inline_shared_secrets():
         "-f",
         str(REPO_ROOT / "deploy" / "helm" / "examples" / "shared-dask-values.yaml"),
         "--set",
-        "aiq.secretEnvAsEnv=true",
+        "deep-researcher.secretEnvAsEnv=true",
         "--set-string",
-        "aiq.secretEnv.TEST_SHARED_SECRET=test-only",
+        "deep-researcher.secretEnv.TEST_SHARED_SECRET=test-only",
     )
     deployments = {
         manifest["metadata"]["name"]: manifest for manifest in manifests if manifest.get("kind") == "Deployment"
     }
-    scheduler = deployments["aiq-dask-scheduler"]["spec"]["template"]["spec"]["containers"][0]
-    worker = deployments["aiq-dask-worker"]["spec"]["template"]["spec"]["containers"][0]
+    scheduler = deployments["deep-researcher-dask-scheduler"]["spec"]["template"]["spec"]["containers"][0]
+    worker = deployments["deep-researcher-dask-worker"]["spec"]["template"]["spec"]["containers"][0]
     scheduler_env_names = {item["name"] for item in scheduler["env"]}
     worker_env = {item["name"]: item.get("value") for item in worker["env"]}
 

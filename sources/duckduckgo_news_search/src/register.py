@@ -96,7 +96,7 @@ async def duckduckgo_news_search(
             """News search tool (unavailable - missing optional `ddgs` package)."""
             return (
                 "Error: DuckDuckGo news search is unavailable because the `ddgs` package is not installed. "
-                "Install the duckduckgo-news-search workspace package dependencies and restart AIQ."
+                "Install the duckduckgo-news-search workspace package dependencies and restart DeepResearcher."
             )
 
         yield FunctionInfo.from_fn(

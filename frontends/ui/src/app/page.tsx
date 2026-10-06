@@ -5,7 +5,7 @@
  * Home Page
  *
  * Main chat interface using the MainLayout component.
- * Displays the full AI-Q experience.
+ * Displays the full Deep Researcher Agent experience.
  * Chat state is managed via the useChatStore.
  *
  * Passes auth state to MainLayout for conditional UI rendering.

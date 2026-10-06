@@ -5,24 +5,24 @@ SPDX-License-Identifier: Apache-2.0
 # MCP Tools and Authentication
 
 Model Context Protocol (MCP) is an open protocol that standardizes how applications expose tools and
-context to LLM applications. The AIQ Blueprint is built on the NVIDIA NeMo Agent toolkit (NAT), so
-AIQ can use MCP servers as data sources through NAT function groups.
+context to LLM applications. The Deep Researcher Agent Blueprint is built on the NVIDIA NeMo Agent toolkit (NAT), so
+Deep Researcher Agent can use MCP servers as data sources through NAT function groups.
 
-This guide targets AIQ deployments pinned to NAT `1.8.0`. Verify your installed version with
+This guide targets Deep Researcher Agent deployments pinned to NAT `1.8.0`. Verify your installed version with
 `uv pip show nvidia-nat`.
 
 ## What this guide covers
 
 **Supported:**
 
-- Connect AIQ to an unauthenticated MCP server.
-- Connect AIQ to an MCP server with backend service-account credentials.
-- Connect each signed-in user to a protected MCP server through the AIQ UI using MCP OAuth.
-- Forward the signed-in AIQ user's identity to a downstream service from a custom AIQ tool.
+- Connect Deep Researcher Agent to an unauthenticated MCP server.
+- Connect Deep Researcher Agent to an MCP server with backend service-account credentials.
+- Connect each signed-in user to a protected MCP server through the Deep Researcher Agent UI using MCP OAuth.
+- Forward the signed-in Deep Researcher Agent user's identity to a downstream service from a custom Deep Researcher Agent tool.
 
 **Not yet first-party:**
 
-- A first-party AIQ-token pass-through MCP auth provider. Today, if your MCP server trusts the AIQ
+- A first-party DeepResearcher-token pass-through MCP auth provider. Today, if your MCP server trusts the Deep Researcher Agent
   user's bearer token, you must implement and register a custom NAT auth provider in your
   deployment package.
 
@@ -31,21 +31,21 @@ For the full NAT MCP reference:
 - [NAT MCP client guide](https://docs.nvidia.com/nemo/agent-toolkit/latest/build-workflows/mcp-client.html)
 - [NAT MCP service-account auth guide](https://docs.nvidia.com/nemo/agent-toolkit/latest/components/auth/mcp-auth/mcp-service-account-auth.html)
 
-This page documents AIQ as an MCP client/data-source consumer. The AIQ reference API does not expose the research
+This page documents Deep Researcher Agent as an MCP client/data-source consumer. The Deep Researcher Agent reference API does not expose the research
 workflow as a public MCP server.
 
 ## Choose an Integration Pattern
 
 | Scenario | Pattern | Section |
 |---|---|---|
-| MCP server has no per-user auth | `mcp_client` function group | [Connect AIQ to an MCP Server](#connect-aiq-to-an-mcp-server) |
+| MCP server has no per-user auth | `mcp_client` function group | [Connect Deep Researcher Agent to an MCP Server](#connect-deep-researcher-agent-to-an-mcp-server) |
 | MCP server uses backend / app credentials | `mcp_client` + `mcp_service_account` | [Service-Account MCP Servers](#service-account-mcp-servers) |
-| Downstream API trusts the AIQ user's bearer token | Custom AIQ tool using `get_auth_token()` | [Forwarding AIQ User Identity](#forwarding-aiq-user-identity-from-a-tool) |
+| Downstream API trusts the Deep Researcher Agent user's bearer token | Custom Deep Researcher Agent tool using `get_auth_token()` | [Forwarding Deep Researcher Agent User Identity](#forwarding-deep-researcher-agent-user-identity-from-a-tool) |
 | MCP server requires per-user OAuth consent | `per_user_mcp_client` + `mcp_oauth2` | [Per-User MCP OAuth](#per-user-mcp-oauth) |
 
 ## Prerequisites
 
-Install NAT and the MCP package on the same release line as your AIQ deployment:
+Install NAT and the MCP package on the same release line as your Deep Researcher Agent deployment:
 
 ```bash
 uv pip install "nvidia-nat[mcp]==1.8.0" nvidia-nat-mcp==1.8.0 nvidia-nat-redis==1.8.0
@@ -61,9 +61,9 @@ nat info components -t function_group -q mcp_client
 nat info components -t auth_provider -q mcp_service_account
 ```
 
-## Connect AIQ to an MCP Server
+## Connect Deep Researcher Agent to an MCP Server
 
-Use `mcp_client` to connect to an MCP server and make its tools available to AIQ agents. The
+Use `mcp_client` to connect to an MCP server and make its tools available to Deep Researcher Agent agents. The
 `mcp_client` function group discovers remote tools and registers them as NAT functions.
 
 ```yaml
@@ -83,7 +83,7 @@ Supported transports:
 
 ### Register the MCP Group as a Data Source
 
-Add the function group to `data_source_registry`. The registry is AIQ's source of truth for UI
+Add the function group to `data_source_registry`. The registry is Deep Researcher Agent's source of truth for UI
 toggles, per-message data source filtering, and default tool inheritance.
 
 ```yaml
@@ -104,7 +104,7 @@ functions:
           - mcp_financial_tools
 ```
 
-When an AIQ agent has no explicit `tools` list, it inherits all tools from `data_source_registry`.
+When an Deep Researcher Agent has no explicit `tools` list, it inherits all tools from `data_source_registry`.
 The registry auto-detects function groups and maps every discovered tool back to the source using
 NAT function-group prefixes, such as `mcp_financial_tools__get_stock_quote`.
 
@@ -121,7 +121,7 @@ functions:
 
 ### Limit and Rename MCP Tools
 
-Use `include`, `exclude`, and `tool_overrides` when the MCP server exposes more tools than AIQ
+Use `include`, `exclude`, and `tool_overrides` when the MCP server exposes more tools than Deep Researcher Agent
 should use, or when the upstream descriptions are too generic for reliable tool routing.
 
 ```yaml
@@ -145,7 +145,7 @@ function_groups:
 ## Service-Account MCP Servers
 
 Use service-account authentication when the MCP server should be accessed with an application or
-backend identity, not an individual AIQ user's identity. This is the preferred pattern for CI,
+backend identity, not an individual Deep Researcher Agent user's identity. This is the preferred pattern for CI,
 batch jobs, shared enterprise data sources, and container deployments.
 
 ```yaml
@@ -185,7 +185,7 @@ authentication:
 ```
 
 Register the function group in `data_source_registry` the same way as unauthenticated MCP tools. If
-the source does not require the end user to sign in to AIQ, leave `requires_auth` unset or `false`.
+the source does not require the end user to sign in to Deep Researcher Agent, leave `requires_auth` unset or `false`.
 
 ```yaml
 functions:
@@ -199,30 +199,30 @@ functions:
           - mcp_enterprise_tools
 ```
 
-## Forwarding AIQ User Identity from a Tool
+## Forwarding Deep Researcher Agent User Identity from a Tool
 
-When a downstream API or MCP gateway already trusts the AIQ user's bearer token, the supported
-AIQ 2.1 pattern is a small custom AIQ tool that reads the request token with
-`aiq_agent.auth.get_auth_token()` and forwards it on the outbound call. This works whether the
+When a downstream API or MCP gateway already trusts the Deep Researcher Agent user's bearer token, the supported
+Deep Researcher Agent 2.1 pattern is a small custom Deep Researcher Agent tool that reads the request token with
+`deep_researcher_agent.auth.get_auth_token()` and forwards it on the outbound call. This works whether the
 downstream service is a real MCP server, an HTTP API, or a gateway in front of one.
 
-AIQ exposes:
+Deep Researcher Agent exposes:
 
-- `aiq_agent.auth.get_auth_token()` — returns the current request token when available.
-- `aiq_agent.auth.get_current_principal()` — returns verified identity metadata from AIQ auth
+- `deep_researcher_agent.auth.get_auth_token()` — returns the current request token when available.
+- `deep_researcher_agent.auth.get_current_principal()` — returns verified identity metadata from Deep Researcher Agent auth
   middleware (use this for authorization decisions; do not trust unverified JWT payloads).
-- Async job token propagation — AIQ captures the request token at submit time and makes it
+- Async job token propagation — Deep Researcher Agent captures the request token at submit time and makes it
   available in Dask workers through the same `get_auth_token()` helper. The token is **not**
   refreshed inside the worker, so jobs that outlive the access token's TTL will fail mid-execution
   on auth-required tool calls. There is currently no in-worker refresh guarantee; configure an adequate token TTL or
   reconnect and resubmit the job after expiry.
 
-Example custom tool that forwards the AIQ user's token to an internal search service:
+Example custom tool that forwards the Deep Researcher Agent user's token to an internal search service:
 
 ```python
 from pydantic import Field
 
-from aiq_agent.auth import get_auth_token
+from deep_researcher_agent.auth import get_auth_token
 from nat.builder.function_info import FunctionInfo
 from nat.cli.register_workflow import register_function
 from nat.data_models.function import FunctionBaseConfig
@@ -254,7 +254,7 @@ async def internal_search(config: InternalSearchConfig, builder):
 
     yield FunctionInfo.from_fn(
         _search,
-        description="Search internal systems using the signed-in AIQ user's token.",
+        description="Search internal systems using the signed-in Deep Researcher Agent user's token.",
     )
 ```
 
@@ -267,7 +267,7 @@ functions:
     sources:
       - id: internal_search
         name: "Internal Search"
-        description: "Search internal systems using your AIQ sign-in."
+        description: "Search internal systems using your Deep Researcher Agent sign-in."
         requires_auth: true
         tools:
           - internal_search
@@ -277,58 +277,58 @@ functions:
     endpoint: ${INTERNAL_SEARCH_URL}
 ```
 
-This is the supported AIQ-user-identity MCP pattern. The two alternatives —
+This is the supported DeepResearcher-user-identity MCP pattern. The two alternatives —
 protocol-level pass-through via a custom NAT auth provider, and an auth-forwarding MCP proxy — are
-viable in NAT but are not first-class in AIQ; treat them as deployment-side extensions.
+viable in NAT but are not first-class in Deep Researcher Agent; treat them as deployment-side extensions.
 
 For the broader auth context (UI sign-in flow, validator registration, headless API callers), refer to
 [Authentication](../deployment/authentication.md).
 
 ## Per-User MCP OAuth
 
-Use per-user MCP OAuth when each AIQ user must authorize the upstream MCP server with their own
+Use per-user MCP OAuth when each Deep Researcher Agent user must authorize the upstream MCP server with their own
 identity. The reference configuration is
 [`configs/config_web_frag_mcp_auth.yml`](../../../configs/config_web_frag_mcp_auth.yml). It combines
 an OAuth-protected data source (declared with a `per_user_auth` block), an `mcp_oauth2` authentication
 provider, and a shared token object store. The config deliberately does **not** declare a
-`per_user_mcp_client` function group: AIQ builds the per-user MCP client in code, per job, from the
+`per_user_mcp_client` function group: Deep Researcher Agent builds the per-user MCP client in code, per job, from the
 `mcp_oauth2` provider's server URL and the signed-in user's stored token. A config-declared
 `per_user_mcp_client` is built by NAT's interactive-session builder, which fails for a user with no
 token and breaks the interactive WebSocket chat path.
 
-Set these values before starting AIQ:
+Set these values before starting Deep Researcher Agent:
 
 - `MCP_GDRIVE_URL`: protected streamable-HTTP MCP endpoint. The example calls the source `gdrive`,
   but the mechanism is not Google Drive-specific.
-- `AIQ_PUBLIC_URL`: externally reachable AIQ origin used to construct the OAuth callback URL.
+- `DEEP_RESEARCHER_PUBLIC_URL`: externally reachable Deep Researcher Agent origin used to construct the OAuth callback URL.
 - `MCP_GDRIVE_CLIENT_ID` and `MCP_GDRIVE_CLIENT_SECRET`: only when the MCP authorization server
   requires a pre-registered OAuth client rather than dynamic client registration.
-- `MCP_TOKEN_STORE_TYPE`: `aiq_sqlite` for a single-host example or `redis` for multi-process and
+- `MCP_TOKEN_STORE_TYPE`: `deep_researcher_sqlite` for a single-host example or `redis` for multi-process and
   multi-host deployments.
 
-The UI reads connection status from `/v1/data_sources` and presents Connect or Reconnect for the protected source. AI-Q
-owns the connect flow and OAuth callback and stores the resulting token under the current AIQ user identity. Disconnect
+The UI reads connection status from `/v1/data_sources` and presents Connect or Reconnect for the protected source. Deep Researcher Agent
+owns the connect flow and OAuth callback and stores the resulting token under the current Deep Researcher Agent user identity. Disconnect
 is not currently exposed by the reference API or UI. Submitting a job with a disconnected protected source
-fails with `409 mcp_auth_required`; AIQ does not silently run the job without that source.
+fails with `409 mcp_auth_required`; Deep Researcher Agent does not silently run the job without that source.
 
 Both interactive WebSocket sessions and REST-submitted async jobs resolve the user's MCP tools.
 Async workers open their own MCP client for the job and read the same token store as the API, so
 the API and workers must share that store:
 
-- `aiq_sqlite` requires the API and worker processes to share the same absolute database path on
+- `deep_researcher_sqlite` requires the API and worker processes to share the same absolute database path on
   one host.
 - `redis` is the supported example for multiple processes, hosts, or Kubernetes pods. Each
   protected source must reference an object store with a distinct bucket or namespace;
   configuration fails closed when two sources reference the same object-store configuration.
 
-This example targets the AIQ web/API deployment, which owns the connect and callback routes and
+This example targets the Deep Researcher Agent web/API deployment, which owns the connect and callback routes and
 supplies user identity to jobs. Raw NAT CLI runs do not provide that browser OAuth lifecycle; use
 an unauthenticated or service-account MCP configuration for standalone CLI execution.
 
 For a local Redis-backed stack, use the
-[per-user-auth Compose override](https://github.com/NVIDIA-AI-Blueprints/aiq/blob/develop/deploy/compose/README.md#per-user-mcp-authentication).
+[per-user-auth Compose override](https://github.com/NVIDIA-AI-Blueprints/deep-researcher-agent/blob/develop/deploy/compose/README.md#per-user-mcp-authentication).
 For a released chart, provide an external Redis service as described in the
-[Helm deployment guide](https://github.com/NVIDIA-AI-Blueprints/aiq/blob/develop/deploy/helm/README.md#per-user-mcp-authentication-with-external-redis).
+[Helm deployment guide](https://github.com/NVIDIA-AI-Blueprints/deep-researcher-agent/blob/develop/deploy/helm/README.md#per-user-mcp-authentication-with-external-redis).
 The default Compose and Helm deployments remain Redis-free when this example is not selected.
 
 Refer to the
@@ -343,7 +343,7 @@ for protocol details.
   control.
 - Use service-account MCP auth only when shared app-level access is acceptable.
 - Use a nested `per_user_auth` block (the `PerUserAuthConfig` object, not a bare boolean) for upstream
-  MCP OAuth; `requires_auth: true` only gates a source on AIQ sign-in and does not authorize the
+  MCP OAuth; `requires_auth: true` only gates a source on Deep Researcher Agent sign-in and does not authorize the
   upstream MCP server:
 
   ```yaml
@@ -355,14 +355,14 @@ for protocol details.
   ```
 
 - Keep token forwarding scoped to trusted internal services and HTTPS endpoints.
-- Use `requires_auth: true` for sources that depend on AIQ sign-in but do not have a separate
+- Use `requires_auth: true` for sources that depend on Deep Researcher Agent sign-in but do not have a separate
   upstream OAuth connection.
 
 ## Troubleshooting
 
 ### MCP Tools Do Not Appear in the UI
 
-Confirm the function group is listed in `data_source_registry`. The AIQ UI gets its connection
+Confirm the function group is listed in `data_source_registry`. The Deep Researcher Agent UI gets its connection
 list from `GET /v1/data_sources`; if a source is missing from the registry, the UI has no toggle
 for it.
 
@@ -379,7 +379,7 @@ to update prompts so agents know when to prefer the new source.
 
 ### Data Source Filtering Does Not Match MCP Tools
 
-AIQ maps function groups by prefix. A group named `mcp_financial_tools` maps tools such as
+Deep Researcher Agent maps function groups by prefix. A group named `mcp_financial_tools` maps tools such as
 `mcp_financial_tools__stock_price` back to the source containing `mcp_financial_tools`. If you
 list individual tool references instead of the group name, list the exact exposed tool names.
 
@@ -391,7 +391,7 @@ the frontend auth provider is configured and that requests include an `idToken` 
 
 ### Async Deep Research Loses User Auth Mid-Job
 
-Use `get_auth_token()` inside custom AIQ tools rather than reading request headers directly — AIQ
+Use `get_auth_token()` inside custom Deep Researcher Agent tools rather than reading request headers directly — Deep Researcher Agent
 captures the request token at job submit and restores it in the async worker context (refer to
 [Authentication → Use the current user token in tools](../deployment/authentication.md#step-5-use-the-current-user-token-in-tools)).
 Note that the access token is **not** refreshed inside the worker, so jobs that outlive the

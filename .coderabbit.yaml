@@ -57,27 +57,27 @@ reviews:
     - "!**/junit.xml"
     - "!skills/**/skill.oms.sig"
   path_instructions:
-    - path: "src/aiq_agent/agents/**/*"
+    - path: "src/deep_researcher_agent/agents/**/*"
       instructions: |
         Review agent changes for research workflow correctness, graph state transitions, prompt/tool contracts,
         HITL behavior, and failure handling. Flag changes that weaken source attribution, report generation,
         async cancellation, checkpointing, or data-source selection without focused tests and docs.
-    - path: "{src/aiq_agent/fastapi_extensions/**,frontends/aiq_api/src/aiq_api/**}"
+    - path: "{src/deep_researcher_agent/fastapi_extensions/**,frontends/deep_researcher_api/src/deep_researcher_api/**}"
       instructions: |
         Treat API, auth, and job-runner changes as externally visible contracts. Check authorization boundaries,
         request tracing, async job lifecycle, websocket reconnect behavior, error responses, and cross-user data isolation.
         Require tests for route behavior, access decisions, and job state transitions when those surfaces change.
-    - path: "{src/aiq_agent/auth/**,frontends/aiq_api/src/aiq_api/auth/**}"
+    - path: "{src/deep_researcher_agent/auth/**,frontends/deep_researcher_api/src/deep_researcher_api/auth/**}"
       instructions: |
         Review authentication changes for issuer/audience validation, token parsing, error hygiene, logging safety,
         and compatibility with local and deployed modes. Do not accept changes that expose tokens, weaken validation,
         or blur trusted server-side identity with client-supplied fields.
-    - path: "{src/aiq_agent/knowledge/**,sources/**}"
+    - path: "{src/deep_researcher_agent/knowledge/**,sources/**}"
       instructions: |
         Review data-source and knowledge-layer changes for optional dependency boundaries, external API error handling,
         retry/rate-limit behavior, deterministic tests, and registration consistency. New source packages should include
         package metadata, plugin registration when applicable, and source-level tests.
-    - path: "src/aiq_agent/tokenomics/**/*"
+    - path: "src/deep_researcher_agent/tokenomics/**/*"
       instructions: |
         Review tokenomics changes for deterministic accounting, pricing-data assumptions, rounding behavior, and report
         compatibility. Flag pricing or aggregation changes without representative tests and clear documentation updates.

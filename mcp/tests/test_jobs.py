@@ -16,15 +16,15 @@ from typing import Any
 import pytest
 from langchain_core.messages import AIMessage
 
-from aiq_agent.agents.chat_researcher.models import RESEARCH_WORKFLOW_FAILURE_ERROR
-from aiq_agent.agents.chat_researcher.models import DepthDecision
-from aiq_agent.agents.chat_researcher.models import IntentResult
-from aiq_agent.agents.chat_researcher.models import WorkflowFailure
-from aiq_agent.agents.chat_researcher.models import WorkflowOutcome
-from aiq_agent.agents.chat_researcher.models import WorkflowSuccess
-from aiq_agent.common.logging_utils import log_identifier_ref
-from aiq_mcp.job_store import Job
-from aiq_mcp.jobs import JobManager
+from deep_researcher_agent.agents.chat_researcher.models import RESEARCH_WORKFLOW_FAILURE_ERROR
+from deep_researcher_agent.agents.chat_researcher.models import DepthDecision
+from deep_researcher_agent.agents.chat_researcher.models import IntentResult
+from deep_researcher_agent.agents.chat_researcher.models import WorkflowFailure
+from deep_researcher_agent.agents.chat_researcher.models import WorkflowOutcome
+from deep_researcher_agent.agents.chat_researcher.models import WorkflowSuccess
+from deep_researcher_agent.common.logging_utils import log_identifier_ref
+from deep_researcher_mcp.job_store import Job
+from deep_researcher_mcp.jobs import JobManager
 
 
 class _Runner:
@@ -56,7 +56,7 @@ class _Runner:
             "depth_decision": DepthDecision(decision=self.depth),
         }
         if self.intent == "meta":
-            result["messages"] = [AIMessage(content="Hello from AI-Q")]
+            result["messages"] = [AIMessage(content="Hello from Deep Researcher Agent")]
         return result
 
     async def run_query(self, query: str, *, conversation_id: str, depth: str | None = None) -> WorkflowOutcome:
@@ -236,7 +236,7 @@ async def test_submit_accepts_target_models_and_completes_meta_inline() -> None:
         "job_id": result["job_id"],
         "depth": "meta",
         "state": "complete",
-        "result": "Hello from AI-Q",
+        "result": "Hello from Deep Researcher Agent",
     }
     assert uuid.UUID(result["job_id"]).version == 4
 
@@ -244,7 +244,7 @@ async def test_submit_accepts_target_models_and_completes_meta_inline() -> None:
 @pytest.mark.asyncio
 @pytest.mark.parametrize("depth", ["shallow", "deep"])
 async def test_submit_classifies_once_and_reuses_depth_for_run(depth: str) -> None:
-    """AIQ-001: the classification made (and persisted) in submit() is the same decision
+    """DeepResearcher-001: the classification made (and persisted) in submit() is the same decision
     handed to the workflow run, and the query is classified exactly once.
 
     Guards against the duplicate-classification regression where run_query re-entered the
@@ -678,7 +678,7 @@ async def test_poll_fails_soft_when_checkpoint_todo_read_fails(caplog) -> None:
         result="answer",
     )
     reader.raise_for_thread_ids.add(job_id)
-    caplog.set_level(logging.WARNING, logger="aiq_mcp.jobs")
+    caplog.set_level(logging.WARNING, logger="deep_researcher_mcp.jobs")
 
     assert await manager.poll(job_id, "anonymous") == {
         "job_id": job_id,
@@ -693,7 +693,7 @@ async def test_poll_fails_soft_when_checkpoint_todo_read_fails(caplog) -> None:
 @pytest.mark.asyncio
 async def test_job_logs_use_opaque_reference_not_capability_uuid(caplog) -> None:
     manager = _manager(_Runner())
-    caplog.set_level(logging.INFO, logger="aiq_mcp.jobs")
+    caplog.set_level(logging.INFO, logger="deep_researcher_mcp.jobs")
     await manager.start()
     try:
         submitted = await manager.submit("query", "anonymous")
@@ -718,7 +718,7 @@ async def test_workflow_exception_does_not_log_capability_uuid(caplog) -> None:
             raise RuntimeError(f"workflow failed for conversation {conversation_id}")
 
     manager = _manager(_CapabilityEchoingRunner())
-    caplog.set_level(logging.ERROR, logger="aiq_mcp.jobs")
+    caplog.set_level(logging.ERROR, logger="deep_researcher_mcp.jobs")
     await manager.start()
     try:
         submitted = await manager.submit("query", "anonymous")
@@ -763,7 +763,7 @@ async def test_claim_failure_marks_queued_or_owned_job_failed(fail_after_claim: 
         heartbeat_interval_seconds=0,
         ttl_sweep_interval_seconds=0,
     )
-    caplog.set_level(logging.ERROR, logger="aiq_mcp.jobs")
+    caplog.set_level(logging.ERROR, logger="deep_researcher_mcp.jobs")
     await manager.start()
     try:
         submitted = await manager.submit("query", "anonymous")
@@ -812,7 +812,7 @@ async def test_transient_heartbeat_failure_retries_without_exposing_details(capl
         heartbeat_interval_seconds=0.001,
         ttl_sweep_interval_seconds=0,
     )
-    caplog.set_level(logging.WARNING, logger="aiq_mcp.jobs")
+    caplog.set_level(logging.WARNING, logger="deep_researcher_mcp.jobs")
     await manager.start()
     try:
         submitted = await manager.submit("query", "anonymous")
@@ -849,7 +849,7 @@ async def test_unexpected_heartbeat_task_failure_cannot_skip_job_cleanup(caplog,
         raise RuntimeError("postgresql://user:heartbeat-secret@db/jobs")  # pragma: allowlist secret
 
     monkeypatch.setattr(manager, "_heartbeat_job", _fail_heartbeat)
-    caplog.set_level(logging.WARNING, logger="aiq_mcp.jobs")
+    caplog.set_level(logging.WARNING, logger="deep_researcher_mcp.jobs")
     await manager.start()
     try:
         submitted = await manager.submit("query", "anonymous")

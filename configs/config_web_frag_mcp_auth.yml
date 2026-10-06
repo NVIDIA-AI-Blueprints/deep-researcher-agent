@@ -7,10 +7,10 @@
 # - Knowledge retrieval using Foundational RAG.
 #    Requires a RAG server and ingest server to be running (not deployed by this
 #    blueprint). Example RAG deployment: https://github.com/NVIDIA-AI-Blueprints/rag/tree/main
-# - Protected per-user MCP source (`gdrive`): AIQ surfaces connection state on the
+# - Protected per-user MCP source (`gdrive`): Deep Researcher Agent surfaces connection state on the
 #    source card, gates job submission until connected (409 mcp_auth_required), and
 #    owns the OAuth connect/callback. See the `authentication` / `object_stores`
-#    sections below for setup (MCP_GDRIVE_URL, AIQ_PUBLIC_URL, MCP_TOKEN_STORE_TYPE).
+#    sections below for setup (MCP_GDRIVE_URL, DEEP_RESEARCHER_PUBLIC_URL, MCP_TOKEN_STORE_TYPE).
 
 general:
   use_uvloop: true
@@ -21,8 +21,8 @@ general:
         level: INFO
 
   front_end:
-    _type: aiq_api
-    runner_class: aiq_api.plugin.AIQAPIWorker
+    _type: deep_researcher_api
+    runner_class: deep_researcher_api.plugin.DeepResearcherAPIWorker
     # =========================================================================
     # Knowledge API is automatically enabled when knowledge_retrieval function
     # is configured
@@ -66,7 +66,7 @@ llms:
       enable_thinking: false
 
   # Known limitation: Build-hosted Lightning can intermittently produce citation-incomplete shallow drafts.
-  # AI-Q fails closed; see docs/source/resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog.
+  # Deep Researcher Agent fails closed; see docs/source/resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog.
   nemotron_lightning_agent_llm:
     _type: nim
     model_name: nvidia/nemotron-3.5-lightning-30b-a3b
@@ -135,13 +135,13 @@ functions:
         tools:
           - knowledge_search
       # Protected per-user MCP source (example: a Google Drive MCP server). `per_user_auth`
-      # makes AIQ surface connection state on the source card, gate job submission
+      # makes Deep Researcher Agent surface connection state on the source card, gate job submission
       # until connected (409 mcp_auth_required), and own the OAuth connect/callback.
       - id: gdrive
         name: "Google Drive"
         description: "Search and read your authorized Google Drive files."
         default_enabled: false
-        # requires_auth (the old AIQ-login gate) is left false so the source card
+        # requires_auth (the old DeepResearcher-login gate) is left false so the source card
         # is visible/Connectable in no-auth local runs; per_user_auth is the gate.
         requires_auth: false
         per_user_auth:
@@ -175,7 +175,7 @@ functions:
         # interactive (WebSocket) session builder, which crashes for a user with no
         # token. Instead the async-job worker builds the MCP client IN CODE per-job
         # (from this source's auth_provider) with the owner's token — see
-        # aiq_api.mcp_auth.runtime_tools. This keeps the interactive WS path untouched.
+        # deep_researcher_api.mcp_auth.runtime_tools. This keeps the interactive WS path untouched.
 
   web_search_tool:
     _type: tavily_web_search
@@ -249,18 +249,18 @@ functions:
 # per-user OAuth-protected MCP source.
 #
 # How it fits together:
-#   - `mcp_oauth2_gdrive` (authentication): standard NAT MCP OAuth provider. AIQ
+#   - `mcp_oauth2_gdrive` (authentication): standard NAT MCP OAuth provider. Deep Researcher Agent
 #     treats this as the single source of truth — it derives the shared token
 #     storage, redirect_uri, scopes and client_id from here, and reuses NAT's
 #     well-known discovery for the authorize/token endpoints.
 #   - `mcp_gdrive` (function_groups): the job-time per_user_mcp_client. It reads
-#     the same token AIQ wrote at connect time from the same object store.
+#     the same token Deep Researcher Agent wrote at connect time from the same object store.
 #
-# Requirements (see frontends/aiq_api/src/aiq_api/mcp_auth/factory.py):
+# Requirements (see frontends/deep_researcher_api/src/deep_researcher_api/mcp_auth/factory.py):
 #   * token_storage_object_store MUST be a shared, persistent object store — the
 #     API process writes the token and a separate worker process reads it.
-#   * redirect_uri MUST point at AIQ's callback: <public-url>/v1/auth/mcp/gdrive/callback
-#     and be reachable by the user's browser (i.e. AIQ's public URL).
+#   * redirect_uri MUST point at Deep Researcher Agent's callback: <public-url>/v1/auth/mcp/gdrive/callback
+#     and be reachable by the user's browser (i.e. Deep Researcher Agent's public URL).
 #   * client_id is OPTIONAL. Omitted -> NAT dynamic client registration (DCR):
 #     connect works, but silent token refresh won't survive the API->worker
 #     process boundary, so users Reconnect when a source shows "expired" (the UI
@@ -269,20 +269,20 @@ functions:
 # Example below wires a per-user OAuth-protected MCP server (e.g. a Google Drive
 # MCP service). Point MCP_GDRIVE_URL at your provider's MCP endpoint.
 # Set: MCP_GDRIVE_URL=https://your-mcp-server.example.com/mcp
-#      AIQ_PUBLIC_URL=<https URL where AIQ's API is reachable by the browser>
+#      DEEP_RESEARCHER_PUBLIC_URL=<https URL where Deep Researcher Agent's API is reachable by the browser>
 #
 # NOTE: deliberately NO `function_groups: mcp_gdrive` here. A per_user_mcp_client
 # declared in config is built by NAT's per-user interactive (WebSocket) session
 # builder, which fails for a user with no token and breaks interactive chat. The
 # async-job worker instead builds the per-user MCP client IN CODE, per job, from
 # the `mcp_oauth2_gdrive` auth provider below (its server_url) + the job owner's
-# token. See aiq_api.mcp_auth.runtime_tools.open_per_user_mcp_tools.
+# token. See deep_researcher_api.mcp_auth.runtime_tools.open_per_user_mcp_tools.
 
 authentication:
   mcp_oauth2_gdrive:
     _type: mcp_oauth2
     server_url: ${MCP_GDRIVE_URL:-https://your-mcp-server.example.com/mcp}
-    redirect_uri: ${AIQ_PUBLIC_URL:-http://localhost:8000}/v1/auth/mcp/gdrive/callback
+    redirect_uri: ${DEEP_RESEARCHER_PUBLIC_URL:-http://localhost:8000}/v1/auth/mcp/gdrive/callback
     token_storage_object_store: mcp_token_store
     # scopes are discovered from MaaS protected-resource metadata; pin only to override.
     # client_id: ${MCP_GDRIVE_CLIENT_ID}        # optional — see note above
@@ -290,21 +290,21 @@ authentication:
 
 # A shared object store is required so the API process (connect) and the worker
 # process (job) see the same token. Two modes, selected by MCP_TOKEN_STORE_TYPE:
-#   * aiq_sqlite (default) — a SQLite file, serviceless and shared across the API
+#   * deep_researcher_sqlite (default) — a SQLite file, serviceless and shared across the API
 #     and worker processes on the same host. Works locally with nothing deployed.
 #   * redis — a networked store for multi-replica / multi-host deployments
 #     (requires nvidia-nat-redis; deploy sets MCP_TOKEN_STORE_TYPE=redis).
 # Fields not used by the active _type are ignored, so both sets can coexist here.
 #
-# aiq_sqlite requirement: the API and worker processes must resolve db_path to the
+# deep_researcher_sqlite requirement: the API and worker processes must resolve db_path to the
 # SAME file, so they must share a filesystem (single host / shared volume). Prefer
 # an ABSOLUTE path — a relative path only works if both processes share a working
 # directory. Separate hosts/pods do NOT share a filesystem; use redis there.
 object_stores:
   mcp_token_store:
-    _type: ${MCP_TOKEN_STORE_TYPE:-aiq_sqlite}
+    _type: ${MCP_TOKEN_STORE_TYPE:-deep_researcher_sqlite}
     bucket_name: mcp-tokens
-    # aiq_sqlite (use an absolute path in any multi-process deployment):
+    # deep_researcher_sqlite (use an absolute path in any multi-process deployment):
     db_path: ${MCP_TOKEN_DB:-./mcp_tokens.db}
     # redis (S3/MySQL also available via their NAT packages):
     host: ${REDIS_HOST:-localhost}
@@ -317,4 +317,4 @@ workflow:
   enable_escalation: true
   enable_clarifier: true
   use_async_deep_research: true
-  checkpoint_db: ${AIQ_CHECKPOINT_DB:-./checkpoints.db}
+  checkpoint_db: ${DEEP_RESEARCHER_CHECKPOINT_DB:-./checkpoints.db}

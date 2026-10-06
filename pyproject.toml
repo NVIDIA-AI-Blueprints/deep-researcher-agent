@@ -21,17 +21,17 @@ requires = ["setuptools >= 83", "setuptools-scm>=8"]
 package-dir = {"" = "src"}
 
 [tool.setuptools.package-data]
-"aiq_agent.agents.chat_researcher" = ["prompts/*.j2"]
-"aiq_agent.agents.clarifier" = ["prompts/*.j2"]
-"aiq_agent.agents.data_science" = ["prompts/*.j2"]
-"aiq_agent.agents.deep_researcher" = ["prompts/*.j2", "skills/**/*"]
-"aiq_agent.agents.report_rewriter" = ["prompts/*.j2"]
-"aiq_agent.agents.shallow_researcher" = ["prompts/*.j2"]
+"deep_researcher_agent.agents.chat_researcher" = ["prompts/*.j2"]
+"deep_researcher_agent.agents.clarifier" = ["prompts/*.j2"]
+"deep_researcher_agent.agents.data_science" = ["prompts/*.j2"]
+"deep_researcher_agent.agents.deep_researcher" = ["prompts/*.j2", "skills/**/*"]
+"deep_researcher_agent.agents.report_rewriter" = ["prompts/*.j2"]
+"deep_researcher_agent.agents.shallow_researcher" = ["prompts/*.j2"]
 
 [project]
-name = "aiq-agent"
+name = "deep-researcher-agent"
 version = "2.2.0"
-description = "NVIDIA AI-Q Blueprint - An enterprise-grade agent for intelligent research assistance"
+description = "NVIDIA Deep Researcher Agent Blueprint - An enterprise-grade agent for intelligent research assistance"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 license = {text = "Apache-2.0"}
@@ -100,7 +100,7 @@ viz = [
     "pygraphviz>=1.11",
 ]
 
-[tool.aiq.openshell]
+[tool.deep-researcher.openshell]
 release-tag = "v0.0.88"
 adapter-version = "0.1.0"
 installer-sha256 = "c15d6cb8090e1c7c8d79a320b5bcbdaf1c15c2363942d81e84b56e03b836249e" # pragma: allowlist secret
@@ -112,14 +112,14 @@ installer-sha256 = "c15d6cb8090e1c7c8d79a320b5bcbdaf1c15c2363942d81e84b56e03b836
 # -----------------------------------------------------------------------------
 
 [project.entry-points."nat.plugins"]
-aiq_chat_researcher = "aiq_agent.agents.chat_researcher.register"
-aiq_shallow_researcher = "aiq_agent.agents.shallow_researcher.register"
-aiq_deep_researcher = "aiq_agent.agents.deep_researcher.register"
-aiq_fastapi_extensions = "aiq_agent.fastapi_extensions.register"
-aiq_clarifier = "aiq_agent.agents.clarifier.register"
-aiq_data_science = "aiq_agent.agents.data_science.register"
-aiq_data_source_registry = "aiq_agent.common.data_source_registry"
-aiq_guardrails = "aiq_agent.guardrails.register"
+deep_researcher_chat_researcher = "deep_researcher_agent.agents.chat_researcher.register"
+deep_researcher_shallow_researcher = "deep_researcher_agent.agents.shallow_researcher.register"
+deep_researcher_deep_researcher = "deep_researcher_agent.agents.deep_researcher.register"
+deep_researcher_fastapi_extensions = "deep_researcher_agent.fastapi_extensions.register"
+deep_researcher_clarifier = "deep_researcher_agent.agents.clarifier.register"
+deep_researcher_data_science = "deep_researcher_agent.agents.data_science.register"
+deep_researcher_data_source_registry = "deep_researcher_agent.common.data_source_registry"
+deep_researcher_guardrails = "deep_researcher_agent.guardrails.register"
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "sources/**/tests"]
@@ -179,7 +179,7 @@ extend-ignore = [
 combine-as-imports = true
 default-section = "third-party"
 force-single-line = true
-known-first-party = ["aiq", "aiq_api", "aiq_mcp", "nat", "nat_*", "_utils"]
+known-first-party = ["deep-researcher", "deep_researcher_api", "deep_researcher_mcp", "nat", "nat_*", "_utils"]
 known-third-party = [
   "agno",
   "autogen",
@@ -206,11 +206,11 @@ indent_dictionary_value = true
 # Auto-discovers packages in sources/ and frontends/ directories
 #
 # Usage:
-#   uv sync --group dev                 # Install AI-Q development dependencies
+#   uv sync --group dev                 # Install Deep Researcher Agent development dependencies
 #   uv sync --project mcp --extra dev   # Install the isolated MCP test environment
-#   uv sync --package aiq-agent  # Install only the root package
+#   uv sync --package deep-researcher-agent  # Install only the root package
 #   uv pip install -e ./frontends/cli    # Install a specific package
-#   uv pip install -e "./frontends/aiq_api[postgres]"  # With extras
+#   uv pip install -e "./frontends/deep_researcher_api[postgres]"  # With extras
 # -----------------------------------------------------------------------------
 [dependency-groups]
 dev = [
@@ -224,7 +224,7 @@ dev = [
     "mypy>=1.5.0",
     "dask[distributed]>=2024.1.0",
     # Workspace packages for testing
-    "aiq-gsf",
+    "deep-researcher-gsf",
     "google-scholar-paper-search",
     "tavily-web-search",
     "exa-web-search",
@@ -233,9 +233,9 @@ dev = [
     "duckduckgo-news-search",
     "polymarket-prediction-market",
     "knowledge-layer[all]",
-    "aiq-api",
-    "aiq-research-cli",
-    "aiq-debug",
+    "deep-researcher-api",
+    "deep-researcher-research-cli",
+    "deep-researcher-debug",
 ]
 [tool.uv]
 prerelease = "allow"
@@ -264,7 +264,7 @@ prerelease = "if-necessary-or-explicit"
 [tool.uv.workspace]
 members = [
     "sources/*",
-    "frontends/aiq_api",
+    "frontends/deep_researcher_api",
     "frontends/cli",
     "frontends/debug",
     "frontends/benchmarks/freshqa",
@@ -273,8 +273,8 @@ members = [
 exclude = ["mcp"]
 
 [tool.uv.sources]
-aiq-agent = { workspace = true }
-aiq-gsf = { workspace = true }
+deep-researcher-agent = { workspace = true }
+deep-researcher-gsf = { workspace = true }
 google-scholar-paper-search = { workspace = true }
 tavily-web-search = { workspace = true }
 exa-web-search = { workspace = true }
@@ -284,8 +284,8 @@ duckduckgo-news-search = { workspace = true }
 polymarket-prediction-market = { workspace = true }
 knowledge-layer = { workspace = true }
 nemo-relay = { git = "https://github.com/NVIDIA/NeMo-Relay.git", rev = "ffb24817442bac99212da0971b13bdad5bc4d84d" }  # pragma: allowlist secret
-aiq-api = { workspace = true }
-aiq-research-cli = { workspace = true }
-aiq-debug = { workspace = true }
+deep-researcher-api = { workspace = true }
+deep-researcher-research-cli = { workspace = true }
+deep-researcher-debug = { workspace = true }
 freshqa-eval = { workspace = true }
 deepsearch-qa-evaluator = { workspace = true }

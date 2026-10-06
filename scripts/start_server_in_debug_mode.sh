@@ -79,7 +79,7 @@ fi
 
 echo ""
 echo "============================================"
-echo "  AI-Q Blueprint - Server Mode"
+echo "  Deep Researcher Agent Blueprint - Server Mode"
 echo "============================================"
 echo ""
 echo "Config: $(basename "$CONFIG_FILE")"

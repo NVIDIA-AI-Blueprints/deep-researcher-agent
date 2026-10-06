@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Profiling and Cost Analysis
 
-The AI-Q blueprint integrates with the NeMo Agent Toolkit (NAT) profiler to capture detailed execution traces from every evaluation run. These traces record every LLM call, tool invocation, token count, and timestamp across the full multi-agent pipeline. A post-eval tokenomics report then combines that trace data with your configured pricing to produce a complete cost and performance breakdown — down to individual LLM calls and external API charges.
+The Deep Researcher Agent blueprint integrates with the NeMo Agent Toolkit (NAT) profiler to capture detailed execution traces from every evaluation run. These traces record every LLM call, tool invocation, token count, and timestamp across the full multi-agent pipeline. A post-eval tokenomics report then combines that trace data with your configured pricing to produce a complete cost and performance breakdown — down to individual LLM calls and external API charges.
 
 ```{note}
 Profiling is a post-eval analysis feature. You run the agent normally via `nat eval`; the profiler is activated by adding a `profiler:` block to your eval config. No changes to agent code are required.
@@ -33,7 +33,7 @@ The relevant `eval` section looks like this:
 ```yaml
 eval:
   general:
-    workflow_alias: "aiq-deepresearcher"
+    workflow_alias: "deep-researcher-deepresearcher"
     output_dir: frontends/benchmarks/deepresearch_bench/results
     max_concurrency: 4
     profiler:
@@ -178,8 +178,8 @@ configured provider and subscription plan.
 After `nat eval` completes, run:
 
 ```bash
-PYTHONPATH=src python -m aiq_agent.tokenomics.report \
-  --trace relay/aiq-relay.atof.jsonl \
+PYTHONPATH=src python -m deep_researcher_agent.tokenomics.report \
+  --trace relay/deep-researcher-relay.atof.jsonl \
   --config frontends/benchmarks/deepresearch_bench/configs/config_tokenomics_pricing.yml
 ```
 
@@ -244,7 +244,7 @@ Full per-query table: cost, ISL, OSL, cached tokens, ISL:OSL ratio, LLM call cou
 
 ### Subagent Phase Attribution
 
-The adapter in `src/aiq_agent/tokenomics/atof_adapter.py` reads Relay ATOF
+The adapter in `src/deep_researcher_agent/tokenomics/atof_adapter.py` reads Relay ATOF
 JSONL and follows scope `parent_uuid` ancestry. Calls nested below real
 `planner-agent` and `researcher-agent` scopes are attributed to those phases;
 all remaining calls use the orchestrator bucket. Parallel researcher tasks use
@@ -257,14 +257,14 @@ The tokenomics module can also be used programmatically:
 
 ```python
 import yaml
-from aiq_agent.tokenomics import parse_trace, PricingRegistry
+from deep_researcher_agent.tokenomics import parse_trace, PricingRegistry
 
 with open("frontends/benchmarks/deepresearch_bench/configs/config_tokenomics_pricing.yml") as f:
     config = yaml.safe_load(f)
 
 pricing = PricingRegistry.from_dict(config["tokenomics"]["pricing"])
 profiles = parse_trace(
-    "relay/aiq-relay.atof.jsonl",
+    "relay/deep-researcher-relay.atof.jsonl",
     pricing,
 )
 

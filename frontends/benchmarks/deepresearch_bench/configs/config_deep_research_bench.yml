@@ -61,7 +61,7 @@ workflow:
   _type: deep_research_workflow
 eval:
   general:
-    workflow_alias: "aiq-deepresearcher"
+    workflow_alias: "deep-researcher-deepresearcher"
     output_dir: frontends/benchmarks/deepresearch_bench/results
     max_concurrency: 4
     dataset:

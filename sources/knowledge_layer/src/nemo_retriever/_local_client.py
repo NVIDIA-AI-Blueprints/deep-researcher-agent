@@ -23,12 +23,12 @@ from typing import Any
 
 from pydantic import SecretStr
 
-from aiq_agent.knowledge import FileProgress
-from aiq_agent.knowledge import IngestionJobStatus
-from aiq_agent.knowledge import JobState
-from aiq_agent.knowledge.schema import CollectionInfo
-from aiq_agent.knowledge.schema import FileInfo
-from aiq_agent.knowledge.schema import FileStatus
+from deep_researcher_agent.knowledge import FileProgress
+from deep_researcher_agent.knowledge import IngestionJobStatus
+from deep_researcher_agent.knowledge import JobState
+from deep_researcher_agent.knowledge.schema import CollectionInfo
+from deep_researcher_agent.knowledge.schema import FileInfo
+from deep_researcher_agent.knowledge.schema import FileStatus
 
 from ._normalization import scrub_metadata
 from ._normalization import status_to_file_status
@@ -37,7 +37,7 @@ from ._normalization import strict_bool
 logger = logging.getLogger(__name__)
 
 _BACKEND_NAME = "nemo_retriever_local"
-_ADAPTER_MARKER = "aiq_nemo_retriever_local"
+_ADAPTER_MARKER = "deep_researcher_nemo_retriever_local"
 _ADAPTER_SCHEMA_VERSION = 1
 _PAGE_SIZE = 100
 _RECONCILIATION_INTERVAL_S = 60.0
@@ -96,7 +96,9 @@ class LocalSettings:
 
     @classmethod
     def from_config(cls, config: dict[str, Any]) -> LocalSettings:
-        raw_dir = str(_config_value(config, "data_dir", "NRL_LOCAL_DATA_DIR", ".aiq-data/nemo_retriever")).strip()
+        raw_dir = str(
+            _config_value(config, "data_dir", "NRL_LOCAL_DATA_DIR", ".deep-researcher-data/nemo_retriever")
+        ).strip()
         if not raw_dir:
             raise ValueError("nrl_local_data_dir must not be empty")
         scope = str(_config_value(config, "scope", "NRL_SCOPE", "local")).strip()
@@ -259,7 +261,7 @@ def _load_nrl_bindings() -> _NRLBindings:
     except ImportError as error:
         raise NemoRetrieverLocalDependencyError(
             "nemo_retriever_local requires the isolated Python 3.12 environment. "
-            "Start AI-Q with `uv run --project environments/nemo_retriever_local nat serve ...`."
+            "Start Deep Researcher Agent with `uv run --project environments/nemo_retriever_local nat serve ...`."
         ) from error
     try:
         default_embed_endpoint = _BatchEmbedCPUActor.DEFAULT_EMBED_INVOKE_URL
@@ -446,7 +448,7 @@ class LocalRuntime:
         }
 
     def _acquire_process_lock(self) -> None:
-        lock_path = self.settings.data_dir / ".aiq-nemo-retriever.lock"
+        lock_path = self.settings.data_dir / ".deep-researcher-nemo-retriever.lock"
         # NAT may finalize a function on a different thread than the one that
         # initialized it. Keep lock ownership process-scoped rather than tied
         # to filelock's default thread-local context.
@@ -456,7 +458,7 @@ class LocalRuntime:
         except self.bindings.FileLockTimeout as error:
             raise NemoRetrieverLocalLockError(
                 f"The NeMo Retriever local data directory {self.settings.data_dir} is already open by another "
-                "process. Stop that AI-Q process or choose a different nrl_local_data_dir."
+                "process. Stop that Deep Researcher Agent process or choose a different nrl_local_data_dir."
             ) from error
         self._lock_file = lock
 
@@ -882,7 +884,7 @@ class LocalRuntime:
             return dataframe
         records = self.bindings.to_client_vdb_records(dataframe)
         fields = list(staged.metadata)
-        join_field = "__aiq_source"
+        join_field = "__deep_researcher_source"
         while join_field in staged.metadata:
             join_field = f"_{join_field}"
         sidecar = self.bindings.pandas.DataFrame([{**staged.metadata, join_field: staged.filename}])

@@ -11,7 +11,7 @@ from pydantic import ConfigDict
 
 
 class GSFErrorCode(StrEnum):
-    """Error codes exposed by GSF-backed AI-Q tools."""
+    """Error codes exposed by GSF-backed Deep Researcher Agent tools."""
 
     AUTHENTICATION_REQUIRED = "authentication_required"
     FORBIDDEN = "forbidden"
@@ -45,7 +45,7 @@ class GSFError(Exception):
 
 
 class GSFToolError(BaseModel):
-    """Serialized error envelope returned to an AI-Q agent."""
+    """Serialized error envelope returned to an Deep Researcher Agent."""
 
     model_config = ConfigDict(extra="forbid")
 

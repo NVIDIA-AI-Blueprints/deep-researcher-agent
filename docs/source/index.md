@@ -3,9 +3,9 @@ SPDX-FileCopyrightText: Copyright (c) 2025-2026, NVIDIA CORPORATION & AFFILIATES
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# NVIDIA AI-Q Blueprint
+# NVIDIA Deep Researcher Agent Blueprint
 
-An NVIDIA blueprint for AI-powered deep research, built on the NeMo Agent Toolkit. AI-Q is a deployable research
+An NVIDIA blueprint for AI-powered deep research, built on the NeMo Agent Toolkit. Deep Researcher Agent is a deployable research
 backend that teams can self-host and connect to deployment-owned models, data, authentication, policy controls,
 storage, and observability. It combines intelligent query routing, multi-agent research pipelines, and pluggable
 knowledge retrieval to deliver citation-backed answers. It is focused on governed research workflows rather than

@@ -44,10 +44,10 @@ sys.path.insert(0, str(project_root))
 # Load environment variables from .env file (won't override existing vars)
 load_dotenv()
 
-from aiq_agent.knowledge.factory import get_ingestor  # noqa: E402
-from aiq_agent.knowledge.schema import CollectionInfo  # noqa: E402
-from aiq_agent.knowledge.schema import FileInfo  # noqa: E402
-from aiq_agent.knowledge.schema import FileStatus  # noqa: E402
+from deep_researcher_agent.knowledge.factory import get_ingestor  # noqa: E402
+from deep_researcher_agent.knowledge.schema import CollectionInfo  # noqa: E402
+from deep_researcher_agent.knowledge.schema import FileInfo  # noqa: E402
+from deep_researcher_agent.knowledge.schema import FileStatus  # noqa: E402
 
 
 def print_header(title: str):

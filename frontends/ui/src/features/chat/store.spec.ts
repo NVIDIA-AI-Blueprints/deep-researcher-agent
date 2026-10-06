@@ -5,7 +5,7 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 import { useChatStore } from './store'
 import type { Conversation, PendingInteraction, FileCardData } from './types'
 
-const STORAGE_KEY = 'aiq-chat-store'
+const STORAGE_KEY = 'deep-researcher-chat-store'
 const mockLayoutState = vi.hoisted(() => ({
   closeRightPanel: vi.fn(),
   enabledDataSourceIds: ['web_search'],

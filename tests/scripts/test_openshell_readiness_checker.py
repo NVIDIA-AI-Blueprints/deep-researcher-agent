@@ -82,7 +82,7 @@ class _Client:
         persist_request_labels: bool = True,
         version: str = "1.2.3",
     ) -> None:
-        self.labels = labels or {"aiq": "readiness-probe"}
+        self.labels = labels or {"deep-researcher": "readiness-probe"}
         self.persist_request_labels = persist_request_labels
         self.version = version
         self.sandbox = SimpleNamespace(
@@ -128,7 +128,7 @@ class _Client:
 
     def list(self, *, workspace: str, label_selector: str) -> list[object]:
         assert workspace == "research"
-        assert label_selector == "aiq=readiness-probe"
+        assert label_selector == "deep-researcher=readiness-probe"
         return [] if self.deleted else [self.sandbox]
 
     def get(self, name: str, *, workspace: str) -> object:
@@ -141,7 +141,7 @@ class _Client:
     def exec(self, sandbox_id: str, command: list[str]) -> object:
         assert sandbox_id == self.sandbox.id
         assert command
-        return SimpleNamespace(exit_code=0, stdout="aiq-openshell-ready")
+        return SimpleNamespace(exit_code=0, stdout="deep-researcher-openshell-ready")
 
     def delete(self, name: str, *, workspace: str) -> bool:
         assert workspace == "research"
@@ -227,7 +227,7 @@ def _config(checker: ModuleType, tmp_path: Path, **overrides: Any) -> object:
     values = {
         "gateway": "enterprise",
         "workspace": "research",
-        "image": "aiq:test",
+        "image": "deep-researcher:test",
         "policy": tmp_path / "policy.yaml",
         "openshell_bin": tmp_path / "openshell",
         "ready_timeout_seconds": 1.0,
@@ -239,7 +239,7 @@ def _config(checker: ModuleType, tmp_path: Path, **overrides: Any) -> object:
 
 @contextmanager
 def _provider_helpers(client: _Client):
-    prefix = "aiq_agent.agents.deep_researcher.sandbox.providers.openshell"
+    prefix = "deep_researcher_agent.agents.deep_researcher.sandbox.providers.openshell"
     policy = SimpleNamespace(version=1)
     client._stub.config.policy = policy
     client._stub.status.revision.policy = policy
@@ -368,7 +368,7 @@ def test_parser_treats_empty_workspace_as_default(
     checker: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("AIQ_OPENSHELL_WORKSPACE", "")
+    monkeypatch.setenv("DEEP_RESEARCHER_OPENSHELL_WORKSPACE", "")
 
     args = checker._parser().parse_args(["--policy-file", "policy.yaml", "--openshell-bin", "openshell"])
 
@@ -426,7 +426,7 @@ def test_probe_rejects_unequal_authoritative_policy_hashes(checker: ModuleType, 
 
 
 def test_probe_rejects_selector_metadata_mismatch_and_cleans_up(checker: ModuleType, tmp_path: Path) -> None:
-    client = _Client(labels={"aiq": "wrong"}, persist_request_labels=False)
+    client = _Client(labels={"deep-researcher": "wrong"}, persist_request_labels=False)
     with (
         _provider_helpers(client),
         _fake_runtime(client),

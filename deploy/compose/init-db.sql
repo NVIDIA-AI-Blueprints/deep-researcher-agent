@@ -1,22 +1,22 @@
 -- =============================================================================
--- AI-Q Blueprint - Database Initialization (idempotent — safe to re-run)
+-- Deep Researcher Agent Blueprint - Database Initialization (idempotent — safe to re-run)
 -- =============================================================================
 --
 -- Run by the backend init container on every pod start. All statements are
 -- idempotent (IF NOT EXISTS) so re-runs are safe.
 --
 -- Databases:
---   - aiq_jobs         (job metadata, events, document summaries)
---   - aiq_checkpoints  (LangGraph conversation state)
+--   - deep_researcher_jobs         (job metadata, events, document summaries)
+--   - deep_researcher_checkpoints  (LangGraph conversation state)
 --
--- Tables in aiq_jobs:
+-- Tables in deep_researcher_jobs:
 --   - job_info                — NAT JobStore metadata (status, timestamps, expiry)
---   - job_access              — AIQ-owned job ownership/access control metadata
+--   - job_access              — DeepResearcher-owned job ownership/access control metadata
 --   - deep_research_admission — Atomic capacity and submission-rate reservations
 --   - job_events              — SSE streaming events and job event persistence
 --   - summaries               — Document summaries (collection + filename keyed)
 --
--- Tables in aiq_checkpoints:
+-- Tables in deep_researcher_checkpoints:
 --   - checkpoints           — LangGraph conversation checkpoints
 --   - checkpoint_blobs      — LangGraph binary state data
 --   - checkpoint_writes     — LangGraph pending writes
@@ -25,16 +25,16 @@
 -- =============================================================================
 
 -- Create checkpoints database if it doesn't exist
-SELECT 'CREATE DATABASE aiq_checkpoints' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'aiq_checkpoints')\gexec
+SELECT 'CREATE DATABASE deep_researcher_checkpoints' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'deep_researcher_checkpoints')\gexec
 
 -- Grant permissions
-GRANT ALL PRIVILEGES ON DATABASE aiq_jobs TO aiq;
-GRANT ALL PRIVILEGES ON DATABASE aiq_checkpoints TO aiq;
+GRANT ALL PRIVILEGES ON DATABASE deep_researcher_jobs TO deep_researcher;
+GRANT ALL PRIVILEGES ON DATABASE deep_researcher_checkpoints TO deep_researcher;
 
 -- =============================================================================
--- Create tables in aiq_jobs database
+-- Create tables in deep_researcher_jobs database
 -- =============================================================================
-\connect aiq_jobs
+\connect deep_researcher_jobs
 
 -- Job metadata table (NAT JobStore)
 CREATE TABLE IF NOT EXISTS job_info (
@@ -118,12 +118,12 @@ CREATE TABLE IF NOT EXISTS summaries (
 CREATE INDEX IF NOT EXISTS idx_summaries_collection ON summaries(collection);
 
 -- =============================================================================
--- Create LangGraph checkpoint tables in aiq_checkpoints database
+-- Create LangGraph checkpoint tables in deep_researcher_checkpoints database
 -- These must exist before backends connect. Previously left to the app,
 -- but if postgres restarts without a backend restart, the tables are lost
 -- and running backends crash with "relation checkpoints does not exist".
 -- =============================================================================
-\connect aiq_checkpoints
+\connect deep_researcher_checkpoints
 
 CREATE TABLE IF NOT EXISTS checkpoint_migrations (
     v INTEGER PRIMARY KEY

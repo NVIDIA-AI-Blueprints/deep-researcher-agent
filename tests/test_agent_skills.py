@@ -73,7 +73,7 @@ def test_validator_flags_bundle_link_escape(tmp_path):
     """A relative bundle link that traverses out of its bundle directory is an error."""
     validator = _load_validator()
     root = tmp_path / "skills"
-    _make_bundle(root, "aiq-escape-skill", body="See [oops](references/../../secret.md).")
+    _make_bundle(root, "deep-researcher-escape-skill", body="See [oops](references/../../secret.md).")
     report = validator.validate_roots([root])
     assert any("escapes the" in e for e in report.errors), report.errors
 
@@ -82,7 +82,7 @@ def test_validator_flags_unreadable_skill_md(tmp_path):
     """An unreadable SKILL.md is reported rather than crashing the validator."""
     validator = _load_validator()
     root = tmp_path / "skills"
-    skill_md = _make_bundle(root, "aiq-unreadable-skill") / "SKILL.md"
+    skill_md = _make_bundle(root, "deep-researcher-unreadable-skill") / "SKILL.md"
     skill_md.chmod(0o000)
     if os.access(skill_md, os.R_OK):  # e.g. running as root, where chmod can't block reads
         skill_md.chmod(0o644)
@@ -98,6 +98,6 @@ def test_validator_accepts_crlf_frontmatter(tmp_path):
     """CRLF line endings in frontmatter are valid; the regex matches `\\r?\\n` by design."""
     validator = _load_validator()
     root = tmp_path / "skills"
-    _make_bundle(root, "aiq-crlf-skill", body="# body", newline="\r\n")
+    _make_bundle(root, "deep-researcher-crlf-skill", body="# body", newline="\r\n")
     report = validator.validate_roots([root])
     assert report.errors == [], report.errors

@@ -166,7 +166,7 @@ class KnowledgeRetrievalConfig(FunctionBaseConfig, name="knowledge_retrieval"):
         description="SigV4 service name: aoss for Amazon OpenSearch Serverless, es for Amazon OpenSearch Service.",
     )
     opensearch_index_prefix: str = Field(
-        default_factory=lambda: _env_value("OPENSEARCH_INDEX_PREFIX", default="aiq"),
+        default_factory=lambda: _env_value("OPENSEARCH_INDEX_PREFIX", default="deep-researcher"),
         description="Prefix for OpenSearch collection indexes.",
     )
     opensearch_vector_field: str = Field(
@@ -266,11 +266,13 @@ class KnowledgeRetrievalConfig(FunctionBaseConfig, name="knowledge_retrieval"):
         description="How Dask ingestion workers receive files: bytes or paths.",
     )
     embed_model: str = Field(
-        default_factory=lambda: _env_value("AIQ_EMBED_MODEL", default="nvidia/nemotron-3-embed-1b"),
+        default_factory=lambda: _env_value("DEEP_RESEARCHER_EMBED_MODEL", default="nvidia/nemotron-3-embed-1b"),
         description="Embedding model for OpenSearch and Azure AI Search ingestion and retrieval.",
     )
     embed_base_url: str = Field(
-        default_factory=lambda: _env_value("AIQ_EMBED_BASE_URL", default="https://integrate.api.nvidia.com/v1"),
+        default_factory=lambda: _env_value(
+            "DEEP_RESEARCHER_EMBED_BASE_URL", default="https://integrate.api.nvidia.com/v1"
+        ),
         description="OpenAI-compatible embeddings endpoint base URL.",
     )
     # Azure AI Search options
@@ -283,14 +285,14 @@ class KnowledgeRetrievalConfig(FunctionBaseConfig, name="knowledge_retrieval"):
         description="Optional Azure AI Search admin key; defaults to AZURE_SEARCH_API_KEY",
     )
     azure_search_index_prefix: str = Field(
-        default_factory=lambda: _env_value("AIQ_AZURE_SEARCH_INDEX_PREFIX", default="aiq"),
+        default_factory=lambda: _env_value("DEEP_RESEARCHER_AZURE_SEARCH_INDEX_PREFIX", default="deep-researcher"),
         min_length=1,
-        description="Unique deployment namespace for the shared AI-Q index",
+        description="Unique deployment namespace for the shared Deep Researcher Agent index",
     )
     embed_dim: int = Field(
-        default_factory=lambda: _env_int("AIQ_EMBED_DIM", 2048),
+        default_factory=lambda: _env_int("DEEP_RESEARCHER_EMBED_DIM", 2048),
         gt=0,
-        description="Embedding dimensions; defaults to AIQ_EMBED_DIM and must match existing indexes",
+        description="Embedding dimensions; defaults to DEEP_RESEARCHER_EMBED_DIM and must match existing indexes",
     )
 
     @model_validator(mode="after")
@@ -379,7 +381,7 @@ def _setup_backend(config: KnowledgeRetrievalConfig, summary_llm_obj=None) -> tu
     if backend == "llamaindex":
         import knowledge_layer.llamaindex.adapter  # noqa: F401
 
-        os.environ.setdefault("AIQ_CHROMA_DIR", config.chroma_dir)
+        os.environ.setdefault("DEEP_RESEARCHER_CHROMA_DIR", config.chroma_dir)
         backend_config = {
             "persist_dir": config.chroma_dir,
             **summary_config,
@@ -481,7 +483,7 @@ def _setup_backend(config: KnowledgeRetrievalConfig, summary_llm_obj=None) -> tu
 
 def _get_retriever(config: KnowledgeRetrievalConfig):
     """Get the retriever singleton from the factory."""
-    from aiq_agent.knowledge.factory import get_retriever
+    from deep_researcher_agent.knowledge.factory import get_retriever
 
     backend, backend_config = _setup_backend(config)
     retriever = get_retriever(backend, backend_config)
@@ -501,8 +503,8 @@ def _initialize_ingestor(config: KnowledgeRetrievalConfig, summary_llm_obj=None)
         config: Knowledge retrieval configuration
         summary_llm_obj: Optional resolved LLM object for summarization
     """
-    from aiq_agent.knowledge.factory import get_ingestor
-    from aiq_agent.knowledge.factory import set_active_ingestor
+    from deep_researcher_agent.knowledge.factory import get_ingestor
+    from deep_researcher_agent.knowledge.factory import set_active_ingestor
 
     backend, backend_config = _setup_backend(config, summary_llm_obj)
     ingestor = get_ingestor(backend, backend_config)
@@ -582,7 +584,7 @@ async def knowledge_retrieval(config: KnowledgeRetrievalConfig, _builder: Builde
         logger.info("Resolved summary model: %s", config.summary_model)
 
     # Initialize summary DB with configured URL
-    from aiq_agent.knowledge.factory import configure_summary_db
+    from deep_researcher_agent.knowledge.factory import configure_summary_db
 
     configure_summary_db(config.summary_db)
 
@@ -656,9 +658,9 @@ async def knowledge_retrieval(config: KnowledgeRetrievalConfig, _builder: Builde
         )
     finally:
         if config.backend in {"nemo_retriever", "nemo_retriever_local"}:
-            from aiq_agent.knowledge.factory import clear_active_ingestor
-            from aiq_agent.knowledge.factory import get_active_ingestor
-            from aiq_agent.knowledge.factory import release_ingestor
+            from deep_researcher_agent.knowledge.factory import clear_active_ingestor
+            from deep_researcher_agent.knowledge.factory import get_active_ingestor
+            from deep_researcher_agent.knowledge.factory import release_ingestor
 
             if get_active_ingestor() is ingestor:
                 clear_active_ingestor()

@@ -1,5 +1,5 @@
 # =============================================================================
-# AI-Q Blueprint - Docker Ignore
+# Deep Researcher Agent Blueprint - Docker Ignore
 # =============================================================================
 # This file controls what enters the Docker build context.
 # .gitignore has NO effect on Docker builds — only .dockerignore does.
@@ -62,7 +62,7 @@ tests/
 !mcp/README.md
 !sources/knowledge_layer/README.md
 !sources/tavily_web_search/README.md
-!src/aiq_agent/agents/deep_researcher/skills/**/SKILL.md
+!src/deep_researcher_agent/agents/deep_researcher/skills/**/SKILL.md
 docs/
 license_report.pdf
 

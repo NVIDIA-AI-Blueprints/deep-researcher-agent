@@ -5,7 +5,7 @@
 """Launch the pytest-owned live OpenShell acceptance suite.
 
 The assertions, fixtures, resource ownership, and verified teardown live in
-``tests/aiq_agent/agents/deep_researcher/sandbox/test_openshell_live.py``.
+``tests/deep_researcher_agent/agents/deep_researcher/sandbox/test_openshell_live.py``.
 See ``docs/source/deployment/openshell.md`` for the operator contract.
 """
 
@@ -19,37 +19,37 @@ from collections.abc import Mapping
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_LIVE_TEST = Path("tests/aiq_agent/agents/deep_researcher/sandbox/test_openshell_live.py")
+_LIVE_TEST = Path("tests/deep_researcher_agent/agents/deep_researcher/sandbox/test_openshell_live.py")
 
 
 def _args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--gateway",
-        default=os.getenv("AIQ_OPENSHELL_GATEWAY_NAME"),
+        default=os.getenv("DEEP_RESEARCHER_OPENSHELL_GATEWAY_NAME"),
         help="Registered OpenShell gateway name; default uses the active gateway",
     )
     parser.add_argument(
         "--workspace",
-        default=os.getenv("AIQ_OPENSHELL_WORKSPACE") or "default",
+        default=os.getenv("DEEP_RESEARCHER_OPENSHELL_WORKSPACE") or "default",
         help="OpenShell workspace that scopes live-test sandbox operations",
     )
     parser.add_argument(
         "--policy",
         default=os.getenv(
-            "AIQ_OPENSHELL_POLICY_FILE",
-            "configs/openshell/generated/aiq-openshell-policy.yaml",
+            "DEEP_RESEARCHER_OPENSHELL_POLICY_FILE",
+            "configs/openshell/generated/deep-researcher-openshell-policy.yaml",
         ),
         help="Policy submitted and attested by the live suite",
     )
     parser.add_argument(
         "--image",
-        default=os.getenv("AIQ_OPENSHELL_IMAGE", "aiq-openshell-demo:latest"),
+        default=os.getenv("DEEP_RESEARCHER_OPENSHELL_IMAGE", "deep-researcher-openshell-demo:latest"),
         help="Prebuilt OpenShell sandbox image",
     )
     parser.add_argument(
         "--expected-gateway-version",
-        default=os.getenv("AIQ_OPENSHELL_EXPECTED_GATEWAY_VERSION"),
+        default=os.getenv("DEEP_RESEARCHER_OPENSHELL_EXPECTED_GATEWAY_VERSION"),
         help="Optional exact gateway version; default requires it to match the installed SDK",
     )
     parser.add_argument(
@@ -62,20 +62,20 @@ def _args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def _environment(args: argparse.Namespace, source: Mapping[str, str] | None = None) -> dict[str, str]:
     env = dict(os.environ if source is None else source)
-    env["AIQ_OPENSHELL_LIVE_TESTS"] = "1"
+    env["DEEP_RESEARCHER_OPENSHELL_LIVE_TESTS"] = "1"
     if args.gateway:
-        env["AIQ_OPENSHELL_GATEWAY_NAME"] = args.gateway
+        env["DEEP_RESEARCHER_OPENSHELL_GATEWAY_NAME"] = args.gateway
     else:
-        env.pop("AIQ_OPENSHELL_GATEWAY_NAME", None)
-    env["AIQ_OPENSHELL_WORKSPACE"] = args.workspace
-    env["AIQ_OPENSHELL_POLICY_FILE"] = args.policy
-    env["AIQ_OPENSHELL_IMAGE"] = args.image
+        env.pop("DEEP_RESEARCHER_OPENSHELL_GATEWAY_NAME", None)
+    env["DEEP_RESEARCHER_OPENSHELL_WORKSPACE"] = args.workspace
+    env["DEEP_RESEARCHER_OPENSHELL_POLICY_FILE"] = args.policy
+    env["DEEP_RESEARCHER_OPENSHELL_IMAGE"] = args.image
     if args.expected_gateway_version:
-        env["AIQ_OPENSHELL_EXPECTED_GATEWAY_VERSION"] = args.expected_gateway_version
+        env["DEEP_RESEARCHER_OPENSHELL_EXPECTED_GATEWAY_VERSION"] = args.expected_gateway_version
     else:
-        env.pop("AIQ_OPENSHELL_EXPECTED_GATEWAY_VERSION", None)
+        env.pop("DEEP_RESEARCHER_OPENSHELL_EXPECTED_GATEWAY_VERSION", None)
     if args.allow_best_effort_landlock:
-        env["AIQ_OPENSHELL_LIVE_ALLOW_BEST_EFFORT"] = "1"
+        env["DEEP_RESEARCHER_OPENSHELL_LIVE_ALLOW_BEST_EFFORT"] = "1"
     return env
 
 

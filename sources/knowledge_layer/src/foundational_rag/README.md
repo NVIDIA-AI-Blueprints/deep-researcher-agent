@@ -73,7 +73,7 @@ export RAG_API_KEY="your-api-key"
 
 ```python
 import knowledge_layer.foundational_rag.adapter  # Register the adapter
-from aiq_agent.knowledge.factory import get_ingestor, get_retriever
+from deep_researcher_agent.knowledge.factory import get_ingestor, get_retriever
 
 # Get ingestor (uses ingestor-server - port 8082)
 ingestor = get_ingestor("foundational_rag", {
@@ -189,7 +189,7 @@ Upload → PENDING → STARTED → SUCCESS/FAILURE
 
 ```python
 import time
-from aiq_agent.knowledge.schema import FileStatus
+from deep_researcher_agent.knowledge.schema import FileStatus
 
 # Upload file (returns immediately with task_id)
 file_info = ingestor.upload_file(

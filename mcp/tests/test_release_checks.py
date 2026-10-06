@@ -184,9 +184,9 @@ def test_sbom_contract_accepts_the_exact_approved_local_component_set() -> None:
     sbom = {
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
-        "metadata": {"component": {"name": "aiq-mcp-server", "version": "0.1.0"}},
+        "metadata": {"component": {"name": "deep-researcher-mcp-server", "version": "0.1.0"}},
         "components": [
-            {"name": "aiq-agent", "version": "2.2.0"},
+            {"name": "deep-researcher-agent", "version": "2.2.0"},
             {"name": "knowledge-layer", "version": "1.0.0"},
             {"name": "tavily-web-search", "version": "1.0.0"},
             {
@@ -205,9 +205,9 @@ def test_sbom_contract_accepts_exact_approved_vcs_qualified_purl(monkeypatch: py
     sbom = {
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
-        "metadata": {"component": {"name": "aiq-mcp-server", "version": "0.1.0"}},
+        "metadata": {"component": {"name": "deep-researcher-mcp-server", "version": "0.1.0"}},
         "components": [
-            {"name": "aiq-agent", "version": "2.2.0"},
+            {"name": "deep-researcher-agent", "version": "2.2.0"},
             {"name": "knowledge-layer", "version": "1.0.0"},
             {"name": "tavily-web-search", "version": "1.0.0"},
             {
@@ -248,9 +248,9 @@ def test_sbom_contract_rejects_unapproved_vcs_qualified_purl(purl: str, monkeypa
     sbom = {
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
-        "metadata": {"component": {"name": "aiq-mcp-server", "version": "0.1.0"}},
+        "metadata": {"component": {"name": "deep-researcher-mcp-server", "version": "0.1.0"}},
         "components": [
-            {"name": "aiq-agent", "version": "2.2.0"},
+            {"name": "deep-researcher-agent", "version": "2.2.0"},
             {"name": "knowledge-layer", "version": "1.0.0"},
             {"name": "tavily-web-search", "version": "1.0.0"},
             {"name": name, "version": version, "purl": purl},
@@ -265,9 +265,9 @@ def test_sbom_contract_requires_every_approved_local_component() -> None:
     sbom = {
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
-        "metadata": {"component": {"name": "aiq-mcp-server", "version": "0.1.0"}},
+        "metadata": {"component": {"name": "deep-researcher-mcp-server", "version": "0.1.0"}},
         "components": [
-            {"name": "aiq-agent", "version": "2.2.0"},
+            {"name": "deep-researcher-agent", "version": "2.2.0"},
             {"name": "knowledge-layer", "version": "1.0.0"},
         ],
     }
@@ -280,7 +280,7 @@ def test_sbom_contract_rejects_non_pypi_dependency_source() -> None:
     sbom = {
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
-        "metadata": {"component": {"name": "aiq-mcp-server", "version": "0.1.0"}},
+        "metadata": {"component": {"name": "deep-researcher-mcp-server", "version": "0.1.0"}},
         "components": [{"name": "private-runtime", "version": "1.0"}],
     }
 
@@ -292,7 +292,7 @@ def test_sbom_contract_rejects_private_sdk_name_from_public_index() -> None:
     sbom = {
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
-        "metadata": {"component": {"name": "aiq-mcp-server", "version": "0.1.0"}},
+        "metadata": {"component": {"name": "deep-researcher-mcp-server", "version": "0.1.0"}},
         "components": [
             {
                 "name": "maas-sdk",
@@ -312,10 +312,10 @@ def test_sbom_contract_rejects_private_sdk_name_from_public_index() -> None:
 # representative public-PyPI registry dependency. Each test copies this baseline
 # and mutates a single entry to exercise one branch of the contract at a time.
 _APPROVED_LOCK_PACKAGES = [
-    ("aiq-agent", "2.2.0", '{ editable = "../" }'),
+    ("deep-researcher-agent", "2.2.0", '{ editable = "../" }'),
     ("knowledge-layer", "1.0.0", '{ editable = "../sources/knowledge_layer" }'),
     ("tavily-web-search", "1.0.0", '{ editable = "../sources/tavily_web_search" }'),
-    ("aiq-mcp-server", "0.1.0", '{ editable = "." }'),
+    ("deep-researcher-mcp-server", "0.1.0", '{ editable = "." }'),
     ("asyncpg", "0.31.0", '{ registry = "https://pypi.org/simple" }'),
 ]
 
@@ -370,17 +370,17 @@ def test_lock_sources_reject_non_editable_local_source(tmp_path: Path, source: s
 @pytest.mark.parametrize(
     "packages",
     [
-        pytest.param(_without("aiq-mcp-server"), id="missing-approved-source"),
+        pytest.param(_without("deep-researcher-mcp-server"), id="missing-approved-source"),
         pytest.param(
             _APPROVED_LOCK_PACKAGES + [("exa-web-search", "1.0.0", '{ editable = "../sources/exa_web_search" }')],
             id="extra-unapproved-editable",
         ),
         pytest.param(
-            _without("aiq-agent") + [("aiq-agent", "2.2.0", '{ editable = "../wrong" }')],
+            _without("deep-researcher-agent") + [("deep-researcher-agent", "2.2.0", '{ editable = "../wrong" }')],
             id="approved-name-wrong-path",
         ),
         pytest.param(
-            _without("aiq-agent") + [("aiq-agent", "9.9.9", '{ editable = "../" }')],
+            _without("deep-researcher-agent") + [("deep-researcher-agent", "9.9.9", '{ editable = "../" }')],
             id="approved-source-wrong-version",
         ),
     ],
@@ -393,8 +393,8 @@ def test_lock_sources_reject_local_set_mismatch(tmp_path: Path, packages: list[t
 @pytest.mark.parametrize(
     ("name", "version", "path"),
     [
-        ("aiq-agent", "2.2.0", ".."),
-        ("aiq-mcp-server", "0.1.0", "./"),
+        ("deep-researcher-agent", "2.2.0", ".."),
+        ("deep-researcher-mcp-server", "0.1.0", "./"),
     ],
 )
 def test_lock_sources_do_not_normalize_editable_paths(tmp_path: Path, name: str, version: str, path: str) -> None:

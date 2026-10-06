@@ -1,4 +1,4 @@
-# copy-pr-bot configuration for NVIDIA-AI-Blueprints/aiq
+# copy-pr-bot configuration for NVIDIA-AI-Blueprints/deep-researcher-agent
 # Docs: https://docs.gha-runners.nvidia.com/platform/apps/copy-pr-bot/
 enabled: true
 auto_sync_draft: false

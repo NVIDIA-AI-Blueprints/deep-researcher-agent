@@ -18,13 +18,13 @@ build-backend = "setuptools.build_meta"
 requires = ["setuptools >= 64", "setuptools-scm>=8"]
 
 [project]
-name = "aiq-research-cli"
+name = "deep-researcher-research-cli"
 version = "2.0.1"
-description = "AI-Q Blueprint CLI - Interactive command-line interface for the AI-Q blueprint"
+description = "Deep Researcher Agent Blueprint CLI - Interactive command-line interface for the Deep Researcher Agent blueprint"
 requires-python = ">=3.11,<3.14"
 license = {text = "Apache-2.0"}
 dependencies = [
-    "aiq-agent",
+    "deep-researcher-agent",
     "rich>=13.0.0",
     "python-dotenv>=1.0.0",
     "httpx>=0.24.0",
@@ -33,8 +33,8 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["aiq_research_cli"]
-package-dir = {"aiq_research_cli" = "."}
+packages = ["deep_researcher_research_cli"]
+package-dir = {"deep_researcher_research_cli" = "."}
 
 [project.scripts]
-aiq-research = "aiq_research_cli.cli:main"
+deep-researcher-research = "deep_researcher_research_cli.cli:main"

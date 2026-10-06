@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 2.2.0
+description: Deep Researcher Agent Helm Chart
+name: deep-researcher
+type: application
+version: "0.0.5"

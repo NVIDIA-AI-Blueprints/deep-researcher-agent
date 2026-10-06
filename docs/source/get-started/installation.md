@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Installation
 
-This guide walks through setting up the AI-Q blueprint for local development. For containerized or production deployments, refer to [Deployment](../deployment/index.md).
+This guide walks through setting up the Deep Researcher Agent blueprint for local development. For containerized or production deployments, refer to [Deployment](../deployment/index.md).
 
 ## Prerequisites
 
@@ -34,7 +34,7 @@ When using [NVIDIA API Catalog](https://build.nvidia.com/) (the default), infere
 
 ```{warning}
 The NVIDIA API Catalog serving profile for Nemotron 3.5 Lightning has a known shallow citation-output limitation.
-AI-Q fails closed rather than publishing a citation-incomplete draft. The Brev getting-started launchable therefore
+Deep Researcher Agent fails closed rather than publishing a citation-incomplete draft. The Brev getting-started launchable therefore
 uses Nemotron Ultra for shallow research while retaining Lightning for intent classification. See
 [Troubleshooting](../resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog) for details and the
 self-hosted Lightning option.
@@ -45,8 +45,8 @@ self-hosted Lightning option.
 The setup script handles everything -- virtual environment, Python dependencies, and UI dependencies:
 
 ```bash
-git clone https://github.com/NVIDIA-AI-Blueprints/aiq.git
-cd aiq
+git clone https://github.com/NVIDIA-AI-Blueprints/deep-researcher-agent.git deep-researcher
+cd deep-researcher
 
 ./scripts/setup.sh
 ```
@@ -76,8 +76,8 @@ If you prefer to install components selectively, follow these steps.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/NVIDIA-AI-Blueprints/aiq.git
-cd aiq
+git clone https://github.com/NVIDIA-AI-Blueprints/deep-researcher-agent.git deep-researcher
+cd deep-researcher
 ```
 
 ### 2. Create the Virtual Environment
@@ -98,7 +98,7 @@ uv pip install -e ".[dev]"
 # Frontends (pick what you need)
 uv pip install -e ./frontends/cli          # CLI interface
 uv pip install -e ./frontends/debug        # Debug console
-uv pip install -e ./frontends/aiq_api      # Unified API server (includes debug)
+uv pip install -e ./frontends/deep_researcher_api      # Unified API server (includes debug)
 
 # Data sources (pick what you need)
 uv pip install -e ./sources/tavily_web_search
@@ -125,7 +125,7 @@ pre-commit install
 
 ## API Key Setup
 
-AI-Q needs API keys to access LLMs and search providers. Create an environment file from the provided template:
+Deep Researcher Agent needs API keys to access LLMs and search providers. Create an environment file from the provided template:
 
 ```bash
 cp deploy/.env.example deploy/.env

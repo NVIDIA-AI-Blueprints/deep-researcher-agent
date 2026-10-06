@@ -1,11 +1,11 @@
 apiVersion: v2
-name: aiq2-web
-description: AI-Q - WEB Profile ()
+name: deep-researcher-web
+description: Deep Researcher Agent - WEB Profile ()
 type: application
 version: 2.2.0
 appVersion: '2.2.0'
 dependencies:
-- name: aiq
+- name: deep-researcher
   version: 0.0.5
-  repository: file://../helm-charts-k8s/aiq
-  alias: aiq
+  repository: file://../helm-charts-k8s/deep-researcher
+  alias: deep-researcher

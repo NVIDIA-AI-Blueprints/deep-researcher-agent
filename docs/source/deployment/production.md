@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Production Considerations
 
-This page covers operational guidance for running the AI-Q blueprint in production environments.
+This page covers operational guidance for running the Deep Researcher Agent blueprint in production environments.
 
 ## Database
 
@@ -21,18 +21,18 @@ Set the following environment variables to point to your managed database:
 
 | Variable | Driver | Example |
 |----------|--------|---------|
-| `NAT_JOB_STORE_DB_URL` | `asyncpg` | `postgresql+asyncpg://<user>:<pw>@rds-host:5432/aiq_jobs` |
-| `AIQ_CHECKPOINT_DB` | `psycopg2` | `postgresql://<user>:<pw>@rds-host:5432/aiq_checkpoints` |
-| `AIQ_SUMMARY_DB` | `psycopg` | `postgresql+psycopg://<user>:<pw>@rds-host:5432/aiq_jobs` |
+| `NAT_JOB_STORE_DB_URL` | `asyncpg` | `postgresql+asyncpg://<user>:<pw>@rds-host:5432/deep_researcher_jobs` |
+| `DEEP_RESEARCHER_CHECKPOINT_DB` | `psycopg2` | `postgresql://<user>:<pw>@rds-host:5432/deep_researcher_checkpoints` |
+| `DEEP_RESEARCHER_SUMMARY_DB` | `psycopg` | `postgresql+psycopg://<user>:<pw>@rds-host:5432/deep_researcher_jobs` |
 
 ### Database Initialization
 
 When using a managed database, you must run the initialization SQL manually (or as a migration step) since the `init-db.sql` Docker entrypoint script only executes on a fresh PostgreSQL container volume. The script:
 
-1. Creates the `aiq_checkpoints` database.
+1. Creates the `deep_researcher_checkpoints` database.
 2. Grants permissions to the application user.
 3. Creates the job metadata, access-control, admission, event, and
-   document-summary tables with their indices in `aiq_jobs`.
+   document-summary tables with their indices in `deep_researcher_jobs`.
 
 Refer to `deploy/compose/init-db.sql` for the full schema.
 
@@ -40,10 +40,10 @@ Refer to `deploy/compose/init-db.sql` for the full schema.
 
 Back up the following databases regularly:
 
-- **`aiq_jobs`** -- Contains the `job_info` table (job metadata) and `job_events` table (event stream). This is the critical operational data store. The shipped Helm profile also points `AIQ_CHECKPOINT_DB` here.
-- **`aiq_checkpoints`** -- Contains [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview) agent state checkpoints in the shipped Compose profile and the managed-database example above. These allow resumption of interrupted research workflows.
+- **`deep_researcher_jobs`** -- Contains the `job_info` table (job metadata) and `job_events` table (event stream). This is the critical operational data store. The shipped Helm profile also points `DEEP_RESEARCHER_CHECKPOINT_DB` here.
+- **`deep_researcher_checkpoints`** -- Contains [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview) agent state checkpoints in the shipped Compose profile and the managed-database example above. These allow resumption of interrupted research workflows.
 
-Back up both databases for either deployment profile. Do not change `AIQ_CHECKPOINT_DB` on an existing deployment
+Back up both databases for either deployment profile. Do not change `DEEP_RESEARCHER_CHECKPOINT_DB` on an existing deployment
 without migrating its checkpoint tables; doing so makes existing resumable workflow state unavailable to the
 application.
 
@@ -54,19 +54,19 @@ shared recovery point for the backup set.
 For managed databases, enable automated daily backups with at least 7 days of retention. For self-managed PostgreSQL,
 install PostgreSQL client tools on the backup host and run `pg_dump` on a schedule.
 
-The shipped Compose stack already includes the matching PostgreSQL client tools in its `aiq-postgres` container. Set
-`AIQ_BACKUP_DIR` to an absolute path outside the repository, and create portable custom-format archives there without
+The shipped Compose stack already includes the matching PostgreSQL client tools in its `deep-researcher-postgres` container. Set
+`DEEP_RESEARCHER_BACKUP_DIR` to an absolute path outside the repository, and create portable custom-format archives there without
 requiring `pg_dump` on the host:
 
 ```bash
 set -euo pipefail
-: "${AIQ_BACKUP_DIR:?Set AIQ_BACKUP_DIR to an absolute path outside the repository}"
-: "${AIQ_POSTGRES_CONTAINER:=aiq-postgres}"
+: "${DEEP_RESEARCHER_BACKUP_DIR:?Set DEEP_RESEARCHER_BACKUP_DIR to an absolute path outside the repository}"
+: "${DEEP_RESEARCHER_POSTGRES_CONTAINER:=deep-researcher-postgres}"
 umask 077
-install -d -m 0700 "$AIQ_BACKUP_DIR"
+install -d -m 0700 "$DEEP_RESEARCHER_BACKUP_DIR"
 backup_id="$(date -u +%Y%m%dT%H%M%SZ)-$$-${RANDOM}"
-jobs_archive="$AIQ_BACKUP_DIR/aiq_jobs_${backup_id}.dump"
-checkpoints_archive="$AIQ_BACKUP_DIR/aiq_checkpoints_${backup_id}.dump"
+jobs_archive="$DEEP_RESEARCHER_BACKUP_DIR/deep_researcher_jobs_${backup_id}.dump"
+checkpoints_archive="$DEEP_RESEARCHER_BACKUP_DIR/deep_researcher_checkpoints_${backup_id}.dump"
 if [[ -e "$jobs_archive" || -e "$checkpoints_archive" ]]; then
   echo "Refusing to replace an existing backup set: $backup_id" >&2
   exit 1
@@ -88,14 +88,14 @@ cleanup() {
   return "$exit_status"
 }
 trap cleanup EXIT
-jobs_tmp=$(mktemp "$AIQ_BACKUP_DIR/.aiq_jobs_${backup_id}.XXXXXXXX.dump.tmp")
-checkpoints_tmp=$(mktemp "$AIQ_BACKUP_DIR/.aiq_checkpoints_${backup_id}.XXXXXXXX.dump.tmp")
+jobs_tmp=$(mktemp "$DEEP_RESEARCHER_BACKUP_DIR/.deep_researcher_jobs_${backup_id}.XXXXXXXX.dump.tmp")
+checkpoints_tmp=$(mktemp "$DEEP_RESEARCHER_BACKUP_DIR/.deep_researcher_checkpoints_${backup_id}.XXXXXXXX.dump.tmp")
 
-docker exec "$AIQ_POSTGRES_CONTAINER" \
-  pg_dump --format=custom --no-owner --no-privileges -U aiq -d aiq_jobs \
+docker exec "$DEEP_RESEARCHER_POSTGRES_CONTAINER" \
+  pg_dump --format=custom --no-owner --no-privileges -U deep_researcher -d deep_researcher_jobs \
   > "$jobs_tmp"
-docker exec "$AIQ_POSTGRES_CONTAINER" \
-  pg_dump --format=custom --no-owner --no-privileges -U aiq -d aiq_checkpoints \
+docker exec "$DEEP_RESEARCHER_POSTGRES_CONTAINER" \
+  pg_dump --format=custom --no-owner --no-privileges -U deep_researcher -d deep_researcher_checkpoints \
   > "$checkpoints_tmp"
 
 mv "$jobs_tmp" "$jobs_archive"
@@ -108,49 +108,49 @@ If the block exits unsuccessfully, its cleanup trap removes temporary files and 
 Confirm that no archives with that backup ID remain, resume the paused writers, investigate the failure, and use a new
 backup ID on the next scheduled run or retry.
 
-If the Compose container name was customized, set `AIQ_POSTGRES_CONTAINER` to that container name.
+If the Compose container name was customized, set `DEEP_RESEARCHER_POSTGRES_CONTAINER` to that container name.
 
 Treat these archives as sensitive data. Before copying them to backup storage, encrypt them with an
 organization-approved backup system, protect transfers in transit, keep encryption keys separate from the archives,
 and restrict read and restore access to the required operators and service identities.
 
 Do not wait for an incident to test restoration. On an isolated restore environment, retrieve and decrypt the archives
-into a restricted directory, set `AIQ_BACKUP_DIR` to that directory, create disposable databases, restore both archives
+into a restricted directory, set `DEEP_RESEARCHER_BACKUP_DIR` to that directory, create disposable databases, restore both archives
 with `--exit-on-error`, and inspect their tables. The following example verifies the local Compose archives; replace
 `YYYYMMDDTHHMMSSZ-PID-RANDOM` with the shared backup ID in the two archive names:
 
 ```bash
 set -euo pipefail
-: "${AIQ_BACKUP_DIR:?Set AIQ_BACKUP_DIR to the restricted archive directory}"
-: "${AIQ_POSTGRES_CONTAINER:=aiq-postgres}"
+: "${DEEP_RESEARCHER_BACKUP_DIR:?Set DEEP_RESEARCHER_BACKUP_DIR to the restricted archive directory}"
+: "${DEEP_RESEARCHER_POSTGRES_CONTAINER:=deep-researcher-postgres}"
 
 restore_cleanup() {
   local exit_status=$?
-  docker exec "$AIQ_POSTGRES_CONTAINER" psql -U aiq -d postgres \
-    -c 'DROP DATABASE IF EXISTS aiq_jobs_restore_check' || true
-  docker exec "$AIQ_POSTGRES_CONTAINER" psql -U aiq -d postgres \
-    -c 'DROP DATABASE IF EXISTS aiq_checkpoints_restore_check' || true
+  docker exec "$DEEP_RESEARCHER_POSTGRES_CONTAINER" psql -U deep_researcher -d postgres \
+    -c 'DROP DATABASE IF EXISTS deep_researcher_jobs_restore_check' || true
+  docker exec "$DEEP_RESEARCHER_POSTGRES_CONTAINER" psql -U deep_researcher -d postgres \
+    -c 'DROP DATABASE IF EXISTS deep_researcher_checkpoints_restore_check' || true
   return "$exit_status"
 }
 trap restore_cleanup EXIT
 
-docker exec "$AIQ_POSTGRES_CONTAINER" psql -v ON_ERROR_STOP=1 -U aiq -d postgres \
-  -c 'DROP DATABASE IF EXISTS aiq_jobs_restore_check'
-docker exec "$AIQ_POSTGRES_CONTAINER" psql -v ON_ERROR_STOP=1 -U aiq -d postgres \
-  -c 'CREATE DATABASE aiq_jobs_restore_check'
-docker exec -i "$AIQ_POSTGRES_CONTAINER" \
-  pg_restore --exit-on-error -U aiq -d aiq_jobs_restore_check \
-  < "$AIQ_BACKUP_DIR/aiq_jobs_YYYYMMDDTHHMMSSZ-PID-RANDOM.dump"
-docker exec "$AIQ_POSTGRES_CONTAINER" psql -U aiq -d aiq_jobs_restore_check -c '\dt'
+docker exec "$DEEP_RESEARCHER_POSTGRES_CONTAINER" psql -v ON_ERROR_STOP=1 -U deep_researcher -d postgres \
+  -c 'DROP DATABASE IF EXISTS deep_researcher_jobs_restore_check'
+docker exec "$DEEP_RESEARCHER_POSTGRES_CONTAINER" psql -v ON_ERROR_STOP=1 -U deep_researcher -d postgres \
+  -c 'CREATE DATABASE deep_researcher_jobs_restore_check'
+docker exec -i "$DEEP_RESEARCHER_POSTGRES_CONTAINER" \
+  pg_restore --exit-on-error -U deep_researcher -d deep_researcher_jobs_restore_check \
+  < "$DEEP_RESEARCHER_BACKUP_DIR/deep_researcher_jobs_YYYYMMDDTHHMMSSZ-PID-RANDOM.dump"
+docker exec "$DEEP_RESEARCHER_POSTGRES_CONTAINER" psql -U deep_researcher -d deep_researcher_jobs_restore_check -c '\dt'
 
-docker exec "$AIQ_POSTGRES_CONTAINER" psql -v ON_ERROR_STOP=1 -U aiq -d postgres \
-  -c 'DROP DATABASE IF EXISTS aiq_checkpoints_restore_check'
-docker exec "$AIQ_POSTGRES_CONTAINER" psql -v ON_ERROR_STOP=1 -U aiq -d postgres \
-  -c 'CREATE DATABASE aiq_checkpoints_restore_check'
-docker exec -i "$AIQ_POSTGRES_CONTAINER" \
-  pg_restore --exit-on-error -U aiq -d aiq_checkpoints_restore_check \
-  < "$AIQ_BACKUP_DIR/aiq_checkpoints_YYYYMMDDTHHMMSSZ-PID-RANDOM.dump"
-docker exec "$AIQ_POSTGRES_CONTAINER" psql -U aiq -d aiq_checkpoints_restore_check -c '\dt'
+docker exec "$DEEP_RESEARCHER_POSTGRES_CONTAINER" psql -v ON_ERROR_STOP=1 -U deep_researcher -d postgres \
+  -c 'DROP DATABASE IF EXISTS deep_researcher_checkpoints_restore_check'
+docker exec "$DEEP_RESEARCHER_POSTGRES_CONTAINER" psql -v ON_ERROR_STOP=1 -U deep_researcher -d postgres \
+  -c 'CREATE DATABASE deep_researcher_checkpoints_restore_check'
+docker exec -i "$DEEP_RESEARCHER_POSTGRES_CONTAINER" \
+  pg_restore --exit-on-error -U deep_researcher -d deep_researcher_checkpoints_restore_check \
+  < "$DEEP_RESEARCHER_BACKUP_DIR/deep_researcher_checkpoints_YYYYMMDDTHHMMSSZ-PID-RANDOM.dump"
+docker exec "$DEEP_RESEARCHER_POSTGRES_CONTAINER" psql -U deep_researcher -d deep_researcher_checkpoints_restore_check -c '\dt'
 ```
 
 Keep restore testing isolated from a live deployment so the application cannot write to the databases during the
@@ -163,11 +163,11 @@ bytes in production. SQL BLOB storage remains the default when the provider is u
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `AIQ_ARTIFACT_BLOB_PROVIDER` | No | `sql` by default; set to `s3` for object storage. |
-| `AIQ_ARTIFACT_S3_BUCKET` | With S3 | Destination bucket. |
-| `AIQ_ARTIFACT_S3_ENDPOINT_URL` | No | Leave unset for AWS S3; set for MinIO, Ceph, R2, or another compatible endpoint. |
-| `AIQ_ARTIFACT_S3_REGION` | No | S3 region when required by the provider. |
-| `AIQ_ARTIFACT_S3_PREFIX` | No | Object-key prefix; defaults to `artifacts/v1`. |
+| `DEEP_RESEARCHER_ARTIFACT_BLOB_PROVIDER` | No | `sql` by default; set to `s3` for object storage. |
+| `DEEP_RESEARCHER_ARTIFACT_S3_BUCKET` | With S3 | Destination bucket. |
+| `DEEP_RESEARCHER_ARTIFACT_S3_ENDPOINT_URL` | No | Leave unset for AWS S3; set for MinIO, Ceph, R2, or another compatible endpoint. |
+| `DEEP_RESEARCHER_ARTIFACT_S3_REGION` | No | S3 region when required by the provider. |
+| `DEEP_RESEARCHER_ARTIFACT_S3_PREFIX` | No | Object-key prefix; defaults to `artifacts/v1`. |
 
 Configure credentials through workload identity, deployment secrets, or the standard
 AWS credential chain. When the provider is `s3`, artifact bytes are stored in the
@@ -175,19 +175,19 @@ configured bucket and SQL stores artifact metadata only.
 
 ### S3 Security Responsibility
 
-The S3-compatible artifact store is operator-managed infrastructure. AI-Q authorizes
+The S3-compatible artifact store is operator-managed infrastructure. Deep Researcher Agent authorizes
 artifact access through its API, but those checks do not protect direct access to the
-bucket. AI-Q also does not apply application-level encryption to artifact blob bytes
+bucket. Deep Researcher Agent also does not apply application-level encryption to artifact blob bytes
 before uploading them. Production operators are therefore responsible for configuring
 the object store to:
 
 - use workload identity, an instance profile, or an IAM role for service accounts
   instead of long-lived static access keys;
-- restrict `GetObject`, `PutObject`, and `DeleteObject` to the AI-Q worker role and
+- restrict `GetObject`, `PutObject`, and `DeleteObject` to the Deep Researcher Agent worker role and
   the configured bucket and prefix;
 - block public access and deny requests that do not use TLS;
 - enable provider-managed encryption at rest, such as Amazon S3 SSE-KMS, using a key
-  policy restricted to the AI-Q worker role; and
+  policy restricted to the Deep Researcher Agent worker role; and
 - enable object-access audit logs and credential-usage monitoring.
 
 For non-AWS S3-compatible services, configure equivalent identity, bucket-policy,
@@ -204,7 +204,7 @@ Compose service scaling for production because the stack does not provide the
 required backend load balancer or shared scheduler topology.
 
 For production horizontal scaling, deploy with Helm and set
-`aiq.apps.backend.replicas` or the `aiq.apps.backend.autoscaling` values. Refer
+`deep-researcher.apps.backend.replicas` or the `deep-researcher.apps.backend.autoscaling` values. Refer
 to [Kubernetes and Helm](./kubernetes.md) for the supported deployment path.
 
 Each backend replica starts its own embedded Dask scheduler and worker.
@@ -251,10 +251,10 @@ advisory lock; SQLite serializes writers with an immediate transaction.
 
 | Variable | Default | Behavior |
 |----------|---------|----------|
-| `AIQ_MAX_DEEP_RESEARCH_INPUT_CHARS` | `32768` | Maximum query payload accepted at admission. It may be lowered; higher values are clamped to the hard per-job contract. |
-| `AIQ_MAX_ACTIVE_DEEP_RESEARCH_JOBS_PER_PRINCIPAL` | `5` | Maximum active deep-research jobs for one principal. |
-| `AIQ_MAX_ACTIVE_DEEP_RESEARCH_JOBS_GLOBAL` | `50` | Deployment-wide active-job ceiling protecting shared Dask capacity. |
-| `AIQ_MAX_DEEP_RESEARCH_SUBMISSIONS_PER_MINUTE` | `20` | Accepted deep-research submissions per principal in a rolling 60-second window. |
+| `DEEP_RESEARCHER_MAX_DEEP_RESEARCH_INPUT_CHARS` | `32768` | Maximum query payload accepted at admission. It may be lowered; higher values are clamped to the hard per-job contract. |
+| `DEEP_RESEARCHER_MAX_ACTIVE_DEEP_RESEARCH_JOBS_PER_PRINCIPAL` | `5` | Maximum active deep-research jobs for one principal. |
+| `DEEP_RESEARCHER_MAX_ACTIVE_DEEP_RESEARCH_JOBS_GLOBAL` | `50` | Deployment-wide active-job ceiling protecting shared Dask capacity. |
+| `DEEP_RESEARCHER_MAX_DEEP_RESEARCH_SUBMISSIONS_PER_MINUTE` | `20` | Accepted deep-research submissions per principal in a rolling 60-second window. |
 
 Missing, non-integer, zero, or negative values use the safe defaults; these controls
 cannot be disabled with `0`. A per-principal capacity or rate rejection returns HTTP
@@ -272,7 +272,7 @@ deployments must enable authentication as described below.
 `deep_research_agent.resource_limits` applies non-disableable per-job ceilings
 to combined query and clarification input, graph execution time, serialized
 plans and final reports, aggregate shared-state file count and bytes, query
-count and text, serialized research notes, orchestrator todos, and AI-Q
+count and text, serialized research notes, orchestrator todos, and Deep Researcher Agent
 source-tool attempts and concrete batch items. Defaults are also absolute
 maximums; deployments may configure lower values but cannot raise them. The
 20-query ceiling also caps persisted notes at 20 because each accepted query
@@ -311,12 +311,12 @@ The default `REQUIRE_AUTH=false` mode is for a single trusted user or trust doma
 it does not isolate jobs, documents, reports, or artifacts between callers. Do not
 publish a no-auth deployment on a shared or untrusted network. Multi-user or externally
 reachable deployments must follow the [Authentication](./authentication.md) guide or
-place AI-Q behind a customer-managed authenticated gateway with authorization, network
+place Deep Researcher Agent behind a customer-managed authenticated gateway with authorization, network
 isolation, and edge request limits.
 
 ### Non-Root Execution
 
-The Docker image runs as a non-root user (`aiq`, UID 1000) in both dev and release targets. The NVIDIA distroless base image has no shell and no package manager, reducing the attack surface.
+The Docker image runs as a non-root user (`deep-researcher`, UID 1000) in both dev and release targets. The NVIDIA distroless base image has no shell and no package manager, reducing the attack surface.
 
 ### Read-Only Configuration Mounts
 
@@ -332,7 +332,7 @@ Treat optional sandbox runtimes as separate execution and authentication boundar
 Production OpenShell requires an explicitly owned authenticated gateway, a distinct
 policy-bound sandbox per job, verified terminal cleanup, and hard Landlock enforcement.
 Follow the [Linux production acceptance](./openshell.md#linux-production-acceptance)
-and [policy/config pairing](./openshell.md#policy-and-ai-q-config-pairing) contracts;
+and [policy/config pairing](./openshell.md#policy-and-deep-researcher-agent-config-pairing) contracts;
 do not infer production readiness from a macOS best-effort demo.
 
 ## Monitoring
@@ -357,7 +357,7 @@ curl http://localhost:8000/health
 Backend logs show agent execution, tool calls, LLM interactions, and job lifecycle events.
 
 ```bash
-docker logs aiq-agent -f
+docker logs deep-researcher-agent -f
 ```
 
 Set `LOG_LEVEL=DEBUG` for verbose output during troubleshooting. Use `LOG_LEVEL=WARNING` in production to reduce log volume.
@@ -368,15 +368,15 @@ The backend exports NeMo Relay traces to OpenTelemetry-compatible destinations.
 See [Observability](./observability.md) for ATOF, Phoenix OTEL, pricing, and
 privacy-redaction guidance.
 
-If you are deploying the `aiq_api` front-end and want request correlation on
+If you are deploying the `deep_researcher_api` front-end and want request correlation on
 Relay-exported spans, set the relevant environment variables at deploy time rather
 than hardcoding them in code:
 
-- `AIQ_TRACE_USER_IDENTITY_MODE`
-- `AIQ_TRACE_USER_IDENTITY_HMAC_SECRET`
-- `AIQ_TRACE_CLIENT_ID_MODE`
-- `AIQ_TRACE_CLIENT_ID_HMAC_SECRET`
-- `AIQ_TRACE_CLIENT_IP_HEADERS`
+- `DEEP_RESEARCHER_TRACE_USER_IDENTITY_MODE`
+- `DEEP_RESEARCHER_TRACE_USER_IDENTITY_HMAC_SECRET`
+- `DEEP_RESEARCHER_TRACE_CLIENT_ID_MODE`
+- `DEEP_RESEARCHER_TRACE_CLIENT_ID_HMAC_SECRET`
+- `DEEP_RESEARCHER_TRACE_CLIENT_IP_HEADERS`
 
 ### Metrics to Watch
 

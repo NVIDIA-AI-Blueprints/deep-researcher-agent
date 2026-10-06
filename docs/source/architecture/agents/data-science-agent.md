@@ -10,7 +10,7 @@ enterprise structured data, document evidence, public web evidence, or a
 combination of those sources. It owns discovery, tool selection, analysis, and
 final synthesis in one continuous message history.
 
-**Location:** `src/aiq_agent/agents/data_science/`
+**Location:** `src/deep_researcher_agent/agents/data_science/`
 
 The agent is exposed through two boundaries that share the same ReAct runtime:
 
@@ -27,8 +27,8 @@ The agent receives tools through NeMo Agent Toolkit references and the
 - `gsf__catalog_search` discovers query-relevant ontology candidates and entity
   coverage.
 - `gsf__text_to_sql` generates validated SQL and returns bounded rows from GSF.
-- `knowledge_search` uses the configured AI-Q knowledge backend.
-- `web_search_tool` uses the configured AI-Q web-search provider.
+- `knowledge_search` uses the configured Deep Researcher Agent knowledge backend.
+- `web_search_tool` uses the configured Deep Researcher Agent web-search provider.
 - `python`, when configured through `sandboxed_python`, runs self-contained
   scientific Python scripts in a fresh OpenShell sandbox per request. It is
   also a non-citable utility.
@@ -46,8 +46,8 @@ graph TD
     B --> C{What evidence is needed?}
     C -->|Enterprise semantics| D[GSF catalog search]
     C -->|Structured values| E[GSF text-to-SQL]
-    C -->|Ingested documents| F[AI-Q knowledge search]
-    C -->|Current public evidence| G[AI-Q web search]
+    C -->|Ingested documents| F[Deep Researcher Agent knowledge search]
+    C -->|Current public evidence| G[Deep Researcher Agent web search]
     D --> B
     E --> B
     F --> B
@@ -57,7 +57,7 @@ graph TD
 
 GSF calls are made sequentially so each later question can use exact entities or
 values observed earlier. Document and web searches should be narrow enough to
-represent distinct evidence needs. The final answer goes through AI-Q's source
+represent distinct evidence needs. The final answer goes through Deep Researcher Agent's source
 registry, citation verification, and report sanitization.
 
 The optional request-local structured-data guard enforces configured catalog and
@@ -74,7 +74,7 @@ Variables do not persist, so every call must be a self-contained script. The
 model sees a single `python(code)` tool and does not manage sandbox or workspace
 identifiers. Every successful structured-data SQL response is persisted under a
 stable request-local reference (`structured_1`, `structured_2`, and so on). Before every
-script, AI-Q copies the complete authoritative receipt set into the sandbox
+script, Deep Researcher Agent copies the complete authoritative receipt set into the sandbox
 through a bounded manifest whose paths are rewritten to sandbox-local files.
 The trusted runner exposes
 `list_analysis_results()`, `analysis_result(ref)`, `analysis_rows(ref)`,
@@ -96,9 +96,9 @@ malformed leading `Answer:` line receives one no-tool format-repair call.
 
 Copy `deploy/.env.example` to `deploy/.env` and set:
 
-- `AIQ_DATA_SCIENCE_MODEL`
+- `DEEP_RESEARCHER_DATA_SCIENCE_MODEL`
 - `INFERENCE_NVIDIA_API_KEY`
-- `AIQ_INFERENCE_BASE_URL`
+- `DEEP_RESEARCHER_INFERENCE_BASE_URL`
 - `TAVILY_API_KEY`
 - `GSF_BASE_URL`
 - `GSF_EMAIL`
@@ -108,14 +108,14 @@ Copy `deploy/.env.example` to `deploy/.env` and set:
 
 Optional variables include `GSF_READ_TIMEOUT_SECONDS`,
 `RAG_RETRIEVAL_TIMEOUT_SECONDS`, `RAG_VERIFY_SSL`, and
-`AIQ_DS_INTERACTION_MODE`. Then run:
+`DEEP_RESEARCHER_DS_INTERACTION_MODE`. Then run:
 
 ```bash
 ./scripts/start_cli.sh --config_file configs/config_cli_data_science.yml
 ```
 
 The local profile uses password-session authentication for GSF. Product
-integration should omit that auth block and rely on AI-Q's request-scoped user
+integration should omit that auth block and rely on Deep Researcher Agent's request-scoped user
 token forwarding.
 
 The direct CLI profile uses the Foundational RAG backend for knowledge
@@ -152,7 +152,7 @@ curl -N http://localhost:8000/v1/jobs/async/job/<job_id>/stream
 curl -N http://localhost:8000/v1/jobs/async/job/<job_id>/stream/<last_event_id>
 ```
 
-Serve the web profile, which adds the `aiq_api` front end:
+Serve the web profile, which adds the `deep_researcher_api` front end:
 
 ```bash
 dotenv -f deploy/.env run nat serve \
@@ -196,8 +196,8 @@ synchronous CLI, which has no job store — the hybrid route still runs inline.
 - **Progress is streamed as SSE events**, not returned in one response. Tool
   calls, model turns, and the citation-verified final report are emitted
   through the standard job event stream.
-- **Sandbox concurrency caps apply.** When `AIQ_MAX_SANDBOXES_PER_PRINCIPAL` or
-  `AIQ_MAX_SANDBOXES_GLOBAL` is set, submissions are capped for agents that
+- **Sandbox concurrency caps apply.** When `DEEP_RESEARCHER_MAX_SANDBOXES_PER_PRINCIPAL` or
+  `DEEP_RESEARCHER_MAX_SANDBOXES_GLOBAL` is set, submissions are capped for agents that
   reach a sandbox — including through the `stateful_python` tool, which owns
   the sandbox reference rather than the agent config.
 - **Per-request analysis artifacts still belong to the run.** The temporary
@@ -240,7 +240,7 @@ searches itself.
 
 ## Non-interactive evaluation
 
-Set `AIQ_DS_INTERACTION_MODE=headless` for benchmark and batch execution. The
+Set `DEEP_RESEARCHER_DS_INTERACTION_MODE=headless` for benchmark and batch execution. The
 agent then uses semantic discovery to resolve ambiguity, discloses defensible
 assumptions, and never waits for a user response. If the model still emits a
 clarification request, the runtime performs one bounded synthesis retry; a
@@ -264,20 +264,20 @@ without choices still receive the standard analytical report. The benchmark
 adapter must include the target database name and complete answer choices in the
 user request.
 
-Required benchmark variables are `AIQ_DATA_SCIENCE_MODEL`,
-`INFERENCE_NVIDIA_API_KEY`, `AIQ_INFERENCE_BASE_URL`, `GSF_BASE_URL`,
+Required benchmark variables are `DEEP_RESEARCHER_DATA_SCIENCE_MODEL`,
+`INFERENCE_NVIDIA_API_KEY`, `DEEP_RESEARCHER_INFERENCE_BASE_URL`, `GSF_BASE_URL`,
 `GSF_EMAIL`, `GSF_PASSWORD`, `RAG_SERVER_URL`, `COLLECTION_NAME`, and
 `TAVILY_API_KEY`. Optional
-`AIQ_DS_STRUCTURED_CATALOG_CALL_LIMIT` and `AIQ_DS_STRUCTURED_TEXT_TO_SQL_CALL_LIMIT`
+`DEEP_RESEARCHER_DS_STRUCTURED_CATALOG_CALL_LIMIT` and `DEEP_RESEARCHER_DS_STRUCTURED_TEXT_TO_SQL_CALL_LIMIT`
 override the profile defaults of two and six actual calls, respectively. Exact
 request-local cache hits do not consume those budgets.
-`AIQ_DS_PYTHON_CALL_LIMIT`, `AIQ_DS_PYTHON_TIMEOUT_SECONDS`,
-`AIQ_DS_PYTHON_MAX_EVIDENCE_BYTES`, `AIQ_DS_PYTHON_MAX_MEMORY_MB`, and
-`AIQ_DS_PYTHON_MAX_CPU_SECONDS` tune the sandboxed analysis runtime;
-`AIQ_DS_FINALIZATION_MODEL_CALL_LIMIT` tunes the reserved finalization turn. The
+`DEEP_RESEARCHER_DS_PYTHON_CALL_LIMIT`, `DEEP_RESEARCHER_DS_PYTHON_TIMEOUT_SECONDS`,
+`DEEP_RESEARCHER_DS_PYTHON_MAX_EVIDENCE_BYTES`, `DEEP_RESEARCHER_DS_PYTHON_MAX_MEMORY_MB`, and
+`DEEP_RESEARCHER_DS_PYTHON_MAX_CPU_SECONDS` tune the sandboxed analysis runtime;
+`DEEP_RESEARCHER_DS_FINALIZATION_MODEL_CALL_LIMIT` tunes the reserved finalization turn. The
 Python profile additionally requires a configured OpenShell gateway, the
 scientific Python image, and an offline policy selected through
-`AIQ_DS_OPENSHELL_IMAGE` and `AIQ_DS_OPENSHELL_POLICY_FILE`. Follow the
+`DEEP_RESEARCHER_DS_OPENSHELL_IMAGE` and `DEEP_RESEARCHER_DS_OPENSHELL_POLICY_FILE`. Follow the
 OpenShell deployment guide before running that profile.
 
 These profiles configure the runtime surface only; they do not bundle FDABench

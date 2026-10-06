@@ -62,13 +62,13 @@ may still use remote endpoints.
   - Backend-specific documentation: `sources/knowledge_layer/src/foundational_rag/README.md`
 - **`azure_ai_search`** - Stores client-generated embeddings in namespaced Azure AI Search indexes and supports
   vector, hybrid, and semantic-ranked retrieval.
-- **`opensearch`** - Uses one vector index per AI-Q collection with `none`, `basic`, or SigV4 authentication.
+- **`opensearch`** - Uses one vector index per Deep Researcher Agent collection with `none`, `basic`, or SigV4 authentication.
   - Supports self-hosted OpenSearch, Amazon OpenSearch Service (`es`), and Amazon OpenSearch Serverless (`aoss`).
   - Can ingest in the local process or dispatch ingestion to Dask workers.
   - Refer to [Amazon OpenSearch Serverless](../deployment/aws-opensearch-serverless.md) for the AOSS/EKS deployment path.
 - **`nemo_retriever`** - Calls a separately deployed NeMo Retriever gateway through its public REST API.
   - NRL owns extraction, OCR, tokenization, embedding, indexing, and collection durability.
-  - AI-Q owns logical inputs, job polling, retrieval, and universal-schema mapping only.
+  - Deep Researcher Agent owns logical inputs, job polling, retrieval, and universal-schema mapping only.
   - See the backend operator guide at `sources/knowledge_layer/src/nemo_retriever/README.md`.
 
 ---
@@ -97,7 +97,7 @@ uv pip install -e "sources/knowledge_layer"                    # NeMo Retriever 
 
 ```bash
 # 3. Verify
-python -c "from aiq_agent.knowledge import get_retriever; print('OK')"
+python -c "from deep_researcher_agent.knowledge import get_retriever; print('OK')"
 ```
 
 ---
@@ -133,7 +133,7 @@ functions:
 
     # opensearch_url: http://localhost:9200   # opensearch only
     # opensearch_auth_type: none              # none, basic, or sigv4
-    # opensearch_index_prefix: aiq
+    # opensearch_index_prefix: deep-researcher
     # opensearch_ingestion_mode: local        # local, dask, or auto
     # embed_model: nvidia/nemotron-3-embed-1b
 
@@ -160,12 +160,12 @@ functions:
 
 ### Collection Routing
 
-AI-Q selects ingestion and retrieval collections independently. This routing policy applies consistently to all
+Deep Researcher Agent selects ingestion and retrieval collections independently. This routing policy applies consistently to all
 shipped knowledge backends: LlamaIndex, Foundational RAG, Azure AI Search, and OpenSearch.
 
 The storage mapping is backend-specific: LlamaIndex and Foundational RAG use named collections, OpenSearch maps each
 collection to a physical index, and Azure AI Search isolates logical collections with `collection_id` filters inside
-one AI-Q-owned physical index.
+one Deep Researcher Agent-owned physical index.
 
 | Usage | Ingestion target | Retrieval target |
 |-------|------------------|------------------|
@@ -234,9 +234,9 @@ Set `AZURE_SEARCH_ENDPOINT` and `NVIDIA_API_KEY` in the environment. Setting
 `DefaultAzureCredential` is used. The workload identity needs `Search Service
 Contributor` for index management and `Search Index Data Contributor` for
 document ingestion and retrieval. Embedding defaults can be shared with the
-LlamaIndex backend through `AIQ_EMBED_BASE_URL` and `AIQ_EMBED_MODEL`; set
-`AIQ_EMBED_DIM` when changing the model dimensions. Set a deployment-unique
-`AIQ_AZURE_SEARCH_INDEX_PREFIX` when multiple AI-Q deployments share a search
+LlamaIndex backend through `DEEP_RESEARCHER_EMBED_BASE_URL` and `DEEP_RESEARCHER_EMBED_MODEL`; set
+`DEEP_RESEARCHER_EMBED_DIM` when changing the model dimensions. Set a deployment-unique
+`DEEP_RESEARCHER_AZURE_SEARCH_INDEX_PREFIX` when multiple Deep Researcher Agent deployments share a search
 service.
 
 Azure stores all logical collections in one physical index selected by the
@@ -245,8 +245,8 @@ chunk manifests enforce logical isolation. Retrieval is always hybrid, and
 chunking is fixed at 1024 tokens with 128-token overlap.
 
 Upload responses return canonical UUID file IDs. Same-name uploads coexist as
-independent files. Collection cleanup uses `AIQ_COLLECTION_TTL_HOURS` (24 hours
-by default) and `AIQ_TTL_CLEANUP_INTERVAL_SECONDS` (one hour by default),
+independent files. Collection cleanup uses `DEEP_RESEARCHER_COLLECTION_TTL_HOURS` (24 hours
+by default) and `DEEP_RESEARCHER_TTL_CLEANUP_INTERVAL_SECONDS` (one hour by default),
 matching the other knowledge backends.
 
 **OpenSearch (Self-Hosted or AWS)**
@@ -262,12 +262,12 @@ functions:
     opensearch_auth_type: ${OPENSEARCH_AUTH_TYPE:-none}
     opensearch_aws_region: ${AWS_REGION:-us-east-1}
     opensearch_aws_service: ${OPENSEARCH_AWS_SERVICE:-aoss}
-    opensearch_index_prefix: ${OPENSEARCH_INDEX_PREFIX:-aiq}
+    opensearch_index_prefix: ${OPENSEARCH_INDEX_PREFIX:-deep-researcher}
     opensearch_embedding_dim: ${OPENSEARCH_EMBEDDING_DIM:-2048}
     opensearch_ingestion_mode: ${OPENSEARCH_INGESTION_MODE:-auto}
     opensearch_dask_scheduler_address: ${NAT_DASK_SCHEDULER_ADDRESS:-}
-    embed_model: ${AIQ_EMBED_MODEL:-nvidia/nemotron-3-embed-1b}
-    embed_base_url: ${AIQ_EMBED_BASE_URL:-https://integrate.api.nvidia.com/v1}
+    embed_model: ${DEEP_RESEARCHER_EMBED_MODEL:-nvidia/nemotron-3-embed-1b}
+    embed_base_url: ${DEEP_RESEARCHER_EMBED_BASE_URL:-https://integrate.api.nvidia.com/v1}
 ```
 
 Use `opensearch_auth_type: none` only with a protected local development endpoint. Configure `basic` or `sigv4`
@@ -286,13 +286,13 @@ The full shipped profile is
 #### Changing the embedding model
 
 Persisted vector stores are tied to both the embedding model and its output dimension. Changing only
-`AIQ_EMBED_MODEL` is not a compatible in-place update:
+`DEEP_RESEARCHER_EMBED_MODEL` is not a compatible in-place update:
 
 - **Chroma:** delete only the affected logical collection through the Knowledge API or UI, then re-ingest its
-  documents. Configuring a new `AIQ_CHROMA_DIR` also creates an isolated store. Deleting the existing shared
-  `AIQ_CHROMA_DIR` removes every named collection in that store and can destroy unrelated data.
-- **OpenSearch:** set `OPENSEARCH_EMBEDDING_DIM` to the new model's exact output length, delete the existing AI-Q
-  collection/index, and re-ingest every document. AI-Q rejects unmarked or incompatible indexes before ingestion or
+  documents. Configuring a new `DEEP_RESEARCHER_CHROMA_DIR` also creates an isolated store. Deleting the existing shared
+  `DEEP_RESEARCHER_CHROMA_DIR` removes every named collection in that store and can destroy unrelated data.
+- **OpenSearch:** set `OPENSEARCH_EMBEDDING_DIM` to the new model's exact output length, delete the existing Deep Researcher Agent
+  collection/index, and re-ingest every document. Deep Researcher Agent rejects unmarked or incompatible indexes before ingestion or
   retrieval.
 - **Azure AI Search:** model and dimension are part of the physical index identity; changing either creates an isolated
   index that must be populated by re-ingestion.
@@ -303,9 +303,9 @@ because the configured summary LLM is not serialized to workers; use local inges
 
 **NeMo Retriever (External REST Service)**
 
-Choose this backend when NeMo Retriever is deployed independently with Docker Compose or Helm/Kubernetes and AI-Q
+Choose this backend when NeMo Retriever is deployed independently with Docker Compose or Helm/Kubernetes and Deep Researcher Agent
 must connect to a shared service. Use the separately registered `nemo_retriever_local` backend below when the
-Retriever library and LanceDB should instead run inside the AI-Q process. The backend names are intentionally distinct;
+Retriever library and LanceDB should instead run inside the Deep Researcher Agent process. The backend names are intentionally distinct;
 there is no runtime mode switch between these two ownership models.
 
 ```yaml
@@ -313,7 +313,7 @@ functions:
   knowledge_search:
     _type: knowledge_retrieval
     backend: nemo_retriever
-    collection_name: ${COLLECTION_NAME:-aiq-nrl}
+    collection_name: ${COLLECTION_NAME:-deep-researcher-nrl}
     top_k: 5
     generate_summary: false
     backend_config:
@@ -341,16 +341,16 @@ The adapter admits complete batches before NRL job creation and bounds total
 active plus queued files. Oversized batches return HTTP 413; temporary
 saturation returns HTTP 503 without a `Retry-After` header.
 Per-attempt IDs remain diagnostic metadata. Query filters are rejected until
-the public NRL query contract supports them. AI-Q does not expose NRL pipeline
+the public NRL query contract supports them. Deep Researcher Agent does not expose NRL pipeline
 tuning and does not consume physical VectorDB names or LanceDB locations.
 Automatic transport retries are limited to reads and explicitly idempotent
 writes. A 404/410 from version-probing job creation or immediate upload means
 the service contract is incompatible; a later polling 404/410 means the job is
 missing or expired.
 
-`nrl_collection_ttl_hours` is sent as an absolute expiration when AI-Q creates a
+`nrl_collection_ttl_hours` is sent as an absolute expiration when Deep Researcher Agent creates a
 collection, and NRL deletes the expired collection itself. TTL cleanup clears the
-document summaries and cached state AI-Q holds for it, so agents stop being
+document summaries and cached state Deep Researcher Agent holds for it, so agents stop being
 offered documents NRL no longer serves. Expiration comes from NRL rather than
 from how long a collection sat idle: the deadline used is the one NRL last
 reported for the collection.
@@ -363,25 +363,25 @@ for local Docker, SSH tunnel, Kubernetes, live validation, and troubleshooting.
 
 **NeMo Retriever (Embedded Local, Experimental)**
 
-`nemo_retriever_local` runs AI-Q, pinned NeMo Retriever, and LanceDB in one Python 3.12 process. It starts no Retriever
+`nemo_retriever_local` runs Deep Researcher Agent, pinned NeMo Retriever, and LanceDB in one Python 3.12 process. It starts no Retriever
 or vector-database service and delegates extraction profiles, schemas, storage, and retrieval to NeMo Retriever. The
-shipped profile defaults to scope `local`, data directory `.aiq-data/nemo_retriever`, and NRL's unchanged `auto`
+shipped profile defaults to scope `local`, data directory `.deep-researcher-data/nemo_retriever`, and NRL's unchanged `auto`
 profile. This is zero deployment for Retriever and vector storage; extraction and embedding may still call remote
 inference endpoints.
 
 When using NRL's default hosted endpoints, authenticate with an NVIDIA Build `nvapi-...` key. `NRL_INFERENCE_API_KEY`
 is an optional explicit Retriever credential, not a separate key type: it can use the same value as `NVIDIA_API_KEY`.
-AI-Q passes the resolved credential to NRL's extraction, document-embedding, and query-embedding calls. Set a distinct
-value only when Retriever and the AI-Q agent LLM need different credentials. If `NRL_INFERENCE_API_KEY` is unset,
+Deep Researcher Agent passes the resolved credential to NRL's extraction, document-embedding, and query-embedding calls. Set a distinct
+value only when Retriever and the Deep Researcher Agent LLM need different credentials. If `NRL_INFERENCE_API_KEY` is unset,
 pinned NRL falls back to `NVIDIA_API_KEY` and then `NGC_API_KEY`.
 
-The default URLs are supplied by NRL, so they do not need to be configured in AI-Q: Page Elements and OCR use the
+The default URLs are supplied by NRL, so they do not need to be configured in Deep Researcher Agent: Page Elements and OCR use the
 hosted `ai.api.nvidia.com` services, while embedding uses `integrate.api.nvidia.com/v1/embeddings`. Set the corresponding
 `NRL_*_INVOKE_URL` only for a compatible external or self-hosted NIM override. Table Structure stays disabled unless
 `NRL_TABLE_STRUCTURE_INVOKE_URL` is configured. All configured NRL inference endpoints share the resolved
-`NRL_INFERENCE_API_KEY`; AI-Q does not define separate keys per endpoint.
+`NRL_INFERENCE_API_KEY`; Deep Researcher Agent does not define separate keys per endpoint.
 
-AI-Q exposes the two extraction profiles supported by the pinned Retriever revision: `auto` and `fast-text`. Neither
+Deep Researcher Agent exposes the two extraction profiles supported by the pinned Retriever revision: `auto` and `fast-text`. Neither
 profile is universally preferred; select one based on corpus characteristics, retrieval requirements, ingestion
 latency objectives, and inference usage.
 
@@ -412,37 +412,37 @@ Structure, embedding endpoint/model/provider prefix, inference key, and collecti
 variable names. The default remains NRL `auto`; Table Structure remains off unless its endpoint is configured.
 
 Collections, documents, chunks, and recovery markers survive restart. Job history is process-local, and interrupted
-pre-write jobs do not. A process lock permits one AI-Q process per data directory. The initial targets are Apple
+pre-write jobs do not. A process lock permits one Deep Researcher Agent process per data directory. The initial targets are Apple
 Silicon macOS, Windows x64, and Linux x64 with remote inference; Intel macOS, Python 3.13, local GPU inference, and
 shared multi-process storage are excluded.
 
-The shipped local profile uses threaded Dask workers and runs full deep research inline so AI-Q, Retriever, and the
+The shipped local profile uses threaded Dask workers and runs full deep research inline so Deep Researcher Agent, Retriever, and the
 LanceDB lock remain in one process. Document ingestion is still asynchronous. Detached, durable async research jobs
 require the deployed service backend.
 
-AI-Q removes credentials, endpoint URLs, local paths, and physical table selectors from adapter errors and public API
+Deep Researcher Agent removes credentials, endpoint URLs, local paths, and physical table selectors from adapter errors and public API
 responses. Pinned NRL and LanceDB can still write local data paths or physical table identifiers to process logs; treat
 those logs as operationally sensitive.
 
 #### LlamaIndex Multimodal Extraction Controls
 
-By default, LlamaIndex ingests text only and uses the NVIDIA hosted embedding models. When `AIQ_EXTRACT_IMAGES` or `AIQ_EXTRACT_CHARTS` is enabled, a Vision Language Model (VLM) is used during ingestion to caption embedded images and extract structured data from charts (axis labels, data points, chart type). This makes visual content in PDFs searchable and retrievable alongside text. The VLM is only invoked at ingestion time, not at query time.
+By default, LlamaIndex ingests text only and uses the NVIDIA hosted embedding models. When `DEEP_RESEARCHER_EXTRACT_IMAGES` or `DEEP_RESEARCHER_EXTRACT_CHARTS` is enabled, a Vision Language Model (VLM) is used during ingestion to caption embedded images and extract structured data from charts (axis labels, data points, chart type). This makes visual content in PDFs searchable and retrievable alongside text. The VLM is only invoked at ingestion time, not at query time.
 
 All options below can be overridden via environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | **Embedding** | | |
-| `AIQ_EMBED_MODEL` | `nvidia/nemotron-3-embed-1b` | NVIDIA embedding model |
-| `AIQ_EMBED_BASE_URL` | `https://integrate.api.nvidia.com/v1` | Embedding API base URL — override for local NIM |
+| `DEEP_RESEARCHER_EMBED_MODEL` | `nvidia/nemotron-3-embed-1b` | NVIDIA embedding model |
+| `DEEP_RESEARCHER_EMBED_BASE_URL` | `https://integrate.api.nvidia.com/v1` | Embedding API base URL — override for local NIM |
 | `OPENSEARCH_EMBEDDING_DIM` | `2048` | OpenSearch vector dimension; must equal the selected embedding model's output length before index creation |
 | **Extraction Flags** | | |
-| `AIQ_EXTRACT_TABLES` | `false` | Extract tables from PDFs as markdown |
-| `AIQ_EXTRACT_IMAGES` | `false` | Extract and caption images with VLM |
-| `AIQ_EXTRACT_CHARTS` | `false` | Classify images as charts and extract structured data |
+| `DEEP_RESEARCHER_EXTRACT_TABLES` | `false` | Extract tables from PDFs as markdown |
+| `DEEP_RESEARCHER_EXTRACT_IMAGES` | `false` | Extract and caption images with VLM |
+| `DEEP_RESEARCHER_EXTRACT_CHARTS` | `false` | Classify images as charts and extract structured data |
 | **Vision Model** | | |
-| `AIQ_VLM_MODEL` | `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` | VLM for image captioning |
-| `AIQ_VLM_BASE_URL` | `https://integrate.api.nvidia.com/v1` | VLM API base URL — override for local NIM |
+| `DEEP_RESEARCHER_VLM_MODEL` | `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` | VLM for image captioning |
+| `DEEP_RESEARCHER_VLM_BASE_URL` | `https://integrate.api.nvidia.com/v1` | VLM API base URL — override for local NIM |
 
 When enabled, the startup log shows the active mode:
 
@@ -450,7 +450,7 @@ When enabled, the startup log shows the active mode:
 LlamaIndexIngestor initialized: persist_dir=/app/data/chroma_data, mode=text + tables + images
 ```
 
-> **Note:** `AIQ_EXTRACT_IMAGES` and `AIQ_EXTRACT_CHARTS` work together. If both are enabled, each image is classified by the VLM as either a chart or a regular image. Foundational RAG handles multimodal extraction server-side. OpenSearch performs text extraction only, so these flags apply only to the LlamaIndex backend.
+> **Note:** `DEEP_RESEARCHER_EXTRACT_IMAGES` and `DEEP_RESEARCHER_EXTRACT_CHARTS` work together. If both are enabled, each image is classified by the VLM as either a chart or a regular image. Foundational RAG handles multimodal extraction server-side. OpenSearch performs text extraction only, so these flags apply only to the LlamaIndex backend.
 
 #### Document Summaries
 
@@ -470,7 +470,7 @@ functions:
     _type: knowledge_retrieval
     generate_summary: true
     summary_model: summary_llm     # Required: LLM reference from llms: section
-    summary_db: ${AIQ_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
+    summary_db: ${DEEP_RESEARCHER_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
 ```
 
 When `generate_summary: true`, you **must** configure `summary_model` to reference an LLM from the `llms:` section. For production deployments, use PostgreSQL for `summary_db` instead of SQLite.
@@ -527,7 +527,7 @@ no ingestion job is created. Failures after job acceptance remain visible per fi
 from knowledge_layer.llamaindex import LlamaIndexRetriever, LlamaIndexIngestor
 
 # Use the factory to get instances
-from aiq_agent.knowledge import get_retriever, get_ingestor
+from deep_researcher_agent.knowledge import get_retriever, get_ingestor
 
 # Ingest documents
 ingestor = get_ingestor("llamaindex", config={"persist_dir": "/tmp/chroma"})
@@ -603,16 +603,16 @@ TTL_CLEANUP_INTERVAL_SECONDS = 3600
 
 NeMo Retriever runs the same hourly thread, but that service owns collection lifetime: it deletes collections on the
 absolute deadline it was given at creation (`nrl_collection_ttl_hours`), and the thread only expires the summaries and
-cached state AI-Q keeps for them rather than deleting anything itself.
+cached state Deep Researcher Agent keeps for them rather than deleting anything itself.
 
 ---
 
 ## Architecture
 
-### Core Library (`src/aiq_agent/knowledge/`)
+### Core Library (`src/deep_researcher_agent/knowledge/`)
 
 ```
-src/aiq_agent/knowledge/
+src/deep_researcher_agent/knowledge/
     __init__.py        # Exports: Chunk, get_retriever, get_ingestor, etc.
     base.py            # Abstract classes: BaseRetriever, BaseIngestor
     schema.py          # Data models: Chunk, RetrievalResult, FileInfo, CollectionInfo
@@ -644,7 +644,7 @@ Backends register themselves using decorators when their module is imported:
 
 ```python
 # In adapter.py
-from aiq_agent.knowledge.factory import register_retriever, register_ingestor
+from deep_researcher_agent.knowledge.factory import register_retriever, register_ingestor
 
 @register_retriever("my_backend")  # Registration name used in config
 class MyRetriever(BaseRetriever):
@@ -697,19 +697,19 @@ Configuration values are resolved in the following order (highest to lowest prio
 | `NVIDIA_API_KEY` | All | Required for embeddings/VLM |
 | `KNOWLEDGE_RETRIEVER_BACKEND` | All | Default retriever backend (fallback if not in YAML) |
 | `KNOWLEDGE_INGESTOR_BACKEND` | All | Default ingestor backend (fallback if not in YAML) |
-| `AIQ_CHROMA_DIR` | llamaindex | ChromaDB persistence path |
-| `AIQ_COLLECTION_TTL_HOURS` | all local/managed backends | Hours before stale collections are deleted (default: 24) |
-| `AIQ_TTL_CLEANUP_INTERVAL_SECONDS` | All | Collection cleanup interval (default: 3600) |
+| `DEEP_RESEARCHER_CHROMA_DIR` | llamaindex | ChromaDB persistence path |
+| `DEEP_RESEARCHER_COLLECTION_TTL_HOURS` | all local/managed backends | Hours before stale collections are deleted (default: 24) |
+| `DEEP_RESEARCHER_TTL_CLEANUP_INTERVAL_SECONDS` | All | Collection cleanup interval (default: 3600) |
 | `RAG_SERVER_URL` | foundational_rag | Query server URL (port 8081) |
 | `RAG_INGEST_URL` | foundational_rag | Ingestion server URL (port 8082) |
 | `OPENSEARCH_URL` | opensearch | OpenSearch endpoint URL |
 | `OPENSEARCH_AUTH_TYPE` | opensearch | `none`, `basic`, or `sigv4` |
 | `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD` | opensearch | Credentials for basic authentication |
 | `AWS_REGION`, `OPENSEARCH_AWS_SERVICE` | opensearch | SigV4 region and service (`es` or `aoss`) |
-| `OPENSEARCH_INDEX_PREFIX` | opensearch | Prefix for AI-Q-managed indexes |
+| `OPENSEARCH_INDEX_PREFIX` | opensearch | Prefix for Deep Researcher Agent-managed indexes |
 | `OPENSEARCH_INGESTION_MODE` | opensearch | `local`, `dask`, or `auto` |
 | `OPENSEARCH_DASK_SCHEDULER_ADDRESS` | opensearch | Optional Dask scheduler for distributed ingestion |
-| `AIQ_EMBED_MODEL`, `AIQ_EMBED_BASE_URL` | llamaindex, opensearch, azure_ai_search | Embedding model and endpoint |
+| `DEEP_RESEARCHER_EMBED_MODEL`, `DEEP_RESEARCHER_EMBED_BASE_URL` | llamaindex, opensearch, azure_ai_search | Embedding model and endpoint |
 | `NRL_BASE_URL` | nemo_retriever | Public NeMo Retriever gateway URL |
 | `NRL_API_TOKEN`, `NRL_SCOPE` | nemo_retriever | Deployment bearer token and required workspace scope |
 | `NRL_CONNECT_TIMEOUT_S`, `NRL_REQUEST_TIMEOUT_S` | nemo_retriever | Connection and request timeout seconds |
@@ -735,20 +735,20 @@ Configuration values are resolved in the following order (highest to lowest prio
 | `milvus-lite` required | Missing dependency | `uv pip install "pymilvus[milvus_lite]"` |
 | `opensearchpy` import error | OpenSearch extra not installed | `uv pip install -e "sources/knowledge_layer[opensearch]"` |
 | OpenSearch `401` or `403` | Auth mode, credentials, IAM, or AOSS data-access policy mismatch | Verify `opensearch_auth_type`; for AOSS follow the IAM and data-access steps in the deployment guide |
-| NRL connection or health failure | AI-Q cannot reach the public gateway | Verify `NRL_BASE_URL`, network policy, ingress, or the SSH tunnel |
+| NRL connection or health failure | Deep Researcher Agent cannot reach the public gateway | Verify `NRL_BASE_URL`, network policy, ingress, or the SSH tunnel |
 | NRL `401` or `403` | Missing/invalid token or unauthorized scope | Verify `NRL_API_TOKEN` and its authorization for `NRL_SCOPE` |
-| NRL job creation/upload `404` or `410` | AI-Q and NRL use incompatible collection-management APIs | Upgrade the NRL chart/image to the validated API version; polling `404`/`410` instead means the job is missing or expired |
+| NRL job creation/upload `404` or `410` | Deep Researcher Agent and NRL use incompatible collection-management APIs | Upgrade the NRL chart/image to the validated API version; polling `404`/`410` instead means the job is missing or expired |
 | NRL TXT/HTML failure | Service image predates the validated integration baseline | Deploy the documented compatible NRL revision or a released successor |
 | Embedded NRL inference `401` | Hosted extraction or embedding rejected its credential | Set a valid NVIDIA Build key in `NRL_INFERENCE_API_KEY`; it may match `NVIDIA_API_KEY`, or use a distinct value when Retriever and agent endpoints require different credentials |
 | Embedded NRL collection ownership mismatch | The data directory was created with a different scope, profile, embedding model, or provider prefix | Restore the original settings or select a new `NRL_LOCAL_DATA_DIR` and re-ingest |
-| Embedded NRL data-directory lock | Another AI-Q process already owns the directory | Stop the other process or select a different `NRL_LOCAL_DATA_DIR`; sharing one directory across processes is unsupported |
+| Embedded NRL data-directory lock | Another Deep Researcher Agent process already owns the directory | Stop the other process or select a different `NRL_LOCAL_DATA_DIR`; sharing one directory across processes is unsupported |
 | Backend registered twice | Module imported multiple times | Normal - factory logs warning but works fine |
 
 ### Debug Registration
 
 ```python
 # Check what's registered
-from aiq_agent.knowledge.factory import list_retrievers, list_ingestors, get_knowledge_layer_config
+from deep_researcher_agent.knowledge.factory import list_retrievers, list_ingestors, get_knowledge_layer_config
 
 print("Retrievers:", list_retrievers())
 print("Ingestors:", list_ingestors())

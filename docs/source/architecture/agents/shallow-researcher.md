@@ -10,7 +10,7 @@ handles the majority of queries -- simple factual lookups, single-step
 questions, and straightforward comparisons -- using a tight tool-calling loop
 with configurable iteration limits.
 
-**Location:** `src/aiq_agent/agents/shallow_researcher/agent.py`
+**Location:** `src/deep_researcher_agent/agents/shallow_researcher/agent.py`
 
 ## Purpose
 
@@ -121,7 +121,7 @@ functions:
 ## Prompt Template
 
 The agent uses `researcher.j2` located in
-`src/aiq_agent/agents/shallow_researcher/prompts/`.
+`src/deep_researcher_agent/agents/shallow_researcher/prompts/`.
 
 Template variables:
 

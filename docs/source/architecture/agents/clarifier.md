@@ -9,7 +9,7 @@ The Clarifier Agent provides human-in-the-loop (HITL) interaction before deep
 research begins. It gathers context and, when the request is vague, optionally
 asks the user to narrow the scope or clarify the type of output requested.
 
-**Location:** `src/aiq_agent/agents/clarifier/agent.py`
+**Location:** `src/deep_researcher_agent/agents/clarifier/agent.py`
 
 ## Purpose
 
@@ -111,7 +111,7 @@ functions:
 
 ## Prompt Templates
 
-Located in `src/aiq_agent/agents/clarifier/prompts/`:
+Located in `src/deep_researcher_agent/agents/clarifier/prompts/`:
 
 | Template | Purpose |
 | -------- | ------- |

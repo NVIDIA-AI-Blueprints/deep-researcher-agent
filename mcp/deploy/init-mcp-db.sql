@@ -2,18 +2,18 @@
 -- SPDX-License-Identifier: Apache-2.0
 
 -- =============================================================================
--- AI-Q MCP - Database Initialization (idempotent - safe to re-run)
+-- Deep Researcher Agent MCP - Database Initialization (idempotent - safe to re-run)
 -- =============================================================================
 --
--- MCP-owned submit/poll ledger inside AIQ_CHECKPOINT_DB. Keep the executable
--- SQL in sync with aiq_mcp.job_store. Application startup also applies this
+-- MCP-owned submit/poll ledger inside DEEP_RESEARCHER_CHECKPOINT_DB. Keep the executable
+-- SQL in sync with deep_researcher_mcp.job_store. Application startup also applies this
 -- schema under a PostgreSQL advisory lock for safe multi-replica startup.
 --
 -- The legacy migration component name aiq_maas_mcp is intentionally preserved
 -- so upgrades reuse the existing migration history for these physical tables.
 -- =============================================================================
 
--- Run this script while connected to the database selected by AIQ_CHECKPOINT_DB.
+-- Run this script while connected to the database selected by DEEP_RESEARCHER_CHECKPOINT_DB.
 
 CREATE TABLE IF NOT EXISTS mcp_schema_migrations (
     component TEXT NOT NULL,

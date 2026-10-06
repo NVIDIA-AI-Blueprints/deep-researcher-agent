@@ -10,8 +10,8 @@ general:
         level: INFO
 
   front_end:
-    _type: aiq_api
-    runner_class: aiq_api.plugin.AIQAPIWorker
+    _type: deep_researcher_api
+    runner_class: deep_researcher_api.plugin.DeepResearcherAPIWorker
     db_url: ${NAT_JOB_STORE_DB_URL:-sqlite+aiosqlite:///./jobs.db}
     expiry_seconds: 86400
     cors:
@@ -42,7 +42,7 @@ llms:
       enable_thinking: false
 
   # Known limitation: NVIDIA API Catalog-hosted Lightning can intermittently produce citation-incomplete shallow drafts.
-  # AI-Q fails closed; see docs/source/resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog.
+  # Deep Researcher Agent fails closed; see docs/source/resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog.
   nemotron_lightning_agent_llm:
     _type: nim
     model_name: nvidia/nemotron-3.5-lightning-30b-a3b
@@ -120,9 +120,9 @@ functions:
     collection_name: ${COLLECTION_NAME:-test_collection}
     generate_summary: true
     summary_model: summary_llm
-    summary_db: ${AIQ_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
+    summary_db: ${DEEP_RESEARCHER_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
     top_k: 5
-    chroma_dir: ${AIQ_CHROMA_DIR:-/tmp/chroma_data}
+    chroma_dir: ${DEEP_RESEARCHER_CHROMA_DIR:-/tmp/chroma_data}
 
   intent_classifier:
     _type: intent_classifier
@@ -154,9 +154,9 @@ functions:
   deep_research_sandbox:
     _type: deep_research_sandbox
     provider: openshell
-    openshell_image: ${AIQ_OPENSHELL_IMAGE:-aiq-openshell-demo:latest}
-    workspace: ${AIQ_OPENSHELL_WORKSPACE:-default}
-    policy: ${AIQ_OPENSHELL_POLICY_FILE:-configs/openshell/generated/aiq-openshell-policy.yaml}
+    openshell_image: ${DEEP_RESEARCHER_OPENSHELL_IMAGE:-deep-researcher-openshell-demo:latest}
+    workspace: ${DEEP_RESEARCHER_OPENSHELL_WORKSPACE:-default}
+    policy: ${DEEP_RESEARCHER_OPENSHELL_POLICY_FILE:-configs/openshell/generated/deep-researcher-openshell-policy.yaml}
     workdir: /sandbox
     # The OpenShell policy is authoritative. This declaration is an upper bound:
     # startup fails if the policy grants a hostname not listed here.
@@ -179,7 +179,7 @@ functions:
     policy_load_timeout_seconds: 30
     delete_on_exit: true
     attest: true
-    require_hard_landlock: ${AIQ_OPENSHELL_REQUIRE_HARD_LANDLOCK:-true}
+    require_hard_landlock: ${DEEP_RESEARCHER_OPENSHELL_REQUIRE_HARD_LANDLOCK:-true}
     artifact_capture:
       enabled: true
       max_file_bytes: 50000000
@@ -203,4 +203,4 @@ workflow:
   enable_escalation: true
   enable_clarifier: true
   use_async_deep_research: true
-  checkpoint_db: ${AIQ_CHECKPOINT_DB:-./checkpoints.db}
+  checkpoint_db: ${DEEP_RESEARCHER_CHECKPOINT_DB:-./checkpoints.db}

@@ -1,5 +1,5 @@
 blank_issues_enabled: true
 contact_links:
   - name: Security Vulnerabilities
-    url: https://github.com/NVIDIA-AI-Blueprints/aiq/security/policy
+    url: https://github.com/NVIDIA-AI-Blueprints/deep-researcher-agent/security/policy
     about: Please follow the security policy instead of opening a public issue.

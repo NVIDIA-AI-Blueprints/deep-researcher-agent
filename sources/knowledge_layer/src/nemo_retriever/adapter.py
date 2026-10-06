@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""AIQ Knowledge Layer adapter for a separately deployed NeMo Retriever service."""
+"""Deep Researcher Agent Knowledge Layer adapter for a separately deployed NeMo Retriever service."""
 
 from __future__ import annotations
 
@@ -26,26 +26,26 @@ from urllib.parse import urlparse
 from pydantic import SecretStr
 from pydantic import ValidationError
 
-from aiq_agent.knowledge import BaseIngestor
-from aiq_agent.knowledge import BaseRetriever
-from aiq_agent.knowledge import Chunk
-from aiq_agent.knowledge import FileProgress
-from aiq_agent.knowledge import IngestionJobStatus
-from aiq_agent.knowledge import JobState
-from aiq_agent.knowledge import RetrievalResult
-from aiq_agent.knowledge import clear_collection_summaries
-from aiq_agent.knowledge import get_available_documents
-from aiq_agent.knowledge import list_summary_collections
-from aiq_agent.knowledge import register_ingestor
-from aiq_agent.knowledge import register_retriever
-from aiq_agent.knowledge import register_summary
-from aiq_agent.knowledge import unregister_summary
-from aiq_agent.knowledge.base import IngestionBatchTooLargeError
-from aiq_agent.knowledge.base import IngestionCapacityError
-from aiq_agent.knowledge.base import TTLCleanupMixin
-from aiq_agent.knowledge.schema import CollectionInfo
-from aiq_agent.knowledge.schema import FileInfo
-from aiq_agent.knowledge.schema import FileStatus
+from deep_researcher_agent.knowledge import BaseIngestor
+from deep_researcher_agent.knowledge import BaseRetriever
+from deep_researcher_agent.knowledge import Chunk
+from deep_researcher_agent.knowledge import FileProgress
+from deep_researcher_agent.knowledge import IngestionJobStatus
+from deep_researcher_agent.knowledge import JobState
+from deep_researcher_agent.knowledge import RetrievalResult
+from deep_researcher_agent.knowledge import clear_collection_summaries
+from deep_researcher_agent.knowledge import get_available_documents
+from deep_researcher_agent.knowledge import list_summary_collections
+from deep_researcher_agent.knowledge import register_ingestor
+from deep_researcher_agent.knowledge import register_retriever
+from deep_researcher_agent.knowledge import register_summary
+from deep_researcher_agent.knowledge import unregister_summary
+from deep_researcher_agent.knowledge.base import IngestionBatchTooLargeError
+from deep_researcher_agent.knowledge.base import IngestionCapacityError
+from deep_researcher_agent.knowledge.base import TTLCleanupMixin
+from deep_researcher_agent.knowledge.schema import CollectionInfo
+from deep_researcher_agent.knowledge.schema import FileInfo
+from deep_researcher_agent.knowledge.schema import FileStatus
 
 from ._models import CollectionDeleteWire
 from ._models import CollectionPageWire
@@ -94,7 +94,7 @@ _SUCCESS_STATUSES = frozenset({"completed", "indexed", "ready", "success", "succ
 _FAILED_STATUSES = frozenset({"failed", "error"})
 _PLACEHOLDER_SUMMARY = "No Summary Available"
 # Shared with the other knowledge backends so one setting paces every TTL cleanup thread.
-TTL_CLEANUP_INTERVAL_SECONDS = int(os.environ.get("AIQ_TTL_CLEANUP_INTERVAL_SECONDS", "3600"))
+TTL_CLEANUP_INTERVAL_SECONDS = int(os.environ.get("DEEP_RESEARCHER_TTL_CLEANUP_INTERVAL_SECONDS", "3600"))
 
 
 @dataclass(frozen=True)
@@ -277,7 +277,7 @@ def _parse_timestamp(value: datetime | None) -> datetime | None:
 
 
 def _public_document_error(value: str | None) -> str | None:
-    """Contain producer exception text at the AI-Q public API boundary."""
+    """Contain producer exception text at the Deep Researcher Agent public API boundary."""
     return _PUBLIC_DOCUMENT_ERROR if value else None
 
 
@@ -332,7 +332,7 @@ def _idempotency_key(
         "metadata": metadata,
     }
     encoded = json.dumps(canonical, separators=(",", ":"), sort_keys=True).encode("utf-8")
-    return f"aiq-{hashlib.sha256(encoded).hexdigest()}"
+    return f"deep-researcher-{hashlib.sha256(encoded).hexdigest()}"
 
 
 def _collection_info(item: CollectionWire) -> CollectionInfo:
@@ -538,11 +538,11 @@ class NemoRetrieverIngestor(TTLCleanupMixin, BaseIngestor):
 
         NRL expires the collection itself, so cleanup never issues a delete. A locally cached
         deadline is only a signal to check NRL: the collection could have had its expiration
-        extended after the last create, update, or reconciliation. AI-Q drops its summaries and
+        extended after the last create, update, or reconciliation. Deep Researcher Agent drops its summaries and
         cached state only once NRL no longer returns the collection.
 
         It also replaces the mixin's idle-time policy: NRL is given an absolute expiration at
-        creation and enforces it, so inferring one from ``updated_at`` would push AI-Q's view of a
+        creation and enforces it, so inferring one from ``updated_at`` would push Deep Researcher Agent's view of a
         collection past the deadline the service will actually act on.
         """
         now = datetime.now(UTC)

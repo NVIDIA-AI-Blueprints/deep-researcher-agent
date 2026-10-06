@@ -16,7 +16,7 @@
   }
 
   const localPreviewStyles = document.createElement("style");
-  localPreviewStyles.dataset.aiqLocalPreview = "true";
+  localPreviewStyles.dataset.deepResearcherLocalPreview = "true";
   localPreviewStyles.textContent = `
     #onetrust-consent-sdk,
     #onetrust-banner-sdk,

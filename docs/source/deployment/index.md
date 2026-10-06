@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Deployment
 
-The AI-Q blueprint supports multiple deployment methods. Choose the one that best fits your environment and operational requirements.
+The Deep Researcher Agent blueprint supports multiple deployment methods. Choose the one that best fits your environment and operational requirements.
 
 | Method | Best For | Prerequisites |
 |--------|----------|---------------|
@@ -15,7 +15,7 @@ The AI-Q blueprint supports multiple deployment methods. Choose the one that bes
 
 ## Published Release Artifacts
 
-AI-Q v2.2.0 is published on NVIDIA NGC. Use the exact versioned references below for release deployments.
+Deep Researcher Agent v2.2.0 is published on NVIDIA NGC. Use the exact versioned references below for release deployments.
 
 | Artifact | Type | Versioned reference |
 |----------|------|---------------------|
@@ -27,8 +27,8 @@ AI-Q v2.2.0 is published on NVIDIA NGC. Use the exact versioned references below
 
 All containerized deployments run the same three services:
 
-- **Backend** (`aiq-agent`) -- [FastAPI](https://fastapi.tiangolo.com/) server with an embedded [Dask](https://www.dask.org/) scheduler and worker for background job processing.
-- **Frontend** (`aiq-blueprint-ui`) -- [Next.js](https://nextjs.org/) web UI that communicates with the backend API.
+- **Backend** (`deep-researcher-agent`) -- [FastAPI](https://fastapi.tiangolo.com/) server with an embedded [Dask](https://www.dask.org/) scheduler and worker for background job processing.
+- **Frontend** (`deep-researcher-blueprint-ui`) -- [Next.js](https://nextjs.org/) web UI that communicates with the backend API.
 - **Database** (`postgres`) -- [PostgreSQL](https://www.postgresql.org/) instance for async job storage, [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview) checkpoints, and document summaries.
 
 ## Deployment Guides
@@ -41,7 +41,7 @@ All containerized deployments run the same three services:
 
 - **[Docker Build System](./docker-build.md)** -- Multi-stage Dockerfile architecture, build targets (dev vs. release), base images, and startup scripts (`entrypoint.py` and `start_web.py`).
 
-- **[Authentication](./authentication.md)** -- Enable OAuth/OIDC sign-in, configure backend JWT validation, and use AIQ user tokens in tools and MCP pass-through integrations.
+- **[Authentication](./authentication.md)** -- Enable OAuth/OIDC sign-in, configure backend JWT validation, and use Deep Researcher Agent user tokens in tools and MCP pass-through integrations.
 
 - **[Async Job Content Encryption](./content-encryption.md)** -- Configure encryption at rest for async final reports and selected artifact event content, including Vault Transit and static-key modes.
 

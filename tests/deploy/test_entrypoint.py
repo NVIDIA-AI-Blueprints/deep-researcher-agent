@@ -18,7 +18,7 @@ from distributed import LocalCluster
 
 def _load_entrypoint():
     path = Path(__file__).parents[2] / "deploy" / "entrypoint.py"
-    spec = importlib.util.spec_from_file_location("aiq_deploy_entrypoint", path)
+    spec = importlib.util.spec_from_file_location("deep_researcher_deploy_entrypoint", path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -99,7 +99,7 @@ def test_worker_and_web_processes_receive_scheduler_address(monkeypatch) -> None
 
 def test_external_scheduler_starts_only_web_server(monkeypatch) -> None:
     entrypoint = _load_entrypoint()
-    scheduler_address = "tls://aiq-dask-scheduler:8786"
+    scheduler_address = "tls://deep-researcher-dask-scheduler:8786"
     wait_for_scheduler = MagicMock()
     run_web_server = MagicMock(return_value=17)
     popen = MagicMock(side_effect=AssertionError("external mode must not launch local Dask processes"))
@@ -120,7 +120,7 @@ def test_external_scheduler_rejects_plaintext_address(monkeypatch) -> None:
     wait_for_scheduler = MagicMock()
     run_web_server = MagicMock()
     monkeypatch.setattr(entrypoint.sys, "argv", ["entrypoint.py"])
-    monkeypatch.setenv("NAT_DASK_SCHEDULER_ADDRESS", "tcp://aiq-dask-scheduler:8786")
+    monkeypatch.setenv("NAT_DASK_SCHEDULER_ADDRESS", "tcp://deep-researcher-dask-scheduler:8786")
     monkeypatch.setattr(entrypoint, "_wait_for_scheduler", wait_for_scheduler)
     monkeypatch.setattr(entrypoint, "_run_web_server", run_web_server)
 

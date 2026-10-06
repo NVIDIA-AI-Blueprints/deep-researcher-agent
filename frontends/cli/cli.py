@@ -52,7 +52,7 @@ logger = logging.getLogger(__name__)
 console = Console()
 
 # Setup prompt_toolkit with persistent history for arrow key navigation
-_history_file = Path.home() / ".aiq" / "cli_history"
+_history_file = Path.home() / ".deep-researcher" / "cli_history"
 _history_file.parent.mkdir(parents=True, exist_ok=True)
 prompt_session: PromptSession[str] = PromptSession(history=FileHistory(str(_history_file)))
 
@@ -174,14 +174,14 @@ class _Spinner:
 # Tracks the active spinner so the HITL callback can pause/resume it
 _active_spinner: _Spinner | None = None
 
-ASCII_AIQ = r"""
+ASCII_DEEP_RESEARCHER = r"""
               █████╗  ██╗         ██████╗
              ██╔══██╗ ██║        ██╔═══██╗
              ███████║ ██║ █████║ ██║   ██║
              ██╔══██║ ██║        ██║▄▄ ██║
              ██║  ██║ ██║        ╚██████╔╝
              ╚═╝  ╚═╝ ╚═╝         ╚══▀▀═╝
-   NVIDIA AI-Q Blueprint powered by NeMo Agent Toolkit
+   NVIDIA Deep Researcher Agent Blueprint powered by NeMo Agent Toolkit
 """
 
 
@@ -274,7 +274,7 @@ def _check_interactive_auth(config_file: str) -> bool:
 async def _initialize_auth() -> None:
     """Initialize authentication for CLI mode."""
     try:
-        from aiq_research_cli.auth import initialize_workflow_auth
+        from deep_researcher_research_cli.auth import initialize_workflow_auth
 
         console.print("[dim]Initializing authentication...[/dim]")
         await initialize_workflow_auth(interactive_auth=True)
@@ -287,8 +287,8 @@ async def _initialize_auth() -> None:
 def build_parser() -> argparse.ArgumentParser:
     """Build the argument parser for the CLI."""
     parser = argparse.ArgumentParser(
-        prog="aiq-agent",
-        description="AI-Q Blueprint - Interactive CLI for research and data analysis",
+        prog="deep-researcher-agent",
+        description="Deep Researcher Agent Blueprint - Interactive CLI for research and data analysis",
     )
     parser.add_argument(
         "--config_file",
@@ -316,8 +316,8 @@ async def interactive_loop(session_manager: SessionManager, verbose: bool = Fals
         session_manager: NAT session manager instance.
         verbose: Whether to show verbose output (all tool calls and thinking).
     """
-    console.print(ASCII_AIQ, style="bold cyan")
-    console.print("AI-Q initialized!", style="bold green")
+    console.print(ASCII_DEEP_RESEARCHER, style="bold cyan")
+    console.print("Deep Researcher Agent initialized!", style="bold green")
     console.print("Type 'exit', 'quit', or 'q' to quit.", style="dim")
     if verbose:
         console.print("Verbose mode: ON - Showing all tool calls and thinking", style="bold yellow")
@@ -428,7 +428,7 @@ def main() -> None:
             with open(config_path, encoding="utf-8") as f:
                 config = yaml.safe_load(f)
 
-            from aiq_agent.common.config_validation import validate_llm_configs
+            from deep_researcher_agent.common.config_validation import validate_llm_configs
 
             is_valid, missing_keys = validate_llm_configs(config)
             if not is_valid:

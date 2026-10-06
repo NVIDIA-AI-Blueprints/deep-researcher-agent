@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Architecture
 
-Understand how AI-Q processes queries, routes between agents, and produces research reports.
+Understand how Deep Researcher Agent processes queries, routes between agents, and produces research reports.
 
 - **[Overview](./overview.md)** — End-to-end system flow with diagrams
 - **[Agents](./agents/index.md)** — Individual agent architectures and internals

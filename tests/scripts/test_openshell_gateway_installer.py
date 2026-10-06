@@ -190,7 +190,7 @@ def test_ambiguous_formula_installation_is_refused(tmp_path: Path) -> None:
         brew,
         """#!/bin/bash
 if [[ "$*" == "list --formula --full-name" ]]; then
-  printf '%s\n' nvidia/openshell/openshell aiq/local-openshell/openshell
+  printf '%s\n' nvidia/openshell/openshell deep-researcher/local-openshell/openshell
   exit 0
 fi
 echo "brew $*" >>"$FAKE_LOG"
@@ -233,7 +233,7 @@ def test_ambiguous_service_installation_is_refused(tmp_path: Path) -> None:
         """#!/bin/bash
 if [[ "$*" == "list --formula --full-name" ]]; then echo nvidia/openshell/openshell; exit 0; fi
 if [[ "$*" == "services list --json" ]]; then
-  printf '%s\n' '[{"name":"openshell"},{"name":"aiq/local-openshell/openshell"}]'
+  printf '%s\n' '[{"name":"openshell"},{"name":"deep-researcher/local-openshell/openshell"}]'
   exit 0
 fi
 if [[ "$*" == "tap" ]]; then echo nvidia/openshell; exit 0; fi
@@ -264,5 +264,5 @@ def test_installer_source_contains_no_implicit_or_insecure_lifecycle_shortcuts()
 
     assert "curl |" not in source
     assert "launchctl setenv" not in source
-    assert "tap-new aiq/" not in source
+    assert "tap-new deep-researcher/" not in source
     assert "openshell-gateway" not in source

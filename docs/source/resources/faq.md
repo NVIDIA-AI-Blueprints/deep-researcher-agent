@@ -5,18 +5,18 @@ SPDX-License-Identifier: Apache-2.0
 
 # FAQ
 
-Frequently asked questions about the AI-Q blueprint.
+Frequently asked questions about the Deep Researcher Agent blueprint.
 
 ## General
 
-**What is the AI-Q blueprint?**
+**What is the Deep Researcher Agent blueprint?**
 
 An NVIDIA blueprint for AI-powered deep research built on the NeMo Agent Toolkit. It combines intelligent query routing, multi-agent research pipelines, and pluggable knowledge retrieval to deliver comprehensive, citation-backed research answers.
 
 **What models does it use?**
 
 The default profiles use NVIDIA Nemotron models through the `integrate.api.nvidia.com` API. The shipped frontier
-profile uses the exact GPT Sol/Luna role assignment in `configs/config_frontier_models.yml`. AI-Q is configurable with
+profile uses the exact GPT Sol/Luna role assignment in `configs/config_frontier_models.yml`. Deep Researcher Agent is configurable with
 self-hosted NIMs and other providers, but a bring-your-own model is not automatically compatible and can require
 provider-specific prompt, hyperparameter, tool-calling, and structured-output tuning. Run the complete workflow against
 the exact provider configuration before deployment. Refer to [Swapping Models](../customization/swapping-models.md).
@@ -65,7 +65,7 @@ prompted to follow the recorded order.
 
 - **Tavily Web Search** — General web search (requires `TAVILY_API_KEY`)
 - **You.com APIs** — Web search, page contents, cited general research, and finance research (`YDC_API_KEY` is
-  required for live API calls; without it, AI-Q starts with diagnostic stubs for these tools)
+  required for live API calls; without it, Deep Researcher Agent starts with diagnostic stubs for these tools)
 - **Exa Web Search** — General web search via Exa (requires `EXA_API_KEY`)
 - **Nimble Web Search** — General web search via Nimble (requires `NIMBLE_API_KEY`)
 - **DuckDuckGo News Search** — Recent news search (no API key)

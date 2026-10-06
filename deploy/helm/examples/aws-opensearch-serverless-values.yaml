@@ -1,12 +1,12 @@
-# Example values for AI-Q with Amazon OpenSearch Serverless.
+# Example values for Deep Researcher Agent with Amazon OpenSearch Serverless.
 #
 # Before applying this file:
 # - Create an OpenSearch Serverless vector collection and note its data endpoint.
 # - Create an AOSS data access policy for the service account IAM role.
 # - Create an EKS Pod Identity association that maps the backend service account
-#   for this release (default name: aiq-backend in namespace ns-aiq) to that role.
+#   for this release (default name: deep-researcher-backend in namespace ns-deep-researcher) to that role.
 
-aiq:
+deep-researcher:
   apps:
     backend:
       image:
@@ -24,7 +24,7 @@ aiq:
         OPENSEARCH_URL: https://abc123.us-west-2.aoss.amazonaws.com
         OPENSEARCH_AUTH_TYPE: sigv4
         OPENSEARCH_AWS_SERVICE: aoss
-        OPENSEARCH_INDEX_PREFIX: aiq
+        OPENSEARCH_INDEX_PREFIX: deep-researcher
         AWS_REGION: us-west-2
         OPENSEARCH_INGESTION_MODE: auto
         OPENSEARCH_DASK_FILE_TRANSFER: bytes

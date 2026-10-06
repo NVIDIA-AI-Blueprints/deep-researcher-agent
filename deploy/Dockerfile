@@ -14,12 +14,12 @@
 # limitations under the License.
 
 # =============================================================================
-# Multi-stage build for AI-Q Blueprint Backend
+# Multi-stage build for Deep Researcher Agent Blueprint Backend
 # =============================================================================
 #
 # Build targets:
-#   docker build --target dev -t aiq:dev .     # Development (includes CLI)
-#   docker build --target release -t aiq:prod . # Production (web only, validates env)
+#   docker build --target dev -t deep-researcher:dev .     # Development (includes CLI)
+#   docker build --target release -t deep-researcher:prod . # Production (web only, validates env)
 #
 # =============================================================================
 
@@ -61,7 +61,7 @@ COPY pyproject.toml uv.lock ./
 # Copy all source packages
 COPY src/ ./src/
 COPY sources/ ./sources/
-COPY frontends/aiq_api/ ./frontends/aiq_api/
+COPY frontends/deep_researcher_api/ ./frontends/deep_researcher_api/
 COPY frontends/cli/ ./frontends/cli/
 COPY frontends/debug/ ./frontends/debug/
 COPY configs/ ./configs/
@@ -87,11 +87,11 @@ RUN uv pip install --no-sources --no-deps -e . \
     && uv pip install --no-deps -e ./sources/exa_web_search \
     && uv pip install --no-deps -e ./sources/nimble_web_search \
     && uv pip install --no-deps -e "./sources/knowledge_layer[all]" \
-    && uv pip install --no-deps -e ./frontends/aiq_api \
+    && uv pip install --no-deps -e ./frontends/deep_researcher_api \
     && uv pip install "psycopg[binary]>=3.0.0"
 
 RUN /app/.venv/bin/python -c \
-    "import asyncio; import aiq_api; import knowledge_layer; import presidio_analyzer; import presidio_anonymizer; import spacy; from nemoguardrails.library.sensitive_data_detection.actions import mask_sensitive_data; from nemoguardrails.rails.llm.config import RailsConfig; config = RailsConfig.from_content(yaml_content='rails:\n  config:\n    sensitive_data_detection:\n      output:\n        entities:\n          - EMAIL_ADDRESS\n'); assert spacy.util.is_package('en_core_web_lg'); assert asyncio.run(mask_sensitive_data(source='output', text='Contact customer@example.com', config=config)) == 'Contact <EMAIL_ADDRESS>'; print('✓ Base packages and PII runtime installed')"
+    "import asyncio; import deep_researcher_api; import knowledge_layer; import presidio_analyzer; import presidio_anonymizer; import spacy; from nemoguardrails.library.sensitive_data_detection.actions import mask_sensitive_data; from nemoguardrails.rails.llm.config import RailsConfig; config = RailsConfig.from_content(yaml_content='rails:\n  config:\n    sensitive_data_detection:\n      output:\n        entities:\n          - EMAIL_ADDRESS\n'); assert spacy.util.is_package('en_core_web_lg'); assert asyncio.run(mask_sensitive_data(source='output', text='Contact customer@example.com', config=config)) == 'Contact <EMAIL_ADDRESS>'; print('✓ Base packages and PII runtime installed')"
 
 # Keep immutable application assets root-owned; only runtime data is writable by the service user.
 RUN chmod +x /app/deploy/start_web.py \
@@ -103,16 +103,16 @@ RUN chmod +x /app/deploy/start_web.py \
 # =============================================================================
 #
 # OpenShell remains an explicitly selected deployment dependency rather than a
-# dependency of every AI-Q image. The published adapter currently declares an
-# older DeepAgents range than AI-Q uses, so install it without dependency
+# dependency of every Deep Researcher Agent image. The published adapter currently declares an
+# older DeepAgents range than Deep Researcher Agent uses, so install it without dependency
 # resolution after installing the certified SDK. The adapter surface is covered
-# by AI-Q's OpenShell tests against the locked DeepAgents runtime.
+# by Deep Researcher Agent's OpenShell tests against the locked DeepAgents runtime.
 FROM builder AS openshell-builder
 
 RUN OPENSHELL_VERSION="$(/app/.venv/bin/python -c \
-        "import pathlib,tomllib; c=tomllib.loads(pathlib.Path('pyproject.toml').read_text())['tool']['aiq']['openshell']; print(c['release-tag'].removeprefix('v'))")" \
+        "import pathlib,tomllib; c=tomllib.loads(pathlib.Path('pyproject.toml').read_text())['tool']['deep-researcher']['openshell']; print(c['release-tag'].removeprefix('v'))")" \
     && OPENSHELL_ADAPTER_VERSION="$(/app/.venv/bin/python -c \
-        "import pathlib,tomllib; c=tomllib.loads(pathlib.Path('pyproject.toml').read_text())['tool']['aiq']['openshell']; print(c['adapter-version'])")" \
+        "import pathlib,tomllib; c=tomllib.loads(pathlib.Path('pyproject.toml').read_text())['tool']['deep-researcher']['openshell']; print(c['adapter-version'])")" \
     && uv pip install "openshell==${OPENSHELL_VERSION}" \
     && uv pip install --no-deps "langchain-nvidia-openshell==${OPENSHELL_ADAPTER_VERSION}" \
     && /app/.venv/bin/python -c \
@@ -127,7 +127,7 @@ FROM builder AS dev-builder
 RUN uv pip install --no-deps -e ./frontends/cli \
     && uv pip install --no-deps -e ./frontends/debug
 
-RUN /app/.venv/bin/python -c "import aiq_api; import aiq_research_cli; import aiq_debug; import knowledge_layer; print('✓ All packages installed')"
+RUN /app/.venv/bin/python -c "import deep_researcher_api; import deep_researcher_research_cli; import deep_researcher_debug; import knowledge_layer; print('✓ All packages installed')"
 
 # =============================================================================
 # Stage 3: Development runtime

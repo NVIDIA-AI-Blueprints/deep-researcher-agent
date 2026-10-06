@@ -60,9 +60,9 @@ load_dotenv()
 # Import adapter to register it
 import knowledge_layer.foundational_rag.adapter  # noqa: E402, F401
 
-from aiq_agent.knowledge.factory import get_ingestor  # noqa: E402
-from aiq_agent.knowledge.factory import get_retriever  # noqa: E402
-from aiq_agent.knowledge.schema import FileStatus  # noqa: E402
+from deep_researcher_agent.knowledge.factory import get_ingestor  # noqa: E402
+from deep_researcher_agent.knowledge.factory import get_retriever  # noqa: E402
+from deep_researcher_agent.knowledge.schema import FileStatus  # noqa: E402
 
 # Polling configuration
 POLL_INTERVAL_SECONDS = 5

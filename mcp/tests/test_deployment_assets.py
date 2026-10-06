@@ -16,7 +16,7 @@ import yaml
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _DOCKERFILE = _REPO_ROOT / "mcp" / "Dockerfile"
-_AIQ_DOCKERFILE = _REPO_ROOT / "deploy" / "Dockerfile"
+_DEEP_RESEARCHER_DOCKERFILE = _REPO_ROOT / "deploy" / "Dockerfile"
 _COMPOSE_FILE = _REPO_ROOT / "deploy" / "compose" / "docker-compose.mcp.yaml"
 _INIT_SQL = _REPO_ROOT / "mcp" / "deploy" / "init-mcp-db.sql"
 _DOCKERIGNORE = _REPO_ROOT / ".dockerignore"
@@ -142,18 +142,18 @@ _EXPECTED_VERBATIM_SHA256 = (
 
 _EXPECTED_SQL_HASH = "05c27bca7385f6127017bee72ae067d02a49849db73b483d42868aaaf90341c7"  # pragma: allowlist secret
 _MCP_ENVIRONMENT = {
-    "AIQ_CHECKPOINT_DB",
-    "AIQ_MCP_ALLOWED_HOSTS",
-    "AIQ_MCP_ALLOWED_ORIGINS",
-    "AIQ_MCP_CONFIG",
-    "AIQ_MCP_CORS_ORIGINS",
-    "AIQ_MCP_HOST",
-    "AIQ_MCP_LOG_LEVEL",
-    "AIQ_MCP_MAX_QUERY_CHARS",
-    "AIQ_MCP_PATH",
-    "AIQ_MCP_PORT",
-    "AIQ_MCP_SHALLOW_INLINE_WAIT_SECONDS",
-    "AIQ_MCP_WORKERS",
+    "DEEP_RESEARCHER_CHECKPOINT_DB",
+    "DEEP_RESEARCHER_MCP_ALLOWED_HOSTS",
+    "DEEP_RESEARCHER_MCP_ALLOWED_ORIGINS",
+    "DEEP_RESEARCHER_MCP_CONFIG",
+    "DEEP_RESEARCHER_MCP_CORS_ORIGINS",
+    "DEEP_RESEARCHER_MCP_HOST",
+    "DEEP_RESEARCHER_MCP_LOG_LEVEL",
+    "DEEP_RESEARCHER_MCP_MAX_QUERY_CHARS",
+    "DEEP_RESEARCHER_MCP_PATH",
+    "DEEP_RESEARCHER_MCP_PORT",
+    "DEEP_RESEARCHER_MCP_SHALLOW_INLINE_WAIT_SECONDS",
+    "DEEP_RESEARCHER_MCP_WORKERS",
     "NVIDIA_API_KEY",
     "TAVILY_API_KEY",
 }
@@ -194,14 +194,15 @@ def _dockerfile_stage(text: str, stage: str) -> str:
 
 
 def _release_notice_section(text: str, section_number: int) -> str:
-    addendum_start = text.index("AI-Q 2.2 RELEASE CONTAINER ATTRIBUTION ADDENDUM")
+    addendum_start = text.index("Deep Researcher Agent 2.2 RELEASE CONTAINER ATTRIBUTION ADDENDUM")
     separator = "\n----------------------------------------------------------------------------\n"
     section_marker = f"{separator}{section_number}. "
     section_start = text.index(section_marker, addendum_start) + len(separator)
     next_section = text.find(f"{separator}{section_number + 1}. ", section_start)
     if next_section == -1:
         end_marker = (
-            "\n============================================================================\nEND OF AI-Q 2.2 RELEASE"
+            "\n============================================================================\n"
+            "END OF Deep Researcher Agent 2.2 RELEASE"
         )
         next_section = text.index(end_marker, section_start)
     return text[section_start:next_section]
@@ -223,7 +224,7 @@ def test_release_dockerfile_is_public_reproducible_and_non_root() -> None:
     assert "uv sync" in text
     assert "--project /app/mcp" in text
     assert "--frozen" in text
-    assert "--package aiq-mcp-server" not in text
+    assert "--package deep-researcher-mcp-server" not in text
     assert "--no-dev" in text
     assert "--no-default-groups" in text
     assert "--no-editable" in text
@@ -233,22 +234,22 @@ def test_release_dockerfile_is_public_reproducible_and_non_root() -> None:
     assert "USER 10001:10001" in text
     assert "EXPOSE 9001" in text
     assert "HEALTHCHECK" in text
-    assert 'ENTRYPOINT ["python", "-m", "aiq_mcp.server"]' in text
+    assert 'ENTRYPOINT ["python", "-m", "deep_researcher_mcp.server"]' in text
     assert "configs/config_mcp.yml" in text
-    assert "AIQ_MCP_CONFIG=/app/configs/config_mcp.yml" in text
+    assert "DEEP_RESEARCHER_MCP_CONFIG=/app/configs/config_mcp.yml" in text
     assert "COPY --chown=10001:10001 LICENSE LICENSE-THIRD-PARTY /licenses/" in _dockerfile_stage(text, "release")
     assert "/opt/venv/bin/python mcp/scripts/check_runtime_dependencies.py" in text
     assert tuple(line.strip() for line in text.splitlines() if line.startswith("COPY ")) == _EXPECTED_COPY_LINES
 
 
-def test_aiq_dockerfile_ignores_opt_in_workspace_sources_for_root_install() -> None:
-    text = _AIQ_DOCKERFILE.read_text()
+def test_deep_researcher_dockerfile_ignores_opt_in_workspace_sources_for_root_install() -> None:
+    text = _DEEP_RESEARCHER_DOCKERFILE.read_text()
 
     assert "RUN uv pip install --no-sources --no-deps -e . \\" in text
 
 
-def test_aiq_final_images_include_project_and_third_party_licenses() -> None:
-    text = _AIQ_DOCKERFILE.read_text()
+def test_deep_researcher_final_images_include_project_and_third_party_licenses() -> None:
+    text = _DEEP_RESEARCHER_DOCKERFILE.read_text()
     copy_instruction = "COPY LICENSE LICENSE-THIRD-PARTY /licenses/"
 
     assert (_REPO_ROOT / "LICENSE").is_file()
@@ -365,15 +366,17 @@ def test_release_third_party_notice_contains_reviewed_payloads() -> None:
 
 def test_source_only_pydata_notice_and_local_template_preserve_bsd_terms() -> None:
     notices = _THIRD_PARTY_LICENSE.read_text()
-    source_addendum = notices.split("AI-Q 2.2 SOURCE-DISTRIBUTION-ONLY ATTRIBUTION ADDENDUM", 1)[1]
-    source_addendum = source_addendum.split("END OF AI-Q 2.2 SOURCE-DISTRIBUTION-ONLY ATTRIBUTION ADDENDUM", 1)[0]
+    source_addendum = notices.split("Deep Researcher Agent 2.2 SOURCE-DISTRIBUTION-ONLY ATTRIBUTION ADDENDUM", 1)[1]
+    source_addendum = source_addendum.split(
+        "END OF Deep Researcher Agent 2.2 SOURCE-DISTRIBUTION-ONLY ATTRIBUTION ADDENDUM", 1
+    )[0]
     template = _SIDEBAR_TEMPLATE.read_text()
 
     assert _SIDEBAR_TEMPLATE.is_file()
     assert "docs/source/_templates/sidebar-nav-bs.html" in source_addendum
     assert (
-        "This addendum applies to the AI-Q source distribution only. The referenced\n"
-        "documentation template is not installed in the AI-Q release container."
+        "This addendum applies to the Deep Researcher Agent source distribution only. The referenced\n"
+        "documentation template is not installed in the Deep Researcher Agent release container."
     ) in source_addendum
     assert "pydata-sphinx-theme v0.16.1" in source_addendum
     upstream_commit = "c47786b993c85f0f442cc8d6e6b55e5d4e92b6b9"  # pragma: allowlist secret
@@ -433,36 +436,37 @@ def test_init_sql_preserves_reference_schema_and_upgrade_history() -> None:
 
 def test_compose_stack_is_isolated_explicit_and_health_gated() -> None:
     compose = yaml.safe_load(_COMPOSE_FILE.read_text())
-    assert compose["name"] == "aiq-mcp"
-    assert set(compose["services"]) == {"postgres", "aiq-mcp"}
+    assert compose["name"] == "deep-researcher-mcp"
+    assert set(compose["services"]) == {"postgres", "deep-researcher-mcp"}
     assert set(compose["volumes"]) == {"mcp-postgres-data"}
-    assert set(compose["networks"]) == {"aiq-mcp-network"}
-    assert compose["networks"]["aiq-mcp-network"].get("internal") is not True
+    assert set(compose["networks"]) == {"deep-researcher-mcp-network"}
+    assert compose["networks"]["deep-researcher-mcp-network"].get("internal") is not True
 
     for service in compose["services"].values():
         assert "container_name" not in service
         assert "env_file" not in service
-        assert service["networks"] == ["aiq-mcp-network"]
+        assert service["networks"] == ["deep-researcher-mcp-network"]
         assert "healthcheck" in service
 
     postgres = compose["services"]["postgres"]
     assert postgres["image"] == "postgres:16-alpine"
     assert postgres["environment"]["POSTGRES_PASSWORD"] == "local_mcp_password"  # pragma: allowlist secret
-    assert postgres["ports"] == ["127.0.0.1:${AIQ_MCP_POSTGRES_PORT:-1234}:5432"]
+    assert postgres["ports"] == ["127.0.0.1:${DEEP_RESEARCHER_MCP_POSTGRES_PORT:-1234}:5432"]
     assert "mcp-postgres-data:/var/lib/postgresql/data" in postgres["volumes"]
     assert "../../mcp/deploy/init-mcp-db.sql:/docker-entrypoint-initdb.d/init-mcp-db.sql:ro" in postgres["volumes"]
 
-    mcp = compose["services"]["aiq-mcp"]
+    mcp = compose["services"]["deep-researcher-mcp"]
     assert mcp["build"] == {"context": "../..", "dockerfile": "mcp/Dockerfile", "target": "release"}
     assert set(mcp["environment"]) == _MCP_ENVIRONMENT
     assert (
-        mcp["environment"]["AIQ_CHECKPOINT_DB"]
-        == "postgresql://aiq:local_mcp_password@postgres:5432/aiq_jobs"  # pragma: allowlist secret
+        mcp["environment"]["DEEP_RESEARCHER_CHECKPOINT_DB"]
+        == "postgresql://deep_researcher:local_mcp_password@postgres:5432/"  # pragma: allowlist secret
+        "deep_researcher_jobs"
     )
-    assert mcp["environment"]["AIQ_MCP_PORT"] == "9001"
-    assert mcp["environment"]["AIQ_MCP_CONFIG"] == "/app/configs/config_mcp.yml"
-    assert mcp["environment"]["AIQ_MCP_MAX_QUERY_CHARS"] == "${AIQ_MCP_MAX_QUERY_CHARS:-8000}"
-    assert mcp["ports"] == ["127.0.0.1:${AIQ_MCP_PUBLISHED_PORT:-9001}:9001"]
+    assert mcp["environment"]["DEEP_RESEARCHER_MCP_PORT"] == "9001"
+    assert mcp["environment"]["DEEP_RESEARCHER_MCP_CONFIG"] == "/app/configs/config_mcp.yml"
+    assert mcp["environment"]["DEEP_RESEARCHER_MCP_MAX_QUERY_CHARS"] == "${DEEP_RESEARCHER_MCP_MAX_QUERY_CHARS:-8000}"
+    assert mcp["ports"] == ["127.0.0.1:${DEEP_RESEARCHER_MCP_PUBLISHED_PORT:-9001}:9001"]
     assert mcp["depends_on"] == {"postgres": {"condition": "service_healthy"}}
     assert mcp["security_opt"] == ["no-new-privileges:true"]
     assert mcp["cap_drop"] == ["ALL"]
@@ -481,7 +485,7 @@ def test_deployment_context_excludes_env_files_and_includes_package_readmes() ->
 
 def test_protocol_smoke_script_is_importable_without_running(protocol_smoke_namespace: dict[str, object]) -> None:
     namespace = protocol_smoke_namespace
-    assert namespace["EXPECTED_SERVER_NAME"] == "aiq_deep_research"
+    assert namespace["EXPECTED_SERVER_NAME"] == "deep_researcher_deep_research"
     assert namespace["EXPECTED_TOOLS"] == {"get_final_report", "poll_query", "submit_query"}
     assert namespace["EXPECTED_HEALTH_STATUS"] == "ready"
     assert namespace["UNKNOWN_JOB_ID"] == "00000000-0000-4000-8000-000000000000"

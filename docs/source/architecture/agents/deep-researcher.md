@@ -11,7 +11,7 @@ task subagents under an orchestrator plus reusable researcher workers created
 with the [`deepagents`](https://docs.langchain.com/oss/python/deepagents/overview)
 and [LangChain](https://docs.langchain.com/) libraries.
 
-**Location:** `src/aiq_agent/agents/deep_researcher/agent.py`
+**Location:** `src/deep_researcher_agent/agents/deep_researcher/agent.py`
 
 For optional DeepAgents sandbox execution and operational notes, refer to
 [Deep Research Sandbox](./sandbox.md).
@@ -134,7 +134,7 @@ runtime dependencies, not additional agents:
 | Shared research state | The host-side `StateBackend` mounted at `/shared/` stores the source-routing plan, research plan, structured notes, and `/shared/output.md`. DeepAgents graph state separately carries progress todos and file metadata. |
 | Skill definitions | Built-in skill collections are mounted from the host at `/skills/`. Filesystem permissions expose only the collections assigned to a role and deny writes to the skill tree. |
 | Sandbox workdir | When a sandbox is configured, the default filesystem route and `execute` tool use one provider sandbox per deep-research job. Agents within that job share the provider runtime; separate jobs receive separate sandboxes. |
-| Inference and source tools | LLM calls, source-tool calls, credentials, orchestration state, and `/shared/` remain in the AI-Q process. Only generated code and job-workspace files cross the sandbox boundary. |
+| Inference and source tools | LLM calls, source-tool calls, credentials, orchestration state, and `/shared/` remain in the Deep Researcher Agent process. Only generated code and job-workspace files cross the sandbox boundary. |
 
 The shipped `config_domain_routing_and_skills.yml` profile assigns the
 `research` collection to researcher workers and the `synthesis` and
@@ -265,7 +265,7 @@ for all enforced ceilings.
 
 ## Prompt Templates
 
-Located in `src/aiq_agent/agents/deep_researcher/prompts/`:
+Located in `src/deep_researcher_agent/agents/deep_researcher/prompts/`:
 
 | Template | Purpose |
 | -------- | ------- |
@@ -347,7 +347,7 @@ post-processing pipeline checks citations against sources captured from
 configured tools. Report sanitization runs after final report extraction
 regardless of this setting.
 
-**Location:** `src/aiq_agent/common/citation_verification.py`
+**Location:** `src/deep_researcher_agent/common/citation_verification.py`
 
 #### Source Registry
 

@@ -29,11 +29,11 @@ from pathlib import Path
 
 import pytest
 
-from aiq_agent.common.logging_utils import log_identifier_ref
-from aiq_agent.knowledge.schema import AvailableDocument
-from aiq_agent.knowledge.summary_store import SummaryStore
-from aiq_agent.knowledge.summary_store import _normalize_db_url
-from aiq_agent.knowledge.summary_store import _redact_db_url
+from deep_researcher_agent.common.logging_utils import log_identifier_ref
+from deep_researcher_agent.knowledge.schema import AvailableDocument
+from deep_researcher_agent.knowledge.summary_store import SummaryStore
+from deep_researcher_agent.knowledge.summary_store import _normalize_db_url
+from deep_researcher_agent.knowledge.summary_store import _redact_db_url
 
 # =============================================================================
 # URL Normalization Tests
@@ -44,22 +44,22 @@ def test_redact_db_url():
     """Test database passwords are redacted while other URL details remain."""
     assert (
         _redact_db_url(
-            "postgresql://alice:plain_password@db.internal:5432/aiq"  # pragma: allowlist secret
+            "postgresql://alice:plain_password@db.internal:5432/deep-researcher"  # pragma: allowlist secret
         )
-        == "postgresql://alice:***@db.internal:5432/aiq"
+        == "postgresql://alice:***@db.internal:5432/deep-researcher"
     )
     assert (
         _redact_db_url(
-            "postgresql+psycopg://alice:p%40ss%3Aword@db.internal:5432/aiq"  # pragma: allowlist secret
+            "postgresql+psycopg://alice:p%40ss%3Aword@db.internal:5432/deep-researcher"  # pragma: allowlist secret
         )
-        == "postgresql+psycopg://alice:***@db.internal:5432/aiq"
+        == "postgresql+psycopg://alice:***@db.internal:5432/deep-researcher"
     )
     assert (
         _redact_db_url(
-            "postgresql://alice:plain_password@db.internal:5432/aiq"  # pragma: allowlist secret
+            "postgresql://alice:plain_password@db.internal:5432/deep-researcher"  # pragma: allowlist secret
             "?password=query_password&sslpassword=tls_password&token=query_token"
         )
-        == "postgresql://alice:***@db.internal:5432/aiq"
+        == "postgresql://alice:***@db.internal:5432/deep-researcher"
     )
     assert _redact_db_url("sqlite+aiosqlite:///./summaries.db") == "sqlite+aiosqlite:///./summaries.db"
 
@@ -233,7 +233,7 @@ class TestSummaryStore:
         with store._sync_engine.begin() as conn:
             conn.exec_driver_sql("DROP TABLE summaries")
 
-        caplog.set_level(logging.WARNING, logger="aiq_agent.knowledge.summary_store")
+        caplog.set_level(logging.WARNING, logger="deep_researcher_agent.knowledge.summary_store")
 
         assert store.get_all(capability_id) == []
         assert capability_id not in caplog.text
@@ -318,7 +318,7 @@ class TestFactoryFunctions:
     @pytest.fixture(autouse=True)
     def reset_summary_store(self):
         """Reset the global summary store before each test."""
-        from aiq_agent.knowledge import factory
+        from deep_researcher_agent.knowledge import factory
 
         factory._summary_store = None
         yield
@@ -333,20 +333,20 @@ class TestFactoryFunctions:
 
     def test_configure_summary_db(self, temp_db_url):
         """Test configuring the summary database."""
-        from aiq_agent.knowledge import configure_summary_db
+        from deep_researcher_agent.knowledge import configure_summary_db
 
         configure_summary_db(temp_db_url)
 
-        from aiq_agent.knowledge import factory
+        from deep_researcher_agent.knowledge import factory
 
         assert factory._summary_store is not None
         assert factory._summary_store.db_url == temp_db_url
 
     def test_register_summary(self, temp_db_url):
         """Test registering a summary via factory function."""
-        from aiq_agent.knowledge import configure_summary_db
-        from aiq_agent.knowledge import get_available_documents
-        from aiq_agent.knowledge.factory import register_summary
+        from deep_researcher_agent.knowledge import configure_summary_db
+        from deep_researcher_agent.knowledge import get_available_documents
+        from deep_researcher_agent.knowledge.factory import register_summary
 
         configure_summary_db(temp_db_url)
         register_summary("test_collection", "test.pdf", "Test summary")
@@ -358,9 +358,9 @@ class TestFactoryFunctions:
 
     def test_register_summary_none_skipped(self, temp_db_url):
         """Test that None summaries are not registered."""
-        from aiq_agent.knowledge import configure_summary_db
-        from aiq_agent.knowledge import get_available_documents
-        from aiq_agent.knowledge.factory import register_summary
+        from deep_researcher_agent.knowledge import configure_summary_db
+        from deep_researcher_agent.knowledge import get_available_documents
+        from deep_researcher_agent.knowledge.factory import register_summary
 
         configure_summary_db(temp_db_url)
         register_summary("collection", "doc.pdf", None)
@@ -370,9 +370,9 @@ class TestFactoryFunctions:
 
     def test_register_summary_empty_string_skipped(self, temp_db_url):
         """Test that empty string summaries are not registered."""
-        from aiq_agent.knowledge import configure_summary_db
-        from aiq_agent.knowledge import get_available_documents
-        from aiq_agent.knowledge.factory import register_summary
+        from deep_researcher_agent.knowledge import configure_summary_db
+        from deep_researcher_agent.knowledge import get_available_documents
+        from deep_researcher_agent.knowledge.factory import register_summary
 
         configure_summary_db(temp_db_url)
         register_summary("collection", "doc.pdf", "")
@@ -382,9 +382,9 @@ class TestFactoryFunctions:
 
     def test_get_available_documents(self, temp_db_url):
         """Test getting available documents via factory function."""
-        from aiq_agent.knowledge import configure_summary_db
-        from aiq_agent.knowledge import get_available_documents
-        from aiq_agent.knowledge.factory import register_summary
+        from deep_researcher_agent.knowledge import configure_summary_db
+        from deep_researcher_agent.knowledge import get_available_documents
+        from deep_researcher_agent.knowledge.factory import register_summary
 
         configure_summary_db(temp_db_url)
         register_summary("my_collection", "file1.pdf", "Summary for file 1")
@@ -397,9 +397,9 @@ class TestFactoryFunctions:
     @pytest.mark.asyncio
     async def test_get_available_documents_async(self, temp_db_url):
         """Test async retrieval of available documents."""
-        from aiq_agent.knowledge import configure_summary_db
-        from aiq_agent.knowledge.factory import get_available_documents_async
-        from aiq_agent.knowledge.factory import register_summary
+        from deep_researcher_agent.knowledge import configure_summary_db
+        from deep_researcher_agent.knowledge.factory import get_available_documents_async
+        from deep_researcher_agent.knowledge.factory import register_summary
 
         configure_summary_db(temp_db_url)
         register_summary("async_test", "doc.pdf", "Async test summary")
@@ -410,10 +410,10 @@ class TestFactoryFunctions:
 
     def test_unregister_summary(self, temp_db_url):
         """Test unregistering a summary via factory function."""
-        from aiq_agent.knowledge import configure_summary_db
-        from aiq_agent.knowledge import get_available_documents
-        from aiq_agent.knowledge.factory import register_summary
-        from aiq_agent.knowledge.factory import unregister_summary
+        from deep_researcher_agent.knowledge import configure_summary_db
+        from deep_researcher_agent.knowledge import get_available_documents
+        from deep_researcher_agent.knowledge.factory import register_summary
+        from deep_researcher_agent.knowledge.factory import unregister_summary
 
         configure_summary_db(temp_db_url)
         register_summary("collection", "doc1.pdf", "Summary 1")
@@ -427,10 +427,10 @@ class TestFactoryFunctions:
 
     def test_clear_collection_summaries(self, temp_db_url):
         """Test clearing collection summaries via factory function."""
-        from aiq_agent.knowledge import configure_summary_db
-        from aiq_agent.knowledge import get_available_documents
-        from aiq_agent.knowledge.factory import clear_collection_summaries
-        from aiq_agent.knowledge.factory import register_summary
+        from deep_researcher_agent.knowledge import configure_summary_db
+        from deep_researcher_agent.knowledge import get_available_documents
+        from deep_researcher_agent.knowledge.factory import clear_collection_summaries
+        from deep_researcher_agent.knowledge.factory import register_summary
 
         configure_summary_db(temp_db_url)
         register_summary("coll1", "doc1.pdf", "Summary 1")
@@ -443,10 +443,10 @@ class TestFactoryFunctions:
 
     def test_clear_all_summaries(self, temp_db_url):
         """Test clearing all summaries via factory function."""
-        from aiq_agent.knowledge import configure_summary_db
-        from aiq_agent.knowledge import get_available_documents
-        from aiq_agent.knowledge.factory import clear_all_summaries
-        from aiq_agent.knowledge.factory import register_summary
+        from deep_researcher_agent.knowledge import configure_summary_db
+        from deep_researcher_agent.knowledge import get_available_documents
+        from deep_researcher_agent.knowledge.factory import clear_all_summaries
+        from deep_researcher_agent.knowledge.factory import register_summary
 
         configure_summary_db(temp_db_url)
         register_summary("coll1", "doc1.pdf", "Summary 1")
@@ -459,13 +459,13 @@ class TestFactoryFunctions:
 
     def test_lazy_initialization(self):
         """Test that summary store is lazily initialized with default DB."""
-        from aiq_agent.knowledge import get_available_documents
+        from deep_researcher_agent.knowledge import get_available_documents
 
         # Don't call configure_summary_db - should auto-initialize
         docs = get_available_documents("test_collection")
         assert docs == []  # Empty but works
 
-        from aiq_agent.knowledge import factory
+        from deep_researcher_agent.knowledge import factory
 
         assert factory._summary_store is not None
 
@@ -488,7 +488,7 @@ class TestSummaryIntegration:
     @pytest.fixture(autouse=True)
     def reset_store(self):
         """Reset global store before each test."""
-        from aiq_agent.knowledge import factory
+        from deep_researcher_agent.knowledge import factory
 
         factory._summary_store = None
         yield
@@ -496,11 +496,11 @@ class TestSummaryIntegration:
 
     def test_full_workflow(self, temp_db_url):
         """Test complete summary storage workflow."""
-        from aiq_agent.knowledge import configure_summary_db
-        from aiq_agent.knowledge import get_available_documents
-        from aiq_agent.knowledge.factory import clear_collection_summaries
-        from aiq_agent.knowledge.factory import register_summary
-        from aiq_agent.knowledge.factory import unregister_summary
+        from deep_researcher_agent.knowledge import configure_summary_db
+        from deep_researcher_agent.knowledge import get_available_documents
+        from deep_researcher_agent.knowledge.factory import clear_collection_summaries
+        from deep_researcher_agent.knowledge.factory import register_summary
+        from deep_researcher_agent.knowledge.factory import unregister_summary
 
         # 1. Configure database
         configure_summary_db(temp_db_url)
@@ -527,9 +527,9 @@ class TestSummaryIntegration:
 
     def test_multiple_collections_isolation(self, temp_db_url):
         """Test that different sessions/collections are isolated."""
-        from aiq_agent.knowledge import configure_summary_db
-        from aiq_agent.knowledge import get_available_documents
-        from aiq_agent.knowledge.factory import register_summary
+        from deep_researcher_agent.knowledge import configure_summary_db
+        from deep_researcher_agent.knowledge import get_available_documents
+        from deep_researcher_agent.knowledge.factory import register_summary
 
         configure_summary_db(temp_db_url)
 
@@ -554,9 +554,9 @@ class TestSummaryIntegration:
     @pytest.mark.asyncio
     async def test_mixed_sync_async_operations(self, temp_db_url):
         """Test mixing sync registration with async retrieval."""
-        from aiq_agent.knowledge import configure_summary_db
-        from aiq_agent.knowledge.factory import get_available_documents_async
-        from aiq_agent.knowledge.factory import register_summary
+        from deep_researcher_agent.knowledge import configure_summary_db
+        from deep_researcher_agent.knowledge.factory import get_available_documents_async
+        from deep_researcher_agent.knowledge.factory import register_summary
 
         configure_summary_db(temp_db_url)
 

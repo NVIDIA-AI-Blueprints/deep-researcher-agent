@@ -5,12 +5,12 @@ SPDX-License-Identifier: Apache-2.0
 
 # Async Job Content Encryption
 
-AI-Q can encrypt sensitive async job content before it is persisted by the
-AI-Q async jobs API. This is application-level envelope encryption for final
+Deep Researcher Agent can encrypt sensitive async job content before it is persisted by the
+Deep Researcher Agent async jobs API. This is application-level envelope encryption for final
 report output and selected artifact event payload fields.
 
 Content encryption is disabled by default. Operators must explicitly set
-`AIQ_CONTENT_ENCRYPTION=key` or `vault` on every API and worker process to
+`DEEP_RESEARCHER_CONTENT_ENCRYPTION=key` or `vault` on every API and worker process to
 enable it.
 
 This feature is intentionally narrow in its first milestone. It protects the
@@ -24,7 +24,7 @@ artifacts.
 Encrypted when enabled:
 
 - `job_info.output` for jobs submitted through `/v1/jobs/async/submit` or
-  `aiq_api.jobs.submit.submit_agent_job`.
+  `deep_researcher_api.jobs.submit.submit_agent_job`.
 - `job_events.event_data` field `artifact.update.data.content` when the
   artifact `data.type` is `output` or `file`.
 
@@ -38,9 +38,9 @@ Still plaintext:
 - `job_info.error`.
 - PostgreSQL notification payloads.
 - `summaries.summary`.
-- LangGraph checkpoints in `aiq_checkpoints`.
+- LangGraph checkpoints in `deep_researcher_checkpoints`.
 - Historical `job_info.output` rows written before encryption was enabled.
-- Inline CLI and local NeMo Agent Toolkit runs that do not use the AI-Q async
+- Inline CLI and local NeMo Agent Toolkit runs that do not use the Deep Researcher Agent async
   API job runner.
 
 Because checkpoints, errors, citations, todos, and other event fields can
@@ -56,7 +56,7 @@ authenticated field path is identical.
 
 ## Modes
 
-Set `AIQ_CONTENT_ENCRYPTION` on every API and worker process.
+Set `DEEP_RESEARCHER_CONTENT_ENCRYPTION` on every API and worker process.
 
 | Mode | Behavior |
 |------|----------|
@@ -77,12 +77,12 @@ Static key mode requires a base64 or base64url value that decodes to exactly
 32 raw bytes.
 
 ```bash
-AIQ_CONTENT_ENCRYPTION=key
-AIQ_CONTENT_ENCRYPTION_KEY=<base64url-encoded-32-byte-key>
-AIQ_CONTENT_ENCRYPTION_KEY_ID=<operator-managed-key-id>
+DEEP_RESEARCHER_CONTENT_ENCRYPTION=key
+DEEP_RESEARCHER_CONTENT_ENCRYPTION_KEY=<base64url-encoded-32-byte-key>
+DEEP_RESEARCHER_CONTENT_ENCRYPTION_KEY_ID=<operator-managed-key-id>
 ```
 
-`AIQ_CONTENT_ENCRYPTION_KEY_ID` is optional, but it is cryptographic identity,
+`DEEP_RESEARCHER_CONTENT_ENCRYPTION_KEY_ID` is optional, but it is cryptographic identity,
 not cosmetic metadata: it is authenticated while wrapping each data encryption
 key. If omitted, envelopes use `static-key` as the key id. Keep the configured
 key id unchanged while encrypted jobs are retained. The first implementation
@@ -98,17 +98,17 @@ Vault mode uses AppRole authentication and Transit data keys. Token fallback is
 not supported in the first implementation.
 
 ```bash
-AIQ_CONTENT_ENCRYPTION=vault
+DEEP_RESEARCHER_CONTENT_ENCRYPTION=vault
 VAULT_ADDR=<vault-address>
 VAULT_ROLE_ID=<approle-role-id>
 VAULT_SECRET_ID=<approle-secret-id>
-AIQ_ENCRYPTION_TRANSIT_KEY=<transit-key-name>
+DEEP_RESEARCHER_ENCRYPTION_TRANSIT_KEY=<transit-key-name>
 VAULT_TRANSIT_MOUNT=<transit-mount>
-AIQ_CONTENT_ENCRYPTION_KEY_ID=<logical-key-id>
+DEEP_RESEARCHER_CONTENT_ENCRYPTION_KEY_ID=<logical-key-id>
 ```
 
 `VAULT_TRANSIT_MOUNT` defaults to `transit` if omitted.
-`AIQ_CONTENT_ENCRYPTION_KEY_ID` is optional; if omitted, envelopes use
+`DEEP_RESEARCHER_CONTENT_ENCRYPTION_KEY_ID` is optional; if omitted, envelopes use
 `<transit-mount>/<transit-key-name>`.
 
 Set `VAULT_NAMESPACE=<vault-namespace>` only when your Vault deployment
@@ -142,12 +142,12 @@ Vault Transit operations use bounded retries for transient failures only:
 The retry policy does not retry missing configuration, invalid requests,
 permission-denied responses, missing Transit paths, malformed Vault responses,
 or decrypt denials. Tune `VAULT_TIMEOUT_SECONDS` to bound individual Vault
-requests and `AIQ_CONTENT_ENCRYPTION_READINESS_TTL_SECONDS` to control how
+requests and `DEEP_RESEARCHER_CONTENT_ENCRYPTION_READINESS_TTL_SECONDS` to control how
 often health and submit readiness recheck Vault.
 
 ## Rollout Behavior
 
-The feature defaults to `off`, so upgrading AI-Q does not change persisted job
+The feature defaults to `off`, so upgrading Deep Researcher Agent does not change persisted job
 content unless an operator explicitly enables encryption. The first
 implementation is forward-only after enablement:
 
@@ -155,7 +155,7 @@ implementation is forward-only after enablement:
 - New `artifact.update.data.content` event fields are encrypted after
   enablement for `output` and `file` artifacts.
 - Existing plaintext `job_info.output` rows are intentionally unreadable while
-  `AIQ_CONTENT_ENCRYPTION=key` or `vault`.
+  `DEEP_RESEARCHER_CONTENT_ENCRYPTION=key` or `vault`.
 - Existing plaintext event rows remain readable in encrypted modes.
 - No historical plaintext backfill is included.
 - No rewrap tooling is included.
@@ -209,8 +209,8 @@ Report reads fail closed:
 
 Decrypt paths use an in-memory plaintext data encryption key cache per process.
 The default TTL is 15 minutes with a maximum of 1024 entries. Set
-`AIQ_CONTENT_ENCRYPTION_DEK_CACHE_TTL_SECONDS=0` to disable this cache.
+`DEEP_RESEARCHER_CONTENT_ENCRYPTION_DEK_CACHE_TTL_SECONDS=0` to disable this cache.
 
 The readiness cache defaults to 60 seconds. Health checks and submit requests
 reuse the cached state until it becomes stale. Set
-`AIQ_CONTENT_ENCRYPTION_READINESS_TTL_SECONDS` to override the default.
+`DEEP_RESEARCHER_CONTENT_ENCRYPTION_READINESS_TTL_SECONDS` to override the default.

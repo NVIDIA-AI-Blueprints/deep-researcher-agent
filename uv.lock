@@ -12,11 +12,11 @@ prerelease-mode = "allow"
 
 [manifest]
 members = [
-    "aiq-agent",
-    "aiq-api",
-    "aiq-debug",
-    "aiq-gsf",
-    "aiq-research-cli",
+    "deep-researcher-agent",
+    "deep-researcher-api",
+    "deep-researcher-debug",
+    "deep-researcher-gsf",
+    "deep-researcher-research-cli",
     "deepsearch-qa-evaluator",
     "duckduckgo-news-search",
     "exa-web-search",
@@ -198,7 +198,7 @@ wheels = [
 ]
 
 [[package]]
-name = "aiq-agent"
+name = "deep-researcher-agent"
 version = "2.2.0"
 source = { editable = "." }
 dependencies = [
@@ -268,10 +268,10 @@ viz = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "aiq-api" },
-    { name = "aiq-debug" },
-    { name = "aiq-gsf" },
-    { name = "aiq-research-cli" },
+    { name = "deep-researcher-api" },
+    { name = "deep-researcher-debug" },
+    { name = "deep-researcher-gsf" },
+    { name = "deep-researcher-research-cli" },
     { name = "dask", extra = ["distributed"] },
     { name = "duckduckgo-news-search" },
     { name = "exa-web-search" },
@@ -345,10 +345,10 @@ provides-extras = ["pii", "s3", "sandboxed-python-test", "dev", "docs", "viz"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "aiq-api", editable = "frontends/aiq_api" },
-    { name = "aiq-debug", editable = "frontends/debug" },
-    { name = "aiq-gsf", editable = "sources/gsf" },
-    { name = "aiq-research-cli", editable = "frontends/cli" },
+    { name = "deep-researcher-api", editable = "frontends/deep_researcher_api" },
+    { name = "deep-researcher-debug", editable = "frontends/debug" },
+    { name = "deep-researcher-gsf", editable = "sources/gsf" },
+    { name = "deep-researcher-research-cli", editable = "frontends/cli" },
     { name = "dask", extras = ["distributed"], specifier = ">=2024.1.0" },
     { name = "duckduckgo-news-search", editable = "sources/duckduckgo_news_search" },
     { name = "exa-web-search", editable = "sources/exa_web_search" },
@@ -369,12 +369,12 @@ dev = [
 ]
 
 [[package]]
-name = "aiq-api"
+name = "deep-researcher-api"
 version = "0.1.0"
-source = { editable = "frontends/aiq_api" }
+source = { editable = "frontends/deep_researcher_api" }
 dependencies = [
     { name = "aiosqlite" },
-    { name = "aiq-agent" },
+    { name = "deep-researcher-agent" },
     { name = "asyncpg" },
     { name = "dask", extra = ["distributed"] },
     { name = "fastapi" },
@@ -399,7 +399,7 @@ postgres = [
 [package.metadata]
 requires-dist = [
     { name = "aiosqlite", specifier = ">=0.19.0" },
-    { name = "aiq-agent", editable = "." },
+    { name = "deep-researcher-agent", editable = "." },
     { name = "asyncpg", specifier = ">=0.29.0" },
     { name = "dask", extras = ["distributed"], specifier = ">=2024.1.0" },
     { name = "fastapi", specifier = ">=0.100.0" },
@@ -417,7 +417,7 @@ requires-dist = [
 provides-extras = ["postgres", "dev"]
 
 [[package]]
-name = "aiq-debug"
+name = "deep-researcher-debug"
 version = "0.1.0"
 source = { editable = "frontends/debug" }
 dependencies = [
@@ -437,7 +437,7 @@ requires-dist = [
 provides-extras = ["dev"]
 
 [[package]]
-name = "aiq-gsf"
+name = "deep-researcher-gsf"
 version = "0.1.0"
 source = { editable = "sources/gsf" }
 dependencies = [
@@ -454,11 +454,11 @@ requires-dist = [
 ]
 
 [[package]]
-name = "aiq-research-cli"
+name = "deep-researcher-research-cli"
 version = "2.0.1"
 source = { editable = "frontends/cli" }
 dependencies = [
-    { name = "aiq-agent" },
+    { name = "deep-researcher-agent" },
     { name = "httpx" },
     { name = "prompt-toolkit" },
     { name = "pydantic" },
@@ -468,7 +468,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiq-agent", editable = "." },
+    { name = "deep-researcher-agent", editable = "." },
     { name = "httpx", specifier = ">=0.24.0" },
     { name = "prompt-toolkit", specifier = ">=3.0.0" },
     { name = "pydantic", specifier = ">=2.0.0" },

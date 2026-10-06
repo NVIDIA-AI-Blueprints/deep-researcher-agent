@@ -1,0 +1,93 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Fallback scaffold only — prefer copying the closest configs/*.yml profile
+# (see .agents/skills/deep-researcher-configure-workflow/references/config-profiles.md).
+# Merge feature blocks from other shipped profiles; do not invent fields.
+#
+# Usage:
+#   cp .agents/skills/deep-researcher-configure-workflow/assets/config-scaffold.yml configs/my_workflow.yml
+
+general:
+  telemetry:
+    logging:
+      console:
+        _type: console
+        level: INFO
+  # Web/API: copy general.front_end from config_web_default_llamaindex.yml
+
+llms:
+  nemotron_lightning_intent_llm:
+    _type: nim
+    model_name: nvidia/nemotron-3.5-lightning-30b-a3b
+    base_url: "https://integrate.api.nvidia.com/v1"
+    api_key: ${NVIDIA_API_KEY}
+    temperature: 0.1
+    top_p: 0.9
+    max_tokens: 1024
+    num_retries: 5
+    parallel_tool_calls: false
+    chat_template_kwargs:
+      enable_thinking: false
+
+  nemotron_lightning_agent_llm:
+    _type: nim
+    model_name: nvidia/nemotron-3.5-lightning-30b-a3b
+    base_url: "https://integrate.api.nvidia.com/v1"
+    api_key: ${NVIDIA_API_KEY}
+    temperature: 0.2
+    top_p: 0.7
+    max_tokens: 32768
+    num_retries: 5
+    parallel_tool_calls: false
+    chat_template_kwargs:
+      enable_thinking: true
+
+  nemotron_ultra_llm:
+    _type: nim
+    model_name: nvidia/nemotron-3-ultra-550b-a55b
+    base_url: "https://integrate.api.nvidia.com/v1"
+    api_key: ${NVIDIA_API_KEY}
+    temperature: 0.2
+    max_tokens: 16384
+    num_retries: 5
+    chat_template_kwargs:
+      enable_thinking: false
+
+  nemotron_ultra_writer_llm:
+    _type: nim
+    model_name: nvidia/nemotron-3-ultra-550b-a55b
+    base_url: "https://integrate.api.nvidia.com/v1"
+    api_key: ${NVIDIA_API_KEY}
+    temperature: 0.2
+    max_tokens: 32768
+    num_retries: 5
+    chat_template_kwargs:
+      enable_thinking: false
+
+functions:
+  data_sources:
+    _type: data_source_registry
+    sources: []   # add sources — see deep-researcher-add-data-source registry reference
+
+  intent_classifier:
+    _type: intent_classifier
+    llm: nemotron_lightning_intent_llm
+
+  shallow_research_agent:
+    _type: shallow_research_agent
+    llm: nemotron_lightning_agent_llm
+
+  deep_research_agent:
+    _type: deep_research_agent
+    orchestrator_llm: nemotron_ultra_llm
+    source_router_llm: nemotron_ultra_llm
+    planner_llm: nemotron_ultra_llm
+    researcher_llm: nemotron_ultra_llm
+    writer_llm: nemotron_ultra_writer_llm
+
+workflow:
+  _type: chat_deepresearcher_agent
+  enable_escalation: true
+  enable_clarifier: false   # set true and add clarifier_agent under functions: to enable
+  checkpoint_db: ${DEEP_RESEARCHER_CHECKPOINT_DB:-./checkpoints.db}

@@ -8,7 +8,7 @@ LLMs are defined in the `llms` section and referenced by agents and tools. You c
 
 ## Shipped Profiles and Validation Boundary
 
-AI-Q 2.2 ships these exact model assignments and parameters:
+Deep Researcher Agent 2.2 ships these exact model assignments and parameters:
 
 | Configuration | Intent and shallow roles | Clarification and deep-research roles | Optional summary role |
 | --- | --- | --- | --- |
@@ -24,7 +24,7 @@ evaluated in that exact configuration.
 
 ```{warning}
 Nemotron 3.5 Lightning can intermittently produce citation-incomplete or malformed shallow drafts when served through
-the NVIDIA API Catalog endpoint. AI-Q fails closed rather than publishing those drafts. See
+the NVIDIA API Catalog endpoint. Deep Researcher Agent fails closed rather than publishing those drafts. See
 [Nemotron 3.5 Lightning on NVIDIA API Catalog](../resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog)
 for the validated mitigation choices. Model weights alone do not define the compatibility boundary; the serving
 profile is part of the deployment contract.

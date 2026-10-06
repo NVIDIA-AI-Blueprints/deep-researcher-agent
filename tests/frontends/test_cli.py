@@ -19,7 +19,7 @@ from contextlib import asynccontextmanager
 from types import SimpleNamespace
 
 import pytest
-from aiq_research_cli import cli
+from deep_researcher_research_cli import cli
 
 
 @pytest.mark.parametrize(
@@ -36,7 +36,7 @@ def test_main_sets_log_level_from_verbose_flag(monkeypatch, arguments: list[str]
         observed["level"] = kwargs["level"]
         raise LoggingConfigured
 
-    monkeypatch.setattr(sys, "argv", ["aiq-research", *arguments])
+    monkeypatch.setattr(sys, "argv", ["deep-researcher-research", *arguments])
     monkeypatch.setattr(cli.logging, "basicConfig", configure_logging)
 
     with pytest.raises(LoggingConfigured):

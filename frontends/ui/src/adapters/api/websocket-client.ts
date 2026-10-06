@@ -73,7 +73,7 @@ export interface NATWebSocketClientOptions {
 }
 
 /**
- * NAT WebSocket client for AI-Q backend communication.
+ * NAT WebSocket client for Deep Researcher Agent backend communication.
  * Supports full human-in-the-loop (HITL) features including
  * clarification prompts and approval flows.
  */

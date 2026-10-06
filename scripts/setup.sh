@@ -1,5 +1,5 @@
 #!/bin/bash
-# Setup script for AI-Q blueprint development environment
+# Setup script for Deep Researcher Agent blueprint development environment
 
 set -euo pipefail
 
@@ -36,7 +36,7 @@ version_at_least() {
     (( current_patch >= minimum_patch ))
 }
 
-echo "=== AI-Q Blueprint Development Setup ==="
+echo "=== Deep Researcher Agent Blueprint Development Setup ==="
 echo ""
 
 # Check if uv is installed
@@ -101,8 +101,8 @@ echo ""
 echo "Installing frontends..."
 "${UV_BIN}" pip install -e ./frontends/cli
 "${UV_BIN}" pip install -e ./frontends/debug
-"${UV_BIN}" pip install -e ./frontends/aiq_api
-echo "Frontends installed (CLI, Debug, AI-Q API)"
+"${UV_BIN}" pip install -e ./frontends/deep_researcher_api
+echo "Frontends installed (CLI, Debug, Deep Researcher Agent API)"
 
 # Install benchmarks
 echo ""
@@ -170,5 +170,5 @@ echo "   - Skill backend:   ./scripts/start_as_skill.sh"
 echo "   - Server mode:     ./scripts/start_server_in_debug_mode.sh"
 echo "   - End-to-End (UI): ./scripts/start_e2e.sh"
 echo "4. Run the MCP server from its isolated environment:"
-echo "   uv run --project mcp aiq-mcp-server"
+echo "   uv run --project mcp deep-researcher-mcp-server"
 echo ""

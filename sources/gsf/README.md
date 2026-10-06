@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # GSF as a data source
 
-This package connects AI-Q to NVIDIA Generative Semantic Fabric (GSF).
+This package connects Deep Researcher Agent to NVIDIA Generative Semantic Fabric (GSF).
 
 ## Tools
 
@@ -42,10 +42,10 @@ functions:
           - gsf
 ```
 
-When `auth` is omitted, each tool invocation obtains the current AI-Q user token and forwards it to GSF without
+When `auth` is omitted, each tool invocation obtains the current Deep Researcher Agent user token and forwards it to GSF without
 storing it on the shared client.
 
-For local development or automated evaluation without an incoming AI-Q user token, explicitly configure password
+For local development or automated evaluation without an incoming Deep Researcher Agent user token, explicitly configure password
 authentication using environment variables:
 
 ```yaml
@@ -62,7 +62,7 @@ function_groups:
       - text_to_sql
 ```
 
-When `auth` is omitted, the existing request-scoped AI-Q user-token flow is
+When `auth` is omitted, the existing request-scoped Deep Researcher Agent user-token flow is
 used. Password mode carries only the `password` variable name through NAT
 configuration and distributed-worker serialization. The worker reads that
 variable directly from its process environment immediately before creating the
@@ -76,5 +76,5 @@ authentication methods.
 - Catalog search calls `POST /api/question-entity-coverage`.
 - Text-to-SQL calls `POST /api/chat/completions` with `prediction: false`.
 - Text-to-PQL calls `POST /api/chat/completions` with `prediction: true`.
-- Normal AI-Q calls rely on GSF's routing and omit database selection.
-- Automated benchmarks may explicitly set optional `database_name`; AI-Q forwards it to GSF as `target_db`.
+- Normal Deep Researcher Agent calls rely on GSF's routing and omit database selection.
+- Automated benchmarks may explicitly set optional `database_name`; Deep Researcher Agent forwards it to GSF as `target_db`.

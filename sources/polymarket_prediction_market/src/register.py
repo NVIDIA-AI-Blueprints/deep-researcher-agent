@@ -383,7 +383,7 @@ async def polymarket_search(
             """Prediction market search (unavailable - missing optional `httpx` package)."""
             return (
                 "Error: Polymarket search is unavailable because the `httpx` package is not installed. "
-                "Install the polymarket-prediction-market workspace package dependencies and restart AIQ."
+                "Install the polymarket-prediction-market workspace package dependencies and restart DeepResearcher."
             )
 
         yield FunctionInfo.from_fn(

@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Docker Build System
 
-The AI-Q blueprint uses a multi-stage Dockerfile (`deploy/Dockerfile`) that produces two build targets: a development image with the CLI and a lean release image for production.
+The Deep Researcher Agent blueprint uses a multi-stage Dockerfile (`deploy/Dockerfile`) that produces two build targets: a development image with the CLI and a lean release image for production.
 
 ## Multi-Stage Architecture
 
@@ -44,13 +44,13 @@ The builder stage handles all compilation and package installation:
 2. **Virtual environment** -- Creates a venv at `/app/.venv` using `uv` and Python 3.13.14.
 3. **Dependency installation** -- Runs `uv sync --frozen --extra pii --extra s3` against the root workspace's `uv.lock`, installing locked runtime dependencies, the `pii` and `s3` extras, and the default `dev` dependency group. The independent `mcp/` project is excluded from the root workspace, so the standalone MCP package and `mcp/uv.lock` are not part of this image.
 4. **Workspace packages** -- Installs application packages with `uv pip install -e` (the root package uses `--no-deps`):
-   - Root workspace package (`aiq-agent`) using `uv pip install --no-sources --no-deps -e .`; `--no-sources` keeps workspace source overrides from coupling this image to packages that are intentionally absent from its build context.
+   - Root workspace package (`deep-researcher-agent`) using `uv pip install --no-sources --no-deps -e .`; `--no-sources` keeps workspace source overrides from coupling this image to packages that are intentionally absent from its build context.
    - `sources/google_scholar_paper_search` -- Google Scholar search
    - `sources/tavily_web_search` -- Tavily web search
    - `sources/exa_web_search` -- Exa web search
    - `sources/nimble_web_search` -- Nimble web search
    - `sources/knowledge_layer[all]` -- Knowledge layer with all extras
-   - `frontends/aiq_api` -- [FastAPI](https://fastapi.tiangolo.com/) frontend
+   - `frontends/deep_researcher_api` -- [FastAPI](https://fastapi.tiangolo.com/) frontend
    - `psycopg[binary]>=3.0.0` -- PostgreSQL driver (psycopg v3, installed non-editable)
 5. **File setup** -- Makes startup scripts executable, creates `/app/data`, and sets ownership to UID 1000.
 
@@ -59,10 +59,10 @@ Only runtime scripts (`deploy/entrypoint.py` and `deploy/start_web.py`) are copi
 ## Standalone MCP Image
 
 The MCP release has a separate multi-stage Dockerfile at `mcp/Dockerfile`. Build
-it from the repository root so its local AI-Q source dependencies are available:
+it from the repository root so its local Deep Researcher Agent source dependencies are available:
 
 ```bash
-docker build -t aiq-mcp-server:local -f mcp/Dockerfile .
+docker build -t deep-researcher-mcp-server:local -f mcp/Dockerfile .
 ```
 
 That builder syncs the frozen MCP project (`uv sync --project /app/mcp`) from
@@ -88,7 +88,7 @@ The development image extends the builder with additional packages:
 ### Build
 
 ```bash
-docker build --target dev -t aiq:dev -f deploy/Dockerfile .
+docker build --target dev -t deep-researcher:dev -f deploy/Dockerfile .
 ```
 
 ### What Is Included
@@ -105,7 +105,7 @@ The release image is built from the base `builder` stage (no CLI or debug packag
 ### Build
 
 ```bash
-docker build --target release -t aiq:prod -f deploy/Dockerfile .
+docker build --target release -t deep-researcher:prod -f deploy/Dockerfile .
 ```
 
 ### What Is Included
@@ -118,8 +118,8 @@ docker build --target release -t aiq:prod -f deploy/Dockerfile .
 
 | Target | Command | Use case |
 |--------|---------|----------|
-| `dev` | `docker build --target dev -t aiq:dev -f deploy/Dockerfile .` | Local development, testing, CLI access |
-| `release` | `docker build --target release -t aiq:prod -f deploy/Dockerfile .` | Production deployment, CI/CD |
+| `dev` | `docker build --target dev -t deep-researcher:dev -f deploy/Dockerfile .` | Local development, testing, CLI access |
+| `release` | `docker build --target release -t deep-researcher:prod -f deploy/Dockerfile .` | Production deployment, CI/CD |
 
 When using Docker Compose, the build target is controlled by the `BUILD_TARGET` variable:
 

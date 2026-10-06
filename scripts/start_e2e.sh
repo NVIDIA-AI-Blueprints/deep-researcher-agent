@@ -19,7 +19,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 UI_DIR="$PROJECT_ROOT/frontends/ui"
-VENV_DIR="${AIQ_VENV_DIR:-$PROJECT_ROOT/.venv}"
+VENV_DIR="${DEEP_RESEARCHER_VENV_DIR:-$PROJECT_ROOT/.venv}"
 PYTHON_BIN="$VENV_DIR/bin/python"
 NAT_BIN="$VENV_DIR/bin/nat"
 
@@ -90,13 +90,13 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 
 echo "================================================"
-echo "Starting AI-Q Blueprint (End-to-End)"
+echo "Starting Deep Researcher Agent Blueprint (End-to-End)"
 echo "================================================"
 echo ""
 
 check_env() {
-    export AIQ_DEV_ENV=e2e
-    echo "Set AIQ_DEV_ENV=e2e"
+    export DEEP_RESEARCHER_DEV_ENV=e2e
+    echo "Set DEEP_RESEARCHER_DEV_ENV=e2e"
 
     if [ -f "./deploy/.env" ]; then
         set -a  # Automatically export all variables
@@ -120,7 +120,7 @@ check_dependencies() {
     echo "Checking Python dependencies..."
 
     if [ ! -x "$PYTHON_BIN" ]; then
-        echo "AI-Q virtual environment not found at $VENV_DIR"
+        echo "Deep Researcher Agent virtual environment not found at $VENV_DIR"
         echo "Run ./scripts/setup.sh or ./scripts/openshell/setup_openshell.sh first."
         exit 1
     fi
@@ -144,7 +144,7 @@ check_openshell_component_versions() {
     fi
     echo "Checking the certified OpenShell component stack..."
     "$PYTHON_BIN" "$PROJECT_ROOT/scripts/openshell/check_versions.py" \
-        --gateway-name "${AIQ_OPENSHELL_GATEWAY_NAME:-openshell}"
+        --gateway-name "${DEEP_RESEARCHER_OPENSHELL_GATEWAY_NAME:-openshell}"
 }
 
 check_ui_dependencies() {

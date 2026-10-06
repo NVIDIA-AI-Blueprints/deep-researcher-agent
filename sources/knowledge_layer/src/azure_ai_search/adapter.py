@@ -38,29 +38,29 @@ from azure.search.documents.indexes.models import VectorSearchAlgorithmMetric
 from azure.search.documents.indexes.models import VectorSearchProfile
 from azure.search.documents.models import VectorizedQuery
 
-from aiq_agent.knowledge import BaseIngestor
-from aiq_agent.knowledge import BaseRetriever
-from aiq_agent.knowledge import Chunk
-from aiq_agent.knowledge import ContentType
-from aiq_agent.knowledge import FileProgress
-from aiq_agent.knowledge import IngestionJobStatus
-from aiq_agent.knowledge import JobState
-from aiq_agent.knowledge import RetrievalResult
-from aiq_agent.knowledge import clear_collection_summaries
-from aiq_agent.knowledge import register_ingestor
-from aiq_agent.knowledge import register_retriever
-from aiq_agent.knowledge import register_summary
-from aiq_agent.knowledge import unregister_summary
-from aiq_agent.knowledge.base import CollectionInfo
-from aiq_agent.knowledge.base import FileInfo
-from aiq_agent.knowledge.base import TTLCleanupMixin
-from aiq_agent.knowledge.schema import FileStatus
+from deep_researcher_agent.knowledge import BaseIngestor
+from deep_researcher_agent.knowledge import BaseRetriever
+from deep_researcher_agent.knowledge import Chunk
+from deep_researcher_agent.knowledge import ContentType
+from deep_researcher_agent.knowledge import FileProgress
+from deep_researcher_agent.knowledge import IngestionJobStatus
+from deep_researcher_agent.knowledge import JobState
+from deep_researcher_agent.knowledge import RetrievalResult
+from deep_researcher_agent.knowledge import clear_collection_summaries
+from deep_researcher_agent.knowledge import register_ingestor
+from deep_researcher_agent.knowledge import register_retriever
+from deep_researcher_agent.knowledge import register_summary
+from deep_researcher_agent.knowledge import unregister_summary
+from deep_researcher_agent.knowledge.base import CollectionInfo
+from deep_researcher_agent.knowledge.base import FileInfo
+from deep_researcher_agent.knowledge.base import TTLCleanupMixin
+from deep_researcher_agent.knowledge.schema import FileStatus
 
 logger = logging.getLogger(__name__)
 
 _BACKEND_NAME = "azure_ai_search"
 _SCHEMA_VERSION = 1
-_MARKER_PREFIX = "aiq.azure_ai_search:"
+_MARKER_PREFIX = "deep-researcher.azure_ai_search:"
 _MARKER_MAX_CHARS = 4000
 _MAX_INDEX_NAME_LENGTH = 128
 _MAX_BATCH_ACTIONS = 1000
@@ -79,8 +79,8 @@ _RECORD_CHUNK = "chunk"
 _COLLECTION_ACTIVE = "active"
 _COLLECTION_DELETING = "deleting"
 
-COLLECTION_TTL_HOURS = float(os.environ.get("AIQ_COLLECTION_TTL_HOURS", "24"))
-TTL_CLEANUP_INTERVAL_SECONDS = int(os.environ.get("AIQ_TTL_CLEANUP_INTERVAL_SECONDS", "3600"))
+COLLECTION_TTL_HOURS = float(os.environ.get("DEEP_RESEARCHER_COLLECTION_TTL_HOURS", "24"))
+TTL_CLEANUP_INTERVAL_SECONDS = int(os.environ.get("DEEP_RESEARCHER_TTL_CLEANUP_INTERVAL_SECONDS", "3600"))
 
 
 def _coerce_config(config: dict[str, Any] | None) -> SimpleNamespace:
@@ -88,14 +88,14 @@ def _coerce_config(config: dict[str, Any] | None) -> SimpleNamespace:
     values: dict[str, Any] = {
         "endpoint": os.environ.get("AZURE_SEARCH_ENDPOINT"),
         "api_key": os.environ.get("AZURE_SEARCH_API_KEY"),
-        "embed_base_url": os.environ.get("AIQ_EMBED_BASE_URL") or "https://integrate.api.nvidia.com/v1",
-        "embed_model": os.environ.get("AIQ_EMBED_MODEL", "nvidia/nemotron-3-embed-1b"),
-        "embed_dim": int(os.environ.get("AIQ_EMBED_DIM", "2048")),
+        "embed_base_url": os.environ.get("DEEP_RESEARCHER_EMBED_BASE_URL") or "https://integrate.api.nvidia.com/v1",
+        "embed_model": os.environ.get("DEEP_RESEARCHER_EMBED_MODEL", "nvidia/nemotron-3-embed-1b"),
+        "embed_dim": int(os.environ.get("DEEP_RESEARCHER_EMBED_DIM", "2048")),
         "collection_name": "default",
         "cleanup_files": False,
         "generate_summary": False,
         "summary_llm": None,
-        "index_prefix": os.environ.get("AIQ_AZURE_SEARCH_INDEX_PREFIX", "aiq"),
+        "index_prefix": os.environ.get("DEEP_RESEARCHER_AZURE_SEARCH_INDEX_PREFIX", "deep-researcher"),
         "start_ttl_cleanup": True,
     }
     values.update({key: value for key, value in (config or {}).items() if key in values})
@@ -147,7 +147,7 @@ def _index_name_for_config(prefix: str, embed_model: str, embed_dim: int) -> str
     ).hex[:12]
     tail = f"knowledge-v{_SCHEMA_VERSION}-{suffix}"
     available = _MAX_INDEX_NAME_LENGTH - len(tail) - 1
-    prefix_part = _sanitize_index_part(prefix, "aiq")[:available].rstrip("-") or "aiq"
+    prefix_part = _sanitize_index_part(prefix, "deep-researcher")[:available].rstrip("-") or "deep-researcher"
     return f"{prefix_part}-{tail}"
 
 
@@ -352,9 +352,11 @@ def _build_index_schema(name: str, embed_dim: int, description: str | None = Non
 def _validate_index_schema(index: SearchIndex, cfg: SimpleNamespace) -> dict[str, Any]:
     marker = _decode_marker(index.description)
     if marker is None:
-        raise RuntimeError(f"Azure AI Search index {index.name!r} is not owned by AI-Q")
+        raise RuntimeError(f"Azure AI Search index {index.name!r} is not owned by Deep Researcher Agent")
     if marker.get("backend") != _BACKEND_NAME or marker.get("schema_version") != _SCHEMA_VERSION:
-        raise RuntimeError(f"Azure AI Search index {index.name!r} has an incompatible AI-Q ownership marker")
+        raise RuntimeError(
+            f"Azure AI Search index {index.name!r} has an incompatible Deep Researcher Agent ownership marker"
+        )
     if (
         marker.get("index_prefix") != cfg.index_prefix
         or marker.get("embedding_dim") != cfg.embed_dim
@@ -546,7 +548,7 @@ class AzureAISearchRetriever(_AzureIndexMixin, BaseRetriever):
             chunks = [self.normalize(hit) for hit in client.search(**search_params)]
             return RetrievalResult(query=query, backend=_BACKEND_NAME, chunks=chunks, success=True)
         except ResourceNotFoundError:
-            message = f"AI-Q Azure AI Search collection {collection_name!r} not found"
+            message = f"Deep Researcher Agent Azure AI Search collection {collection_name!r} not found"
         except ClientAuthenticationError as error:
             message = f"AI Search authentication failed: {error!s}"
         except ServiceRequestError as error:
@@ -854,7 +856,7 @@ class AzureAISearchIngestor(TTLCleanupMixin, _AzureIndexMixin, BaseIngestor):
                 target=self._process_job,
                 args=(job_id, [path for path, _ in validated], collection_name, job_config),
                 daemon=True,
-                name=f"aiq-azure-search-ingest-{job_id[:8]}",
+                name=f"deep-researcher-azure-search-ingest-{job_id[:8]}",
             ).start()
         except Exception as error:  # noqa: BLE001
             message = f"Failed to start ingestion worker: {self._translate_error(error)}"

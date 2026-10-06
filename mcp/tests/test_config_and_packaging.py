@@ -66,7 +66,7 @@ def test_public_mcp_config_preserves_reference_orchestration_choices() -> None:
         "enable_clarifier": False,
         "enable_escalation": True,
         "use_async_deep_research": False,
-        "checkpoint_db": "${AIQ_CHECKPOINT_DB}",
+        "checkpoint_db": "${DEEP_RESEARCHER_CHECKPOINT_DB}",
     }
 
     functions = config["functions"]
@@ -118,7 +118,7 @@ def test_mcp_manifest_declares_public_direct_runtime_dependencies() -> None:
     dependency_names = {Requirement(value).name for value in manifest["project"]["dependencies"]}
 
     assert dependency_names == {
-        "aiq-agent",
+        "deep-researcher-agent",
         "asyncpg",
         "langchain-core",
         "mcp",
@@ -129,11 +129,11 @@ def test_mcp_manifest_declares_public_direct_runtime_dependencies() -> None:
         "tavily-web-search",
         "uvicorn",
     }
-    assert manifest["project"]["name"] == "aiq-mcp-server"
+    assert manifest["project"]["name"] == "deep-researcher-mcp-server"
     assert manifest["project"]["license"] == "Apache-2.0"
     assert manifest["project"]["license-files"] == ["LICENSE"]
     assert "Private :: Do Not Upload" in manifest["project"]["classifiers"]
-    assert manifest["project"]["scripts"] == {"aiq-mcp-server": "aiq_mcp.server:main"}
+    assert manifest["project"]["scripts"] == {"deep-researcher-mcp-server": "deep_researcher_mcp.server:main"}
 
 
 def test_root_workspace_excludes_the_independent_mcp_project() -> None:
@@ -142,15 +142,15 @@ def test_root_workspace_excludes_the_independent_mcp_project() -> None:
     sources = manifest["tool"]["uv"]["sources"]
 
     assert "mcp-tests" not in manifest["dependency-groups"]
-    assert "aiq-mcp-server" not in manifest["dependency-groups"]["dev"]
+    assert "deep-researcher-mcp-server" not in manifest["dependency-groups"]["dev"]
     assert "mcp" not in workspace["members"]
     assert "mcp" in workspace["exclude"]
-    assert "aiq-mcp-server" not in sources
+    assert "deep-researcher-mcp-server" not in sources
     assert sources["tavily-web-search"] == {"workspace": True}
     assert _MCP_LOCK_PATH.is_file()
 
     lock = tomllib.loads(_ROOT_LOCK_PATH.read_text())
-    assert not any(package["name"] == "aiq-mcp-server" for package in lock["package"])
+    assert not any(package["name"] == "deep-researcher-mcp-server" for package in lock["package"])
     for package in lock["package"]:
         source = package["source"]
         assert len(source) == 1
@@ -176,14 +176,14 @@ def test_root_workspace_excludes_the_independent_mcp_project() -> None:
         assert ".." not in Path(editable).parts
 
 
-def test_root_aiq_resolution_keeps_cryptography_in_the_nat_supported_range() -> None:
+def test_root_deep_researcher_resolution_keeps_cryptography_in_the_nat_supported_range() -> None:
     manifest = tomllib.loads(_ROOT_MANIFEST_PATH.read_text())
     direct_names = {Requirement(value).name for value in manifest["project"]["dependencies"]}
     cryptography_policy = _requirements_named(manifest["tool"]["uv"]["override-dependencies"], "cryptography")
 
-    # The published aiq-agent metadata must not create a third MCP release
+    # The published deep-researcher-agent metadata must not create a third MCP release
     # incompatibility. NAT owns the runtime requirement; the root uv policy
-    # keeps AI-Q on the compatible security floor.
+    # keeps Deep Researcher Agent on the compatible security floor.
     assert "cryptography" not in direct_names
     assert len(cryptography_policy) == 1
     assert Version("46.0.6") in cryptography_policy[0].specifier
@@ -205,7 +205,7 @@ def test_mcp_project_owns_its_sources_lock_and_scoped_cryptography_override() ->
     assert 'UV_MIN_VERSION="0.11.25"' in _SETUP_SCRIPT_PATH.read_text()
 
     assert manifest["tool"]["uv"]["sources"] == {
-        "aiq-agent": {"path": "..", "editable": True},
+        "deep-researcher-agent": {"path": "..", "editable": True},
         "knowledge-layer": {"path": "../sources/knowledge_layer", "editable": True},
         "tavily-web-search": {"path": "../sources/tavily_web_search", "editable": True},
     }
@@ -236,14 +236,14 @@ def test_mcp_project_owns_its_sources_lock_and_scoped_cryptography_override() ->
 
     lock = tomllib.loads(_MCP_LOCK_PATH.read_text())
     assert _locked_versions(lock, "cryptography") == {Version("50.0.0")}
-    assert any(package["name"] == "aiq-mcp-server" for package in lock["package"])
+    assert any(package["name"] == "deep-researcher-mcp-server" for package in lock["package"])
 
     local_sources = {
         package["name"]: package["source"]["editable"] for package in lock["package"] if "editable" in package["source"]
     }
     assert local_sources == {
-        "aiq-agent": "../",
-        "aiq-mcp-server": ".",
+        "deep-researcher-agent": "../",
+        "deep-researcher-mcp-server": ".",
         "knowledge-layer": "../sources/knowledge_layer",
         "tavily-web-search": "../sources/tavily_web_search",
     }

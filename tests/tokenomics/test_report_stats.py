@@ -15,12 +15,12 @@
 
 """Tests for tokenomics report statistics helpers.
 
-Module under test: src/aiq_agent/tokenomics/report/_report_stats.py
+Module under test: src/deep_researcher_agent/tokenomics/report/_report_stats.py
 """
 
-from aiq_agent.tokenomics.report._report_stats import _latency_stats
-from aiq_agent.tokenomics.report._report_stats import _load_csv_predictions
-from aiq_agent.tokenomics.report._report_stats import _pct
+from deep_researcher_agent.tokenomics.report._report_stats import _latency_stats
+from deep_researcher_agent.tokenomics.report._report_stats import _load_csv_predictions
+from deep_researcher_agent.tokenomics.report._report_stats import _pct
 
 
 def test_pct_empty():

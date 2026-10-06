@@ -2,10 +2,10 @@
 SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
-This is the canonical template for AI-Q maintainer skills. To create a skill:
+This is the canonical template for Deep Researcher Agent maintainer skills. To create a skill:
 
   1. Copy the YAML frontmatter and body below into
-     .agents/skills/<aiq-skill-name>/SKILL.md
+     .agents/skills/<deep-researcher-skill-name>/SKILL.md
   2. Replace every <PLACEHOLDER> and the example content.
   3. Keep SKILL.md concise; move long procedures into references/*.md.
   4. Validate: uv run python scripts/validate_skills.py .agents/skills
@@ -22,32 +22,32 @@ Copy everything between the rulers below into your new `SKILL.md`.
 
 ```markdown
 ---
-name: aiq-<skill-name>
+name: deep-researcher-<skill-name>
 description: Use when <specific trigger>. Keep this under 1024 characters and specific enough for an agent to route on.
 license: Apache-2.0
 compatibility: Claude Code, Codex, Cursor, OpenCode, and Agent Skills-compatible tools.
 metadata:
   version: "0.1.0"
-  source-repo: "NVIDIA-AI-Blueprints/aiq"
-  tags: "aiq nemo-agent-toolkit <area>"
+  source-repo: "NVIDIA-AI-Blueprints/deep-researcher-agent"
+  tags: "deep-researcher nemo-agent-toolkit <area>"
 allowed-tools: Read Bash Edit
 ---
 
 # <Human-Readable Skill Title>
 
 One or two sentences on what this skill helps a coding agent accomplish in the
-AI-Q repository, and when it applies.
+Deep Researcher Agent repository, and when it applies.
 
 ## Start Here
 
 - Confirm the requested change type before editing.
-- Read the authoritative AI-Q files listed below.
+- Read the authoritative Deep Researcher Agent files listed below.
 - Preserve existing repo patterns; prefer the smallest change that fits.
 - Do not print secrets or hard-code tokens.
 
 ## Authoritative References
 
-List the AI-Q files and docs that are the source of truth for this workflow.
+List the Deep Researcher Agent files and docs that are the source of truth for this workflow.
 Point at precise paths, not whole trees.
 
 - `docs/source/<area>/<page>.md`: canonical walkthrough.
@@ -87,8 +87,8 @@ code.
 
 ## Related Skills
 
-- `aiq-release-qa`
-- `aiq-prepare-pr`
+- `deep-researcher-release-qa`
+- `deep-researcher-prepare-pr`
 ```
 
 ---

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""AI-Q skill-eval coordinator.
+"""Deep Researcher Agent skill-eval coordinator.
 
 This script validates Agent Skill eval specs, generates Harbor-style datasets,
 and can optionally run Harbor when the target environment is available.
@@ -19,7 +19,9 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_OUTPUT_DIR = Path(os.environ.get("AIQ_SKILL_EVAL_OUTPUT_DIR", "/tmp/aiq-skill-eval/datasets"))
+DEFAULT_OUTPUT_DIR = Path(
+    os.environ.get("DEEP_RESEARCHER_SKILL_EVAL_OUTPUT_DIR", "/tmp/deep-researcher-skill-eval/datasets")
+)
 REQUIRED_SPEC_KEYS = ("skills", "resources", "env", "expects")
 
 # Argv elements whose key portion ends in any of these suffixes are redacted in
@@ -143,12 +145,12 @@ def _task_roots(dataset_root: Path) -> list[Path]:
 
 
 def _run_harbor(task_root: Path, out_dir: Path) -> tuple[int, Path | None]:
-    agent = os.environ.get("AIQ_SKILL_EVAL_AGENT", "claude-code")
-    model = os.environ.get("AIQ_SKILL_EVAL_MODEL") or os.environ.get("ANTHROPIC_MODEL")
-    max_retries = os.environ.get("AIQ_SKILL_EVAL_MAX_RETRIES", "1")
+    agent = os.environ.get("DEEP_RESEARCHER_SKILL_EVAL_AGENT", "claude-code")
+    model = os.environ.get("DEEP_RESEARCHER_SKILL_EVAL_MODEL") or os.environ.get("ANTHROPIC_MODEL")
+    max_retries = os.environ.get("DEEP_RESEARCHER_SKILL_EVAL_MAX_RETRIES", "1")
     if agent != "oracle" and not model:
         print(
-            "BLOCKED: AIQ_SKILL_EVAL_MODEL or ANTHROPIC_MODEL is required for Harbor execution",
+            "BLOCKED: DEEP_RESEARCHER_SKILL_EVAL_MODEL or ANTHROPIC_MODEL is required for Harbor execution",
             file=sys.stderr,
         )
         return 2, None
@@ -237,7 +239,7 @@ def main() -> int:
 
     specs = _discover_specs(all_specs=args.all, base=args.base)
     if not specs:
-        print("BLOCKED: no AI-Q skill eval specs found")
+        print("BLOCKED: no Deep Researcher Agent skill eval specs found")
         return 0
 
     generated_roots: list[Path] = []
@@ -277,7 +279,9 @@ def main() -> int:
     print(json.dumps(summary, indent=2))
 
     if args.run_harbor:
-        results_root = Path(os.environ.get("AIQ_SKILL_EVAL_RESULTS_DIR", "/tmp/aiq-skill-eval/results"))
+        results_root = Path(
+            os.environ.get("DEEP_RESEARCHER_SKILL_EVAL_RESULTS_DIR", "/tmp/deep-researcher-skill-eval/results")
+        )
         # Isolate this job's results so the gate can never read a previous job's
         # output on the long-lived self-hosted runner (the results root persists
         # between jobs). Keyed by GitHub run id + attempt in CI; random locally.
@@ -298,7 +302,7 @@ def main() -> int:
 
         # Post-Harbor verdict. Harbor exits 0 even at low reward, so gate here so a
         # green check actually means the eval passed (catches PR regressions).
-        threshold = float(os.environ.get("AIQ_SKILL_EVAL_REWARD_THRESHOLD", "1.0"))
+        threshold = float(os.environ.get("DEEP_RESEARCHER_SKILL_EVAL_REWARD_THRESHOLD", "1.0"))
         ok, summary = _gate(result_paths, threshold)
         gate_desc = "report-only" if threshold <= 0 else f"threshold {threshold}"
         print(f"=== Skill-eval verdict ({gate_desc}) ===")
@@ -307,12 +311,12 @@ def main() -> int:
         if not ok:
             print(
                 "EVAL FAILED: a trial errored or scored below threshold "
-                "(set AIQ_SKILL_EVAL_REWARD_THRESHOLD=0 for report-only)"
+                "(set DEEP_RESEARCHER_SKILL_EVAL_REWARD_THRESHOLD=0 for report-only)"
             )
             return 1
         print("EVAL PASSED")
 
-    print(f"DONE: generated {len(set(generated_roots))} AI-Q skill-eval dataset(s)")
+    print(f"DONE: generated {len(set(generated_roots))} Deep Researcher Agent skill-eval dataset(s)")
     return 0
 
 

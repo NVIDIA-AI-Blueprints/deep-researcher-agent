@@ -99,10 +99,10 @@ exec "$REAL_PYTHON" "$@"
             "FAKE_LOG": str(log),
             "FAKE_STATE": str(state),
             "FAKE_GATEWAYS_JSON": json.dumps([gateway]),
-            "AIQ_OPENSHELL_STATUS_ATTEMPTS": "1",
-            "AIQ_OPENSHELL_PROBE_ATTEMPTS": "1",
-            "AIQ_OPENSHELL_DELETE_ATTEMPTS": "1",
-            "AIQ_OPENSHELL_POLL_DELAY": "0",
+            "DEEP_RESEARCHER_OPENSHELL_STATUS_ATTEMPTS": "1",
+            "DEEP_RESEARCHER_OPENSHELL_PROBE_ATTEMPTS": "1",
+            "DEEP_RESEARCHER_OPENSHELL_DELETE_ATTEMPTS": "1",
+            "DEEP_RESEARCHER_OPENSHELL_POLL_DELAY": "0",
         }
     )
     env.update(extra_env or {})
@@ -134,7 +134,7 @@ def test_authenticated_gateway_runs_mandatory_strict_readiness_check(tmp_path: P
             "auth": "oidc",
             "active": False,
         },
-        extra_env={"AIQ_OPENSHELL_WORKSPACE": "research"},
+        extra_env={"DEEP_RESEARCHER_OPENSHELL_WORKSPACE": "research"},
     )
 
     assert result.returncode == 0, result.stderr
@@ -230,8 +230,8 @@ def test_setup_is_provisioning_only_and_migrates_old_lifecycle_flags() -> None:
     assert 'uv pip install "deepagents' not in source
     assert 'export VIRTUAL_ENV="$VENV_DIR"' in source
     assert '*":$VENV_DIR/bin:"*' in source
-    assert 'export AIQ_OPENSHELL_WORKSPACE="${AIQ_OPENSHELL_WORKSPACE:-default}"' in source
-    assert 'export AIQ_OPENSHELL_WORKSPACE="default"' not in source
+    assert 'export DEEP_RESEARCHER_OPENSHELL_WORKSPACE="${DEEP_RESEARCHER_OPENSHELL_WORKSPACE:-default}"' in source
+    assert 'export DEEP_RESEARCHER_OPENSHELL_WORKSPACE="default"' not in source
 
     result = subprocess.run(
         [str(_SETUP_SCRIPT), "--gateway-name", "old"],
@@ -279,7 +279,7 @@ def test_setup_local_demo_uses_explicit_runtime_override_without_config_copy() -
 
     assert "--local-demo" in source
     assert 'LANDLOCK_COMPATIBILITY="best_effort"' in source
-    assert 'runtime_env="AIQ_OPENSHELL_REQUIRE_HARD_LANDLOCK=false "' in source
+    assert 'runtime_env="DEEP_RESEARCHER_OPENSHELL_REQUIRE_HARD_LANDLOCK=false "' in source
     assert "configs/config_openshell.local.yml" not in source
 
 

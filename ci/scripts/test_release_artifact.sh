@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# Validate the installable AI-Q artifact without relying on checkout metadata or
+# Validate the installable Deep Researcher Agent artifact without relying on checkout metadata or
 # editable imports. CI intentionally runs this against the committed HEAD.
 
 set -euo pipefail
@@ -29,15 +29,15 @@ if [[ -e "$SOURCE_ROOT/.git" ]]; then
 fi
 
 uv build --wheel --out-dir "$WHEEL_DIR" "$SOURCE_ROOT"
-wheel_count=$(find "$WHEEL_DIR" -maxdepth 1 -type f -name 'aiq_agent-*.whl' | wc -l | tr -d ' ')
+wheel_count=$(find "$WHEEL_DIR" -maxdepth 1 -type f -name 'deep_researcher_agent-*.whl' | wc -l | tr -d ' ')
 if [[ "$wheel_count" != "1" ]]; then
-    echo "Expected exactly one aiq-agent wheel, found $wheel_count" >&2
+    echo "Expected exactly one deep-researcher-agent wheel, found $wheel_count" >&2
     exit 1
 fi
-WHEEL_PATH=$(find "$WHEEL_DIR" -maxdepth 1 -type f -name 'aiq_agent-*.whl')
+WHEEL_PATH=$(find "$WHEEL_DIR" -maxdepth 1 -type f -name 'deep_researcher_agent-*.whl')
 
 UV_PROJECT_ENVIRONMENT="$VENV_DIR" \
-    uv sync --project "$SOURCE_ROOT" --frozen --group dev --no-editable --no-install-package aiq-agent
+    uv sync --project "$SOURCE_ROOT" --frozen --group dev --no-editable --no-install-package deep-researcher-agent
 uv pip install --python "$VENV_DIR/bin/python" --no-deps --reinstall "$WHEEL_PATH"
 uv pip check --python "$VENV_DIR/bin/python"
 
@@ -50,32 +50,32 @@ import sys
 import zipfile
 from pathlib import Path
 
-import aiq_agent
+import deep_researcher_agent
 
 source_root = Path(sys.argv[1]).resolve()
 wheel_path = Path(sys.argv[2]).resolve()
 expected = {
-    "aiq_agent/agents/chat_researcher/prompts/context_aware_intent_router.j2",
-    "aiq_agent/agents/chat_researcher/prompts/intent_classification.j2",
-    "aiq_agent/agents/clarifier/prompts/research_clarification.j2",
-    "aiq_agent/agents/data_science/prompts/agent.j2",
-    "aiq_agent/agents/deep_researcher/prompts/orchestrator.j2",
-    "aiq_agent/agents/deep_researcher/prompts/planner.j2",
-    "aiq_agent/agents/deep_researcher/prompts/researcher.j2",
-    "aiq_agent/agents/deep_researcher/prompts/source_registry.j2",
-    "aiq_agent/agents/deep_researcher/prompts/source_router.j2",
-    "aiq_agent/agents/deep_researcher/prompts/writer.j2",
-    "aiq_agent/agents/report_rewriter/prompts/edit.j2",
-    "aiq_agent/agents/shallow_researcher/prompts/researcher.j2",
-    "aiq_agent/agents/deep_researcher/skills/research/data-table-analysis/SKILL.md",
-    "aiq_agent/agents/deep_researcher/skills/research/forecast-analysis/SKILL.md",
-    "aiq_agent/agents/deep_researcher/skills/research/lightweight-calculation/SKILL.md",
-    "aiq_agent/agents/deep_researcher/skills/synthesis/long-form-report-writer/SKILL.md",
-    "aiq_agent/agents/deep_researcher/skills/synthesis/prediction-report-writer/SKILL.md",
-    "aiq_agent/agents/deep_researcher/skills/visualization/chart-generation/SKILL.md",
+    "deep_researcher_agent/agents/chat_researcher/prompts/context_aware_intent_router.j2",
+    "deep_researcher_agent/agents/chat_researcher/prompts/intent_classification.j2",
+    "deep_researcher_agent/agents/clarifier/prompts/research_clarification.j2",
+    "deep_researcher_agent/agents/data_science/prompts/agent.j2",
+    "deep_researcher_agent/agents/deep_researcher/prompts/orchestrator.j2",
+    "deep_researcher_agent/agents/deep_researcher/prompts/planner.j2",
+    "deep_researcher_agent/agents/deep_researcher/prompts/researcher.j2",
+    "deep_researcher_agent/agents/deep_researcher/prompts/source_registry.j2",
+    "deep_researcher_agent/agents/deep_researcher/prompts/source_router.j2",
+    "deep_researcher_agent/agents/deep_researcher/prompts/writer.j2",
+    "deep_researcher_agent/agents/report_rewriter/prompts/edit.j2",
+    "deep_researcher_agent/agents/shallow_researcher/prompts/researcher.j2",
+    "deep_researcher_agent/agents/deep_researcher/skills/research/data-table-analysis/SKILL.md",
+    "deep_researcher_agent/agents/deep_researcher/skills/research/forecast-analysis/SKILL.md",
+    "deep_researcher_agent/agents/deep_researcher/skills/research/lightweight-calculation/SKILL.md",
+    "deep_researcher_agent/agents/deep_researcher/skills/synthesis/long-form-report-writer/SKILL.md",
+    "deep_researcher_agent/agents/deep_researcher/skills/synthesis/prediction-report-writer/SKILL.md",
+    "deep_researcher_agent/agents/deep_researcher/skills/visualization/chart-generation/SKILL.md",
 }
 
-source_package = source_root / "src" / "aiq_agent"
+source_package = source_root / "src" / "deep_researcher_agent"
 actual_source = {
     path.relative_to(source_root / "src").as_posix()
     for path in (source_package / "agents").glob("*/prompts/*.j2")
@@ -101,33 +101,33 @@ for relative in expected:
     if wheel_entries.get(relative, 0) == 0:
         raise SystemExit(f"Wheel runtime asset is missing or empty: {relative}")
 
-package_root = Path(aiq_agent.__file__).resolve().parent
+package_root = Path(deep_researcher_agent.__file__).resolve().parent
 venv_root = Path(sys.prefix).resolve()
 try:
     package_root.relative_to(venv_root)
 except ValueError as exc:
-    raise SystemExit(f"aiq_agent imported outside the isolated environment: {package_root}") from exc
+    raise SystemExit(f"deep_researcher_agent imported outside the isolated environment: {package_root}") from exc
 if source_root in package_root.parents:
-    raise SystemExit(f"aiq_agent imported from the source export: {package_root}")
+    raise SystemExit(f"deep_researcher_agent imported from the source export: {package_root}")
 
 for relative in expected:
-    installed_path = package_root / Path(relative).relative_to("aiq_agent")
+    installed_path = package_root / Path(relative).relative_to("deep_researcher_agent")
     if not installed_path.is_file() or installed_path.stat().st_size == 0:
         raise SystemExit(f"Installed runtime asset is missing or empty: {relative}")
 
-direct_url = importlib.metadata.distribution("aiq-agent").read_text("direct_url.json") or ""
+direct_url = importlib.metadata.distribution("deep-researcher-agent").read_text("direct_url.json") or ""
 if '"editable": true' in direct_url:
-    raise SystemExit("aiq-agent was installed editable")
+    raise SystemExit("deep-researcher-agent was installed editable")
 
 print(f"Verified {len(expected)} non-empty runtime assets in source, wheel, and installed distribution")
-print(f"Verified isolated aiq_agent import: {aiq_agent.__file__}")
+print(f"Verified isolated deep_researcher_agent import: {deep_researcher_agent.__file__}")
 PY
 
 export NVIDIA_API_KEY="ci-not-a-real-key"  # pragma: allowlist secret
 export OPENAI_API_KEY="ci-not-a-real-key"  # pragma: allowlist secret
 export INFERENCE_NVIDIA_API_KEY="ci-not-a-real-key"  # pragma: allowlist secret
-export AIQ_DATA_SCIENCE_MODEL="openai/ci-test-model"
-export AIQ_INFERENCE_BASE_URL="https://inference.invalid/v1"
+export DEEP_RESEARCHER_DATA_SCIENCE_MODEL="openai/ci-test-model"
+export DEEP_RESEARCHER_INFERENCE_BASE_URL="https://inference.invalid/v1"
 export TAVILY_API_KEY="ci-not-a-real-key"  # pragma: allowlist secret
 export SERPER_API_KEY="ci-not-a-real-key"  # pragma: allowlist secret
 export GSF_BASE_URL="https://gsf.invalid"
@@ -137,13 +137,13 @@ export COLLECTION_NAME="ci-test-collection"
 export RAG_SERVER_URL="https://rag.invalid/v1"
 export REDIS_PASSWORD="ci-not-a-real-password"  # pragma: allowlist secret
 export NAT_JOB_STORE_DB_URL="sqlite+aiosqlite:///$RUNTIME_ROOT/jobs.db"
-export AIQ_CHECKPOINT_DB="$RUNTIME_ROOT/checkpoints.db"
-export AIQ_SUMMARY_DB="sqlite+aiosqlite:///$RUNTIME_ROOT/summaries.db"
-export AIQ_CHROMA_DIR="$RUNTIME_ROOT/chroma"
+export DEEP_RESEARCHER_CHECKPOINT_DB="$RUNTIME_ROOT/checkpoints.db"
+export DEEP_RESEARCHER_SUMMARY_DB="sqlite+aiosqlite:///$RUNTIME_ROOT/summaries.db"
+export DEEP_RESEARCHER_CHROMA_DIR="$RUNTIME_ROOT/chroma"
 export AZURE_SEARCH_ENDPOINT="https://azure-search.invalid"
 export NRL_SCOPE="ci"
 export MCP_TOKEN_DB="$RUNTIME_ROOT/mcp_tokens.db"
-export AIQ_OPENSHELL_POLICY_FILE="$RUNTIME_ROOT/configs/openshell/aiq-research-policy.yaml"
+export DEEP_RESEARCHER_OPENSHELL_POLICY_FILE="$RUNTIME_ROOT/configs/openshell/deep-researcher-research-policy.yaml"
 
 config_count=0
 while IFS= read -r config_path; do

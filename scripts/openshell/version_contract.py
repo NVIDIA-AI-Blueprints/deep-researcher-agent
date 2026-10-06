@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Read and validate AI-Q's certified OpenShell release contract."""
+"""Read and validate Deep Researcher Agent's certified OpenShell release contract."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def load_contract(pyproject: Path | None = None) -> OpenShellContract:
     """Load the release contract and cross-check a published optional extra when present."""
     path = pyproject or (_REPO_ROOT / "pyproject.toml")
     data = tomllib.loads(path.read_text(encoding="utf-8"))
-    table = data.get("tool", {}).get("aiq", {}).get("openshell", {})
+    table = data.get("tool", {}).get("deep-researcher", {}).get("openshell", {})
     release_tag = table.get("release-tag")
     adapter_version = table.get("adapter-version")
     checksum = table.get("installer-sha256")

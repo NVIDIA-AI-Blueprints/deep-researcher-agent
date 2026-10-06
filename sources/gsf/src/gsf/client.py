@@ -585,7 +585,7 @@ class GSFClient:
         request_id: str | None,
         max_rows: int,
     ) -> TextToSQLResponse:
-        """Normalize current and legacy GSF SQL fields into AI-Q output."""
+        """Normalize current and legacy GSF SQL fields into Deep Researcher Agent output."""
 
         sql = answer.get("sql") or answer.get("sql_code")
         if not isinstance(sql, str) or not sql.strip():

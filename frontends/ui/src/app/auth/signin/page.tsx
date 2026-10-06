@@ -76,7 +76,7 @@ const SignInContent = (): ReactNode => {
       <Logo kind="horizontal" className="h-8" />
 
       <Flex direction="col" gap="2" align="center">
-        <Text kind="title/lg">Sign in to AI-Q</Text>
+        <Text kind="title/lg">Sign in to Deep Researcher Agent</Text>
         <Text kind="body/regular/md" className="text-secondary text-center">
           Sign in to continue
         </Text>

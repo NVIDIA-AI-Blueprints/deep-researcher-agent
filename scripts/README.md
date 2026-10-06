@@ -1,6 +1,6 @@
 # Development Scripts
 
-This directory contains helper scripts for developing and running the AI-Q blueprint.
+This directory contains helper scripts for developing and running the Deep Researcher Agent blueprint.
 
 ## Available Scripts
 
@@ -55,7 +55,7 @@ Starts the agent in CLI mode with browser-based authentication.
 the reusable image. `openshell/install_gateway.sh` is the explicit Apple Silicon macOS
 entry point for installing the official packaged gateway. `openshell/start_openshell_gateway.sh`
 validates an authenticated registered
-gateway and performs a disposable version/policy/selector/execution/cleanup probe. AI-Q
+gateway and performs a disposable version/policy/selector/execution/cleanup probe. Deep Researcher Agent
 then owns one attested physical sandbox per job. OpenShell `0.0.88` is the supported
 version because it adds the Linux hard-Landlock file-path fix while retaining the required
 policy-revision and request-label capabilities.
@@ -75,7 +75,7 @@ For a macOS local demo:
 /opt/homebrew/bin/bash ./scripts/openshell/setup_openshell.sh --local-demo --policy offline
 ./scripts/openshell/install_gateway.sh --dry-run
 ./scripts/openshell/install_gateway.sh
-AIQ_OPENSHELL_REQUIRE_HARD_LANDLOCK=false \
+DEEP_RESEARCHER_OPENSHELL_REQUIRE_HARD_LANDLOCK=false \
   ./scripts/start_e2e.sh --start-openshell-gateway --config_file configs/config_openshell.yml
 ```
 
@@ -114,7 +114,7 @@ Starts the NAT FastAPI server for deep research with async job support.
 
 ### `start_as_skill.sh` - Agent Skill Backend
 
-Starts the AI-Q API backend for use by Agent Skills such as `aiq-research`. This does not start the Next.js UI and disables the optional debug console.
+Starts the Deep Researcher Agent API backend for use by Agent Skills such as `deep-researcher-research`. This does not start the Next.js UI and disables the optional debug console.
 
 ```bash
 ./scripts/start_as_skill.sh

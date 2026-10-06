@@ -119,7 +119,7 @@ def configure_logging():
 
     # Set specific loggers to appropriate levels
     # These match NAT's default logging configuration
-    logger_names = ("nat", "aiq_agent", "aiq_api", "knowledge_layer")
+    logger_names = ("nat", "deep_researcher_agent", "deep_researcher_api", "knowledge_layer")
     for logger_name in logger_names:
         logging.getLogger(logger_name).setLevel(getattr(logging, log_level, logging.INFO))
 
@@ -195,7 +195,7 @@ def main():
     # that, we need to set it ourselves.
     #
     # IMPORTANT: We need to use the runner_class from the config file, not the
-    # default NAT worker. The config specifies aiq_async.plugin.AsyncAPIWorker
+    # default NAT worker. The config specifies deep_researcher_async.plugin.AsyncAPIWorker
     # which provides async job infrastructure with SSE streaming.
     print("Setting up FastAPI worker...")
     from nat.front_ends.fastapi.utils import get_class_name
@@ -209,7 +209,7 @@ def main():
         )
         if runner_class_name:
             # The runner_class in config is already a string like
-            # "aiq_async.plugin.AsyncAPIWorker".
+            # "deep_researcher_async.plugin.AsyncAPIWorker".
             os.environ["NAT_FRONT_END_WORKER"] = runner_class_name
             print(f"✓ Worker class (from config): {runner_class_name}")
         else:

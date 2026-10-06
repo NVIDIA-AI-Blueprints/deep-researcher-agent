@@ -12,4 +12,4 @@ duckduckgo_news_search_tool:
 ```
 
 The tool returns lightweight document blocks with title, source, date, snippet,
-and URL so AIQ citation capture can treat news results as citable sources.
+and URL so Deep Researcher Agent citation capture can treat news results as citable sources.

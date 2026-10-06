@@ -18,7 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 COMPOSE_PATH = REPO_ROOT / "deploy" / "compose" / "docker-compose.yaml"
 COMPOSE_INIT_DB_PATH = REPO_ROOT / "deploy" / "compose" / "init-db.sql"
 COMPOSE_README_PATH = REPO_ROOT / "deploy" / "compose" / "README.md"
-HELM_INIT_DB_PATH = REPO_ROOT / "deploy" / "helm" / "helm-charts-k8s" / "aiq" / "files" / "init-db.sql"
+HELM_INIT_DB_PATH = REPO_ROOT / "deploy" / "helm" / "helm-charts-k8s" / "deep-researcher" / "files" / "init-db.sql"
 DOCS_COMPOSE_PATH = REPO_ROOT / "docs" / "source" / "deployment" / "docker-compose.md"
 DOCS_PROJECT_PATH = REPO_ROOT / "docs" / "source" / "project.json"
 DOCS_VERSIONS_PATH = REPO_ROOT / "docs" / "source" / "versions1.json"
@@ -40,7 +40,7 @@ def test_release_version_matches_default_compose_images():
     compose = load_compose()
 
     assert package_version == EXPECTED_RELEASE_VERSION
-    assert compose["services"]["aiq-agent"]["image"] == (
+    assert compose["services"]["deep-researcher-agent"]["image"] == (
         f"${{BACKEND_IMAGE:-nvcr.io/nvidia/blueprint/aiq-agent:{package_version}}}"
     )
     assert compose["services"]["frontend"]["image"] == (
@@ -75,7 +75,7 @@ def test_release_version_matches_published_docs():
 def test_default_compose_does_not_provision_or_configure_redis():
     compose = load_compose()
     services = compose["services"]
-    backend = services["aiq-agent"]
+    backend = services["deep-researcher-agent"]
 
     assert "redis" not in services
     assert "redis-data" not in compose.get("volumes", {})
@@ -97,7 +97,7 @@ def test_upload_limits_are_aligned_between_backend_and_frontend():
             for name, value in [entry.split("=", maxsplit=1)]
         }
 
-    backend = environment("aiq-agent")
+    backend = environment("deep-researcher-agent")
     frontend = environment("frontend")
     upload_variables = {
         "FILE_UPLOAD_ACCEPTED_TYPES",
@@ -112,19 +112,22 @@ def test_backend_wires_default_on_deep_research_admission_limits():
     compose = load_compose()
     backend_env = {
         name: value
-        for entry in compose["services"]["aiq-agent"]["environment"]
+        for entry in compose["services"]["deep-researcher-agent"]["environment"]
         for name, value in [entry.split("=", maxsplit=1)]
     }
 
-    assert backend_env["AIQ_MAX_DEEP_RESEARCH_INPUT_CHARS"] == "${AIQ_MAX_DEEP_RESEARCH_INPUT_CHARS:-32768}"
-    assert backend_env["AIQ_MAX_ACTIVE_DEEP_RESEARCH_JOBS_PER_PRINCIPAL"] == (
-        "${AIQ_MAX_ACTIVE_DEEP_RESEARCH_JOBS_PER_PRINCIPAL:-5}"
+    assert (
+        backend_env["DEEP_RESEARCHER_MAX_DEEP_RESEARCH_INPUT_CHARS"]
+        == "${DEEP_RESEARCHER_MAX_DEEP_RESEARCH_INPUT_CHARS:-32768}"
     )
-    assert backend_env["AIQ_MAX_ACTIVE_DEEP_RESEARCH_JOBS_GLOBAL"] == (
-        "${AIQ_MAX_ACTIVE_DEEP_RESEARCH_JOBS_GLOBAL:-50}"
+    assert backend_env["DEEP_RESEARCHER_MAX_ACTIVE_DEEP_RESEARCH_JOBS_PER_PRINCIPAL"] == (
+        "${DEEP_RESEARCHER_MAX_ACTIVE_DEEP_RESEARCH_JOBS_PER_PRINCIPAL:-5}"
     )
-    assert backend_env["AIQ_MAX_DEEP_RESEARCH_SUBMISSIONS_PER_MINUTE"] == (
-        "${AIQ_MAX_DEEP_RESEARCH_SUBMISSIONS_PER_MINUTE:-20}"
+    assert backend_env["DEEP_RESEARCHER_MAX_ACTIVE_DEEP_RESEARCH_JOBS_GLOBAL"] == (
+        "${DEEP_RESEARCHER_MAX_ACTIVE_DEEP_RESEARCH_JOBS_GLOBAL:-50}"
+    )
+    assert backend_env["DEEP_RESEARCHER_MAX_DEEP_RESEARCH_SUBMISSIONS_PER_MINUTE"] == (
+        "${DEEP_RESEARCHER_MAX_DEEP_RESEARCH_SUBMISSIONS_PER_MINUTE:-20}"
     )
 
 
@@ -152,7 +155,7 @@ def test_per_user_auth_compose_adds_private_redis_token_store(tmp_path: Path):
     # The runtime env file is intentionally untracked. Render from a temporary
     # copy so this merge test works in a clean checkout without developer secrets.
     base_compose = load_compose()
-    base_compose["services"]["aiq-agent"].pop("env_file", None)
+    base_compose["services"]["deep-researcher-agent"].pop("env_file", None)
     test_compose_path = tmp_path / "docker-compose.yaml"
     test_compose_path.write_text(yaml.safe_dump(base_compose), encoding="utf-8")
 
@@ -176,7 +179,7 @@ def test_per_user_auth_compose_adds_private_redis_token_store(tmp_path: Path):
         text=True,
     )
     compose = json.loads(result.stdout)
-    backend = compose["services"]["aiq-agent"]
+    backend = compose["services"]["deep-researcher-agent"]
     redis = compose["services"]["redis"]
 
     assert "redis-data" in compose["volumes"]
@@ -193,7 +196,7 @@ def test_mcp_example_config_accepts_an_optional_external_redis_password(monkeypa
     monkeypatch.delenv("REDIS_PASSWORD", raising=False)
 
     without_password = yaml_load(MCP_CONFIG_PATH)["object_stores"]["mcp_token_store"]
-    assert without_password["_type"] == "aiq_sqlite"
+    assert without_password["_type"] == "deep_researcher_sqlite"
     assert without_password["password"] is None
 
     monkeypatch.setenv("MCP_TOKEN_STORE_TYPE", "redis")

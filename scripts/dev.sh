@@ -1,5 +1,5 @@
 #!/bin/bash
-# Common development commands for AI-Q blueprint
+# Common development commands for Deep Researcher Agent blueprint
 set -euo pipefail
 COMMAND=${1:-help}
 
@@ -13,34 +13,34 @@ case "$COMMAND" in
         ;;
     format)
         echo "Formatting code..."
-        uv run ruff check --fix --select I src/aiq_agent/
-        uv run yapf -i -r src/aiq_agent/
+        uv run ruff check --fix --select I src/deep_researcher_agent/
+        uv run yapf -i -r src/deep_researcher_agent/
         echo "Code formatted"
         ;;
     lint)
         echo "Running linters..."
         echo "Running ruff..."
-        uv run ruff check src/aiq_agent/
+        uv run ruff check src/deep_researcher_agent/
         echo "Running yapf..."
-        uv run yapf -d -r src/aiq_agent/
+        uv run yapf -d -r src/deep_researcher_agent/
         echo "Lint checks passed"
         ;;
     pre-commit)
         echo "Running pre-commit checks..."
         echo ""
         echo "Step 1: Formatting code..."
-        uv run ruff check --fix --select I src/aiq_agent/
-        uv run yapf -i -r src/aiq_agent/
+        uv run ruff check --fix --select I src/deep_researcher_agent/
+        uv run yapf -i -r src/deep_researcher_agent/
         echo "Code formatted"
         echo ""
         echo "Step 2: Running lint checks..."
-        uv run ruff check src/aiq_agent/
-        uv run yapf -d -r src/aiq_agent/
+        uv run ruff check src/deep_researcher_agent/
+        uv run yapf -d -r src/deep_researcher_agent/
         echo "All pre-commit checks passed"
         ;;
     ruff)
         echo "Running ruff..."
-        uv run ruff check src/aiq_agent/
+        uv run ruff check src/deep_researcher_agent/
         ;;
     clean)
         echo "Cleaning build artifacts..."
@@ -52,7 +52,7 @@ case "$COMMAND" in
         echo "Cleaned"
         ;;
     help|*)
-        echo "AI-Q Blueprint - Development Commands"
+        echo "Deep Researcher Agent Blueprint - Development Commands"
         echo "=============================================="
         echo ""
         echo "Usage: ./scripts/dev.sh <command>"

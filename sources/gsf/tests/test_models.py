@@ -91,7 +91,7 @@ def test_gsf_requests_reject_invalid_database_names(database_name: str) -> None:
 
 
 def test_text_to_pql_request_omits_database_selector_by_default() -> None:
-    """Leave prediction routing unscoped for normal AI-Q calls."""
+    """Leave prediction routing unscoped for normal Deep Researcher Agent calls."""
 
     request = TextToPQLRequest(question="Predict churn")
 

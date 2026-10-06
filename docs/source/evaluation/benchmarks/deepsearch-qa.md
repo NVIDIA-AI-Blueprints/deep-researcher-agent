@@ -2,7 +2,7 @@
 SPDX-FileCopyrightText: Copyright (c) 2025-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 -->
-# DeepSearchQA Evaluation for AI-Q Deep Researcher
+# DeepSearchQA Evaluation for Deep Researcher Agent Deep Researcher
 
 This directory contains the evaluation setup for running [DeepSearchQA](https://www.kaggle.com/datasets/deepmind/deepsearchqa) benchmark from DeepMind on the deep researcher agent.
 

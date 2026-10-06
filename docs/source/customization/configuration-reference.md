@@ -5,11 +5,11 @@ SPDX-License-Identifier: Apache-2.0
 
 # Configuration Reference
 
-The AI-Q blueprint is configured through a single YAML file that defines LLMs, tools, agents, and the workflow. The NeMo Agent Toolkit reads this file at startup and wires everything together.
+The Deep Researcher Agent blueprint is configured through a single YAML file that defines LLMs, tools, agents, and the workflow. The NeMo Agent Toolkit reads this file at startup and wires everything together.
 
 ```{note}
 The NVIDIA API Catalog serving profile for Nemotron 3.5 Lightning has a known shallow citation-output limitation.
-AI-Q fails closed rather than publishing citation-incomplete drafts. See
+Deep Researcher Agent fails closed rather than publishing citation-incomplete drafts. See
 [Troubleshooting](../resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog) before using this hosted
 profile for shallow research.
 ```
@@ -34,7 +34,7 @@ You can reference environment variables anywhere in the YAML using shell-style s
 api_key: ${NVIDIA_API_KEY}
 
 # Variable with a default value
-checkpoint_db: ${AIQ_CHECKPOINT_DB:-./checkpoints.db}
+checkpoint_db: ${DEEP_RESEARCHER_CHECKPOINT_DB:-./checkpoints.db}
 
 # Nested in a URL
 collection_name: ${COLLECTION_NAME:-test_collection}
@@ -57,8 +57,8 @@ general:
         _type: console
         level: INFO          # DEBUG, INFO, WARNING, ERROR
   front_end:                 # Only for web/API mode
-    _type: aiq_api
-    runner_class: aiq_api.plugin.AIQAPIWorker
+    _type: deep_researcher_api
+    runner_class: deep_researcher_api.plugin.DeepResearcherAPIWorker
     db_url: ${NAT_JOB_STORE_DB_URL:-sqlite+aiosqlite:///./jobs.db}
     expiry_seconds: 86400
     cors:
@@ -74,21 +74,21 @@ general:
 | `use_uvloop` | `bool` | `false` | Enable uvloop for improved async I/O performance. Recommended for web mode. |
 | `telemetry.logging.console._type` | `str` | `console` | Logging backend type. |
 | `telemetry.logging.console.level` | `str` | `INFO` | Log level: `DEBUG`, `INFO`, `WARNING`, `ERROR`. |
-| `front_end._type` | `str` | -- | Front-end type. Use `aiq_api` for the web API server. Omit for CLI mode. |
+| `front_end._type` | `str` | -- | Front-end type. Use `deep_researcher_api` for the web API server. Omit for CLI mode. |
 | `front_end.db_url` | `str` | `sqlite+aiosqlite:///./jobs.db` | Database URL for async job persistence. |
 | `front_end.expiry_seconds` | `int` | `86400` | How long completed jobs remain in the database (seconds). |
 | `front_end.cors` | `object` | -- | CORS settings for the API server. |
 
 Tracing is configured through `workflow.relay`, not `general.telemetry`.
-For `aiq_api`, request tag enrichment for Relay-exported spans is configured via
-environment variables rather than YAML fields. Refer to `frontends/aiq_api/README.md`
+For `deep_researcher_api`, request tag enrichment for Relay-exported spans is configured via
+environment variables rather than YAML fields. Refer to `frontends/deep_researcher_api/README.md`
 and the [Observability](../deployment/observability.md) guide for:
 
-- `AIQ_TRACE_USER_IDENTITY_MODE`
-- `AIQ_TRACE_USER_IDENTITY_HMAC_SECRET`
-- `AIQ_TRACE_CLIENT_ID_MODE`
-- `AIQ_TRACE_CLIENT_ID_HMAC_SECRET`
-- `AIQ_TRACE_CLIENT_IP_HEADERS`
+- `DEEP_RESEARCHER_TRACE_USER_IDENTITY_MODE`
+- `DEEP_RESEARCHER_TRACE_USER_IDENTITY_HMAC_SECRET`
+- `DEEP_RESEARCHER_TRACE_CLIENT_ID_MODE`
+- `DEEP_RESEARCHER_TRACE_CLIENT_ID_HMAC_SECRET`
+- `DEEP_RESEARCHER_TRACE_CLIENT_IP_HEADERS`
 
 ---
 
@@ -287,10 +287,10 @@ functions:
     backend: llamaindex
     collection_name: ${COLLECTION_NAME:-test_collection}
     top_k: 5
-    chroma_dir: ${AIQ_CHROMA_DIR:-/tmp/chroma_data}
+    chroma_dir: ${DEEP_RESEARCHER_CHROMA_DIR:-/tmp/chroma_data}
     generate_summary: true
     summary_model: summary_llm
-    summary_db: ${AIQ_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
+    summary_db: ${DEEP_RESEARCHER_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
 ```
 
 ```yaml
@@ -332,9 +332,9 @@ functions:
     opensearch_auth_type: ${OPENSEARCH_AUTH_TYPE:-none}
     opensearch_aws_region: ${AWS_REGION:-us-east-1}
     opensearch_aws_service: ${OPENSEARCH_AWS_SERVICE:-aoss}
-    opensearch_index_prefix: ${OPENSEARCH_INDEX_PREFIX:-aiq}
+    opensearch_index_prefix: ${OPENSEARCH_INDEX_PREFIX:-deep-researcher}
     opensearch_ingestion_mode: ${OPENSEARCH_INGESTION_MODE:-auto}
-    embed_model: ${AIQ_EMBED_MODEL:-nvidia/nemotron-3-embed-1b}
+    embed_model: ${DEEP_RESEARCHER_EMBED_MODEL:-nvidia/nemotron-3-embed-1b}
 ```
 
 | Parameter | Type | Default | Description |
@@ -352,8 +352,8 @@ functions:
 | `verify_ssl` | `bool` | `true` | Verify SSL certificates. Set `false` for self-signed certs. Foundational RAG backend only. |
 | `azure_search_endpoint` | `URL` | `AZURE_SEARCH_ENDPOINT` | Azure AI Search service endpoint. Required for Azure AI Search. |
 | `azure_search_api_key` | `SecretStr` | `AZURE_SEARCH_API_KEY` | Optional admin API key. |
-| `azure_search_index_prefix` | `str` | `AIQ_AZURE_SEARCH_INDEX_PREFIX` or `aiq` | Deployment-unique namespace for the shared AI-Q index. |
-| `embed_dim` | `int` | `AIQ_EMBED_DIM` or `2048` | Embedding dimensions; must match the model and existing index schema. |
+| `azure_search_index_prefix` | `str` | `DEEP_RESEARCHER_AZURE_SEARCH_INDEX_PREFIX` or `deep-researcher` | Deployment-unique namespace for the shared Deep Researcher Agent index. |
+| `embed_dim` | `int` | `DEEP_RESEARCHER_EMBED_DIM` or `2048` | Embedding dimensions; must match the model and existing index schema. |
 | `opensearch_url` | `str` | `http://localhost:9200` | OpenSearch endpoint. OpenSearch backend only. |
 | `opensearch_auth_type` | `str` | `none` | Authentication mode: `none`, `basic`, or `sigv4`. |
 | `opensearch_username` | `str` | `None` | Username for basic authentication. Also read from `OPENSEARCH_USERNAME`. |
@@ -362,7 +362,7 @@ functions:
 | `opensearch_ca_certs` | `str` | `None` | Optional custom CA bundle path. |
 | `opensearch_aws_region` | `str` | `us-east-1` | AWS region for SigV4 authentication. |
 | `opensearch_aws_service` | `str` | `aoss` | SigV4 service: `aoss` for Serverless or `es` for managed OpenSearch Service. |
-| `opensearch_index_prefix` | `str` | `aiq` | Prefix for the physical index created for each AI-Q collection. |
+| `opensearch_index_prefix` | `str` | `deep-researcher` | Prefix for the physical index created for each Deep Researcher Agent collection. |
 | `opensearch_embedding_dim` | `int` | `2048` | Vector dimension; must match the configured embedding model. |
 | `opensearch_ingestion_mode` | `str` | `local` | Ingestion executor: `local`, `dask`, or `auto`. `auto` uses Dask only when a scheduler address is configured. |
 | `opensearch_dask_scheduler_address` | `str` | `None` | Dask scheduler for distributed ingestion. Also reads `NAT_DASK_SCHEDULER_ADDRESS`. |
@@ -393,7 +393,7 @@ function_groups:
       - text_to_sql
 ```
 
-Omit `auth` in an authenticated AI-Q deployment to forward the current user's
+Omit `auth` in an authenticated Deep Researcher Agent deployment to forward the current user's
 bearer token. Password mode is intended for local development and evaluation.
 The `password` field names the environment variable containing the secret; it
 does not contain or interpolate the secret itself.
@@ -411,8 +411,8 @@ functions:
   ds_python_sandbox:
     _type: deep_research_sandbox
     provider: openshell
-    openshell_image: ${AIQ_DS_OPENSHELL_IMAGE:-aiq-openshell-demo:latest}
-    policy: ${AIQ_DS_OPENSHELL_POLICY_FILE}
+    openshell_image: ${DEEP_RESEARCHER_DS_OPENSHELL_IMAGE:-deep-researcher-openshell-demo:latest}
+    policy: ${DEEP_RESEARCHER_DS_OPENSHELL_POLICY_FILE}
     workdir: /sandbox
     network: blocked
     delete_on_exit: true
@@ -447,7 +447,7 @@ functions:
 
 The runner preloads pandas, NumPy, SciPy, scikit-learn, and statsmodels for every
 call. It has
-no GSF client, SQL connection, host-process fallback, or network access. AI-Q
+no GSF client, SQL connection, host-process fallback, or network access. Deep Researcher Agent
 uploads only the version-matched runner, model code request, and validated request-local
 GSF receipt JSON; application environment variables and credentials are not
 included in the OpenShell sandbox specification. OpenShell owns the physical
@@ -522,7 +522,7 @@ functions:
 | `tools` | `list[str]` | `[]` | Search tools available to the agent. |
 | `max_llm_turns` | `int` | `10` | Maximum number of LLM turns (includes both reasoning and tool-calling steps). |
 | `max_tool_iterations` | `int` | `5` | Maximum tool-calling iterations before forcing synthesis. |
-| `enforce_citations` | `bool` | `false` | Fail the run when citation integrity cannot be preserved. When `false`, AI-Q returns the generated answer after sanitization instead of failing solely on the citation contract. |
+| `enforce_citations` | `bool` | `false` | Fail the run when citation integrity cannot be preserved. When `false`, Deep Researcher Agent returns the generated answer after sanitization instead of failing solely on the citation contract. |
 | `verbose` | `bool` | `false` | Enable verbose logging. |
 
 ### `data_science_agent`
@@ -636,7 +636,7 @@ functions:
 | `writer_llm` | `str` | `None` | LLM for the final writer/synthesis sub-agent. Falls back to `orchestrator_llm` if not specified. |
 | `tools` | `list[str]` | `[]` | Explicit callable tools. An empty list inherits all tool and function-group references in `data_source_registry`; a non-empty list bypasses inheritance. |
 | `exclude_tools` | `list[str]` | `[]` | Exact runtime tool names removed after inherited or explicit tools are resolved. |
-| `domain_catalog_path` | `str` | `None` | Optional YAML or JSON domain catalog used by the source router. Without one, AI-Q generates a general route from available mapped sources. |
+| `domain_catalog_path` | `str` | `None` | Optional YAML or JSON domain catalog used by the source router. Without one, Deep Researcher Agent generates a general route from available mapped sources. |
 | `enable_source_router` | `bool` | `true` | Run the advisory source-router sub-agent before planning. It recommends available mapped sources but does not restrict worker tool bindings. |
 | `enable_citation_verification` | `bool` | `true` | Verify final citations against sources captured from configured tool results. Set `false` only when the active source formats are not compatible with verification. |
 | `skills` | object or function ref | `None` | Inline `deep_research_skills` config or a reference to a config-only function of that type. Skill assignments are keyed by `researcher-agent` and `writer-agent`. |
@@ -662,7 +662,7 @@ functions:
 | `max_total_query_chars` | `10000` | Aggregate main-query and subquery characters across the job. |
 | `max_research_note_bytes` | `524288` | UTF-8 serialized size of one `ResearchNotes` payload. |
 | `max_total_research_note_bytes` | `10485760` | Aggregate serialized research-note bytes across the job. |
-| `max_source_tool_calls` | `100` | AI-Q source-tool attempts and concrete batch items across workers in this job. Retries hidden inside a provider SDK are not observable to this counter. |
+| `max_source_tool_calls` | `100` | Deep Researcher Agent source-tool attempts and concrete batch items across workers in this job. Retries hidden inside a provider SDK are not observable to this counter. |
 | `max_todo_items` | `20` | Top-level orchestrator todo items in one state replacement. Subagents cannot write todos. |
 | `max_todo_item_chars` | `2048` | Characters in one top-level todo item. |
 | `max_total_todo_chars` | `10000` | Aggregate todo content characters in one state replacement. |
@@ -702,19 +702,19 @@ workflow:
   enable_clarifier: true
   use_async_deep_research: true
   max_history: 20
-  checkpoint_db: ${AIQ_CHECKPOINT_DB:-./checkpoints.db}
+  checkpoint_db: ${DEEP_RESEARCHER_CHECKPOINT_DB:-./checkpoints.db}
   relay:
     logging: true
     observability:
       enable_full_payloads: true
-      atof: {enabled: true, output_directory: ./relay, filename: aiq-relay.atof.jsonl, mode: append}
+      atof: {enabled: true, output_directory: ./relay, filename: deep-researcher-relay.atof.jsonl, mode: append}
       opentelemetry:
         enabled: false
         endpoints:
           - type: openinference
             endpoint: "${RELAY_OTEL_ENDPOINT:-http://localhost:6006/v1/traces}"
-            service_name: aiq-relay
-            resource_attributes: {openinference.project.name: aiq-relay}
+            service_name: deep-researcher-relay
+            resource_attributes: {openinference.project.name: deep-researcher-relay}
     redaction:
       enabled: true
       request_privacy_attributes: [data, category_profile]
@@ -742,7 +742,7 @@ catalog when the provider offer or deployment changes.
 Relay configuration is strict: unknown nested fields and invalid OTLP endpoint
 URLs fail workflow validation instead of being silently ignored.
 
-> **Note:** `interactive_auth` is a YAML-level field consumed by the CLI entry point (`start_cli.sh` / `aiq-research`), not a Pydantic field on `ChatDeepResearcherConfig`. It can be set in YAML config files but is not part of the workflow config class.
+> **Note:** `interactive_auth` is a YAML-level field consumed by the CLI entry point (`start_cli.sh` / `deep-researcher-research`), not a Pydantic field on `ChatDeepResearcherConfig`. It can be set in YAML config files but is not part of the workflow config class.
 
 ---
 
@@ -868,7 +868,7 @@ workflow:
   _type: chat_deepresearcher_agent
   enable_escalation: true              # Allow deep research routing
   enable_clarifier: true               # Ask clarifying questions first
-  checkpoint_db: ${AIQ_CHECKPOINT_DB:-./checkpoints.db}
+  checkpoint_db: ${DEEP_RESEARCHER_CHECKPOINT_DB:-./checkpoints.db}
 ```
 
 ## Provided Config Files
@@ -888,11 +888,11 @@ only the additional sections you need.
 | `configs/config_web_frag.yml` | Web API / Helm base | Foundational RAG plus Tavily. Requires separately deployed RAG query and ingestion services. Paper search is commented out. |
 | `configs/config_web_opensearch.yml` | Web API | Built-in OpenSearch knowledge backend plus Tavily. Supports unauthenticated or basic self-hosted OpenSearch and SigV4 (`es` or `aoss`); infrastructure and credentials are deployment opt-ins. |
 | `configs/config_frontier_models.yml` | Web API | Shipped LlamaIndex frontier profile: GPT-5.6 Luna for intent/shallow/source routing/research, GPT-5.6 Sol for clarification/orchestration/planning/writing, and Gemma 4 for summaries. Requires `NVIDIA_API_KEY`, `OPENAI_API_KEY`, and `TAVILY_API_KEY` for the enabled Tavily tools; the commented paper-search opt-in requires `SERPER_API_KEY` when enabled. Validate the complete workflow against the configured provider endpoints before deployment. |
-| `configs/config_web_default_guardrails.yml` | Web API | LlamaIndex with workflow Guardrails attached explicitly, shallow-agent Guardrails dynamically attached through `workflow_functions`, and async deep-agent Guardrails applied by the AI-Q runner from the same target configuration. |
+| `configs/config_web_default_guardrails.yml` | Web API | LlamaIndex with workflow Guardrails attached explicitly, shallow-agent Guardrails dynamically attached through `workflow_functions`, and async deep-agent Guardrails applied by the Deep Researcher Agent runner from the same target configuration. |
 | `configs/config_web_frag_mcp_auth.yml` | Web API | Foundational RAG plus a protected per-user OAuth MCP source example. Requires a real protected MCP endpoint and shared token-store configuration; it is not a zero-config default. |
 | `configs/config_domain_routing_and_skills.yml` | Direct deep-research workflow | Automatic domain routing, Tavily, DuckDuckGo news, Polymarket, LlamaIndex, enabled Serper paper search, built-in skills, and a Modal sandbox. Requires the corresponding service credentials and Modal setup. |
 | `configs/config_openshell.yml` | Web API, experimental | Skills and artifact capture over one policy-bound OpenShell sandbox per deep-research job, with fail-closed policy attestation and terminal deletion. |
-| `configs/config_mcp.yml` | Standalone MCP server | Public NIM and Tavily research over stateless submit, poll, and final-report tools with PostgreSQL-backed job state. Requires `NVIDIA_API_KEY`, `TAVILY_API_KEY`, and `AIQ_CHECKPOINT_DB`. |
+| `configs/config_mcp.yml` | Standalone MCP server | Public NIM and Tavily research over stateless submit, poll, and final-report tools with PostgreSQL-backed job state. Requires `NVIDIA_API_KEY`, `TAVILY_API_KEY`, and `DEEP_RESEARCHER_CHECKPOINT_DB`. |
 
 ## Related
 

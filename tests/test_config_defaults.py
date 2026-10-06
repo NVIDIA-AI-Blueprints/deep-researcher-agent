@@ -20,7 +20,7 @@ CONFIG_PATHS = [
     REPO_ROOT / "configs" / "config_web_nemo_retriever.yml",
     REPO_ROOT / "configs" / "config_web_opensearch.yml",
     REPO_ROOT / "configs" / "nemo_relay" / "config_web_default_with_pricing.yml",
-    REPO_ROOT / ".agents" / "skills" / "aiq-configure-workflow" / "assets" / "config-scaffold.yml",
+    REPO_ROOT / ".agents" / "skills" / "deep-researcher-configure-workflow" / "assets" / "config-scaffold.yml",
 ]
 
 

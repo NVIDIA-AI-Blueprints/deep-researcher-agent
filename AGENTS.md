@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# AI-Q Agent Guidance
+# Deep Researcher Agent Guidance
 
 Repository-global instructions for coding agents and for humans reviewing
 agent-authored changes. These rules apply to every task in this repository.
@@ -12,7 +12,7 @@ relevant skill before starting a workflow it covers.
 
 ## Project overview
 
-AI-Q is an NVIDIA AI Blueprint: an enterprise research agent built on the
+Deep Researcher Agent is an NVIDIA AI Blueprint: an enterprise research agent built on the
 **NeMo Agent Toolkit (NAT)**. The deployed product is a research blueprint, not
 a general skill runtime. New retrieval sources and tools are NAT functions;
 agent behavior is driven by workflow YAML, Jinja2 prompts, and a data-source
@@ -20,14 +20,14 @@ registry — not by hard-coded logic.
 
 Primary boundaries:
 
-- Backend Python package: `src/aiq_agent/`.
+- Backend Python package: `src/deep_researcher_agent/`.
 - Data-source and tool packages: `sources/` (each is its own package).
 - Frontends and tooling: `frontends/` (web UI in `frontends/ui/`, eval harnesses
   in `frontends/benchmarks/`).
 - Configs, deployment, docs: `configs/`, `deploy/`, `docs/`.
 
 Stay inside this repository. If your workspace also contains adjacent repos
-(for example a sibling NeMo-Relay checkout), do not edit them as part of an AI-Q
+(for example a sibling NeMo-Relay checkout), do not edit them as part of an Deep Researcher Agent
 change. Treat `sources/*` as independent packages: prefer the smallest change
 scoped to the package you are touching.
 
@@ -35,7 +35,7 @@ scoped to the package you are touching.
 
 | Path | Purpose |
 | :-- | :-- |
-| `src/aiq_agent/` | Backend agent, FastAPI extensions, auth, observability, knowledge |
+| `src/deep_researcher_agent/` | Backend agent, FastAPI extensions, auth, observability, knowledge |
 | `sources/` | Data-source / tool packages (e.g. `tavily_web_search`, `google_scholar_paper_search`) |
 | `configs/` | Workflow YAML configs (e.g. `config_cli_default.yml`) |
 | `frontends/ui/` | Next.js / React / TypeScript / Tailwind / KUI web UI |
@@ -43,7 +43,7 @@ scoped to the package you are touching.
 | `mcp/` | Independent MCP server uv project, lockfile, tests, and release assets |
 | `deploy/` | Docker Compose and Helm/Kubernetes assets; `deploy/.env` for secrets |
 | `docs/source/` | Sphinx documentation |
-| `skills/` | API-consumer Agent Skills (`aiq-deploy`, `aiq-research`) |
+| `skills/` | API-consumer Agent Skills (`deep-researcher-deploy`, `deep-researcher-research`) |
 | `.agents/skills/` | Maintainer Agent Skills (this contributor skill set) |
 | `tests/` | Pytest suite |
 
@@ -53,7 +53,7 @@ Python (run from the repo root; the project uses `uv`):
 
 ```bash
 ./scripts/setup.sh                    # one-time environment setup
-uv sync --group dev                   # root AI-Q development environment
+uv sync --group dev                   # root Deep Researcher Agent development environment
 uv run ruff check .                   # lint
 uv run ruff format --check .          # format check
 uv run pytest                         # root and source-package tests
@@ -163,9 +163,9 @@ change crosses shared boundaries.
 - Task-specific runbooks live in [`.agents/skills/`](.agents/skills/) (maintainer
   skills). See its [README](.agents/skills/README.md) and
   [TEMPLATE](.agents/skills/TEMPLATE.md) to use or add one.
-- API-consumer skills for calling a running AI-Q server live in `skills/`
-  (`aiq-research`, `aiq-deploy`); they are a different audience and are not
+- API-consumer skills for calling a running Deep Researcher Agent server live in `skills/`
+  (`deep-researcher-research`, `deep-researcher-deploy`); they are a different audience and are not
   maintainer skills.
 - These skills are guidance for coding agents working in this repository. They
   are not an in-product skill runtime and are not executed by the deployed
-  AI-Q application.
+  Deep Researcher Agent application.

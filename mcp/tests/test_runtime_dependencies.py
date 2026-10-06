@@ -112,12 +112,12 @@ def test_main_verify_imports_reports_verification(capsys: pytest.CaptureFixture[
     assert script_main(["--verify-imports"]) == 0
     output = capsys.readouterr().out
     assert "security_overrides" in output
-    assert "AI-Q MCP runtime verified" in output
+    assert "Deep Researcher Agent MCP runtime verified" in output
 
 
 def test_main_without_flag_skips_verification(capsys: pytest.CaptureFixture[str]) -> None:
     assert script_main([]) == 0
-    assert "AI-Q MCP runtime verified" not in capsys.readouterr().out
+    assert "Deep Researcher Agent MCP runtime verified" not in capsys.readouterr().out
 
 
 def test_main_rejects_unknown_arguments() -> None:

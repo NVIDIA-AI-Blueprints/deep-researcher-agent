@@ -1,5 +1,5 @@
 # Experimental zero-deployment NeMo Retriever Web configuration.
-# AI-Q, NeMo Retriever, and LanceDB run in one Python 3.12 process. The
+# Deep Researcher Agent, NeMo Retriever, and LanceDB run in one Python 3.12 process. The
 # standard web-search tools and configured inference endpoints may be remote.
 
 general:
@@ -12,8 +12,8 @@ general:
         level: INFO
 
   front_end:
-    _type: aiq_api
-    runner_class: aiq_api.plugin.AIQAPIWorker
+    _type: deep_researcher_api
+    runner_class: deep_researcher_api.plugin.DeepResearcherAPIWorker
     # Embedded Retriever owns a process-lifetime data-directory lock.
     dask_workers: threads
     db_url: ${NAT_JOB_STORE_DB_URL:-sqlite+aiosqlite:///./jobs.db}
@@ -36,9 +36,9 @@ llms:
   # OpenAI-compatible endpoint whose model supports tool calling.
   agent_llm:
     _type: openai
-    model_name: ${AIQ_AGENT_LLM_MODEL:-openai/local-tool-model}
-    base_url: ${AIQ_AGENT_LLM_BASE_URL:-http://127.0.0.1:1234/v1}
-    api_key: ${AIQ_AGENT_LLM_API_KEY:-local}
+    model_name: ${DEEP_RESEARCHER_AGENT_LLM_MODEL:-openai/local-tool-model}
+    base_url: ${DEEP_RESEARCHER_AGENT_LLM_BASE_URL:-http://127.0.0.1:1234/v1}
+    api_key: ${DEEP_RESEARCHER_AGENT_LLM_API_KEY:-local}
     temperature: 0.2
     max_tokens: 32768
     num_retries: 3
@@ -73,12 +73,12 @@ functions:
   knowledge_search:
     _type: knowledge_retrieval
     backend: nemo_retriever_local
-    collection_name: ${COLLECTION_NAME:-aiq-nrl-local}
+    collection_name: ${COLLECTION_NAME:-deep-researcher-nrl-local}
     top_k: 5
     generate_summary: false
     backend_config:
       scope: ${NRL_SCOPE:-local}
-      data_dir: ${NRL_LOCAL_DATA_DIR:-.aiq-data/nemo_retriever}
+      data_dir: ${NRL_LOCAL_DATA_DIR:-.deep-researcher-data/nemo_retriever}
       profile: ${NRL_LOCAL_PROFILE:-auto}
       # Leave URL overrides empty for NRL's hosted defaults; set them for compatible external or self-hosted NIMs.
       page_elements_invoke_url: ${NRL_PAGE_ELEMENTS_INVOKE_URL:-}
@@ -135,4 +135,4 @@ workflow:
   enable_clarifier: true
   # Keep full research in this process; detached process jobs require service mode.
   use_async_deep_research: false
-  checkpoint_db: ${AIQ_CHECKPOINT_DB:-./checkpoints.db}
+  checkpoint_db: ${DEEP_RESEARCHER_CHECKPOINT_DB:-./checkpoints.db}

@@ -3,11 +3,11 @@ SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Expose AI-Q as an MCP Server
+# Expose Deep Researcher Agent as an MCP Server
 
-AI-Q includes a standalone [Model Context Protocol](https://modelcontextprotocol.io/) server that exposes the
+Deep Researcher Agent includes a standalone [Model Context Protocol](https://modelcontextprotocol.io/) server that exposes the
 research workflow to MCP clients over stateless Streamable HTTP. The server is a public FastMCP application; it
-does not depend on a private transport SDK or the AI-Q REST API.
+does not depend on a private transport SDK or the Deep Researcher Agent REST API.
 
 The default endpoint is `http://localhost:9001/mcp`. It advertises exactly three tools:
 
@@ -24,19 +24,19 @@ required for this MCP configuration:
 |----------|---------|
 | `NVIDIA_API_KEY` | Hosted NIM inference |
 | `TAVILY_API_KEY` | Public web search |
-| `AIQ_CHECKPOINT_DB` | Shared PostgreSQL database for MCP jobs and LangGraph checkpoints |
+| `DEEP_RESEARCHER_CHECKPOINT_DB` | Shared PostgreSQL database for MCP jobs and LangGraph checkpoints |
 
-The config intentionally excludes the AI-Q API frontend, authentication providers, enterprise data sources,
+The config intentionally excludes the Deep Researcher Agent API frontend, authentication providers, enterprise data sources,
 paper search, and the second async-job layer. FastMCP owns the transport and the submit/poll lifecycle.
 
 ### Dependency isolation
 
-MCP is a separate uv project with its own `mcp/pyproject.toml`, `mcp/uv.lock`, and environment. The root AI-Q
+MCP is a separate uv project with its own `mcp/pyproject.toml`, `mcp/uv.lock`, and environment. The root Deep Researcher Agent
 workspace excludes it and keeps `cryptography>=46.0.6,<47`, which is compatible with NAT's declared requirements.
 The frozen MCP release/container profile instead pins `cryptography==50.0.0` to replace vulnerable earlier
 releases.
 
-The release-supported platform is Linux x86_64 with CPython 3.13, using either the frozen MCP project in an AI-Q
+The release-supported platform is Linux x86_64 with CPython 3.13, using either the frozen MCP project in an Deep Researcher Agent
 source checkout or the release container built from the repository root. CI validates the production environment
 and container on that platform. Other 64-bit source hosts are development-only. `cryptography` 50 no longer ships
 x86_64 macOS or 32-bit Windows wheels. Those platforms are unsupported by the frozen profile; run the Linux
@@ -45,7 +45,7 @@ release container on a supported 64-bit Linux/container host. See the
 another target.
 
 Here, *standalone* describes the MCP process and transport boundary, not a generic Python wheel.
-`aiq-mcp-server` depends on `aiq-agent`, `tavily-web-search`, and other packages supplied by this repository; that
+`deep-researcher-mcp-server` depends on `deep-researcher-agent`, `tavily-web-search`, and other packages supplied by this repository; that
 complete dependency closure is not published to a Python package index. Its locally buildable wheel is an internal
 implementation artifact and is marked `Private :: Do Not Upload`.
 
@@ -58,40 +58,40 @@ For a local source checkout, start PostgreSQL and then run:
 ```bash
 export NVIDIA_API_KEY="your-nvidia-api-key"  # pragma: allowlist secret
 export TAVILY_API_KEY="your-tavily-api-key"  # pragma: allowlist secret
-export AIQ_CHECKPOINT_DB="postgresql://aiq:local_mcp_password@127.0.0.1:1234/aiq_jobs"  # pragma: allowlist secret
+export DEEP_RESEARCHER_CHECKPOINT_DB="postgresql://deep_researcher:local_mcp_password@127.0.0.1:1234/deep_researcher_jobs"  # pragma: allowlist secret
 uv sync --project mcp --frozen
-uv run --project mcp --frozen aiq-mcp-server
+uv run --project mcp --frozen deep-researcher-mcp-server
 ```
 
 The component accepts these runtime settings:
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `AIQ_MCP_HOST` | `0.0.0.0` | Uvicorn bind host |
-| `AIQ_MCP_PORT` | `9001` | Uvicorn bind port |
-| `AIQ_MCP_PATH` | `/mcp` | Streamable HTTP path |
-| `AIQ_MCP_WORKERS` | `1` | Independent workflow-owning worker processes |
-| `AIQ_MCP_LOG_LEVEL` | `INFO` | Python and Uvicorn log level |
-| `AIQ_MCP_CONFIG` | `configs/config_mcp.yml` | NAT workflow configuration |
-| `AIQ_MCP_ENV_FILE` | `deploy/.env` | Optional dotenv file; process variables take precedence |
-| `AIQ_MCP_SHALLOW_INLINE_WAIT_SECONDS` | `30` | Shallow-query inline wait window |
-| `AIQ_MCP_MAX_QUERY_CHARS` | `8000` | Maximum accepted `submit_query` query length in characters |
-| `AIQ_MCP_CORS_ORIGINS` | `http://localhost:6274` | Browser CORS allowlist; an empty value disables CORS |
-| `AIQ_MCP_ALLOWED_HOSTS` | Local hosts | Valid HTTP `Host` values |
-| `AIQ_MCP_ALLOWED_ORIGINS` | Local HTTP origins | Valid browser `Origin` values |
+| `DEEP_RESEARCHER_MCP_HOST` | `0.0.0.0` | Uvicorn bind host |
+| `DEEP_RESEARCHER_MCP_PORT` | `9001` | Uvicorn bind port |
+| `DEEP_RESEARCHER_MCP_PATH` | `/mcp` | Streamable HTTP path |
+| `DEEP_RESEARCHER_MCP_WORKERS` | `1` | Independent workflow-owning worker processes |
+| `DEEP_RESEARCHER_MCP_LOG_LEVEL` | `INFO` | Python and Uvicorn log level |
+| `DEEP_RESEARCHER_MCP_CONFIG` | `configs/config_mcp.yml` | NAT workflow configuration |
+| `DEEP_RESEARCHER_MCP_ENV_FILE` | `deploy/.env` | Optional dotenv file; process variables take precedence |
+| `DEEP_RESEARCHER_MCP_SHALLOW_INLINE_WAIT_SECONDS` | `30` | Shallow-query inline wait window |
+| `DEEP_RESEARCHER_MCP_MAX_QUERY_CHARS` | `8000` | Maximum accepted `submit_query` query length in characters |
+| `DEEP_RESEARCHER_MCP_CORS_ORIGINS` | `http://localhost:6274` | Browser CORS allowlist; an empty value disables CORS |
+| `DEEP_RESEARCHER_MCP_ALLOWED_HOSTS` | Local hosts | Valid HTTP `Host` values |
+| `DEEP_RESEARCHER_MCP_ALLOWED_ORIGINS` | Local HTTP origins | Valid browser `Origin` values |
 
 ## Component and lifecycle
 
-The repository directory is `mcp/`, the distribution is `aiq-mcp-server`, and the Python import package is
-`aiq_mcp`. This avoids shadowing the third-party `mcp` package.
+The repository directory is `mcp/`, the distribution is `deep-researcher-mcp-server`, and the Python import package is
+`deep_researcher_mcp`. This avoids shadowing the third-party `mcp` package.
 
 | Path | Responsibility |
 |------|----------------|
-| `mcp/src/aiq_mcp/server.py` | FastMCP tools, Starlette routes, process lifecycle, and Uvicorn launcher |
-| `mcp/src/aiq_mcp/workflow_runner.py` | Long-lived NAT workflow and sessions |
-| `mcp/src/aiq_mcp/jobs.py` | Classification, background work, state rendering, polling, and cleanup |
-| `mcp/src/aiq_mcp/job_store.py` | Shared PostgreSQL job ledger |
-| `mcp/src/aiq_mcp/checkpoint_todos.py` | Best-effort LangGraph todo progress |
+| `mcp/src/deep_researcher_mcp/server.py` | FastMCP tools, Starlette routes, process lifecycle, and Uvicorn launcher |
+| `mcp/src/deep_researcher_mcp/workflow_runner.py` | Long-lived NAT workflow and sessions |
+| `mcp/src/deep_researcher_mcp/jobs.py` | Classification, background work, state rendering, polling, and cleanup |
+| `mcp/src/deep_researcher_mcp/job_store.py` | Shared PostgreSQL job ledger |
+| `mcp/src/deep_researcher_mcp/checkpoint_todos.py` | Best-effort LangGraph todo progress |
 | `mcp/deploy/init-mcp-db.sql` | Idempotent job-ledger bootstrap |
 
 An outer Starlette lifespan starts the NAT workflow, job manager, and MCP session manager once per Uvicorn worker.
@@ -230,13 +230,13 @@ The server does not require an `Authorization` header. Every call uses the const
 `anonymous`; the random job UUID is therefore a bearer capability. Anyone who obtains it can poll or retrieve the
 job until its database row expires. Do not put job IDs in URLs, logs, analytics, or support messages.
 
-`AIQ_MCP_ALLOWED_HOSTS` and `AIQ_MCP_ALLOWED_ORIGINS` protect browser-reachable deployments from DNS rebinding and
+`DEEP_RESEARCHER_MCP_ALLOWED_HOSTS` and `DEEP_RESEARCHER_MCP_ALLOWED_ORIGINS` protect browser-reachable deployments from DNS rebinding and
 untrusted web origins. CORS controls which browser applications may read responses. None of these settings
 authenticate a user or create per-user authorization. Headless clients normally omit `Origin` but must send an
 allowed `Host`.
 
 An unauthenticated MCP endpoint can consume model/search quota. The server rejects `submit_query` requests whose
-query exceeds `AIQ_MCP_MAX_QUERY_CHARS` characters before any job is enqueued, but it does not rate-limit callers.
+query exceeds `DEEP_RESEARCHER_MCP_MAX_QUERY_CHARS` characters before any job is enqueued, but it does not rate-limit callers.
 Do not expose it directly to an untrusted network. Use network policy, an authenticated reverse proxy or gateway,
 request and rate limits, and deployment monitoring when running beyond a trusted local environment.
 
@@ -251,7 +251,7 @@ docker compose -f deploy/compose/docker-compose.mcp.yaml up --detach --build --w
 ```
 
 The MCP endpoint is `http://127.0.0.1:9001/mcp`; PostgreSQL is published at `127.0.0.1:1234`. The local stack uses
-a fixed development-only database password. Production should inject `AIQ_CHECKPOINT_DB` from secret management
+a fixed development-only database password. Production should inject `DEEP_RESEARCHER_CHECKPOINT_DB` from secret management
 and should not reuse the local Compose database credentials.
 
 The image contains no private package indexes, private deployment metadata, bundled certificate authority, or
@@ -278,7 +278,7 @@ The behavioral contract is frozen in `mcp/REFERENCE_PARITY.md`. The intentional 
 
 - FastMCP and an outer Starlette lifespan provide the transport and worker lifecycle.
 - Authentication, token propagation, private feedback hooks, and registry metadata are not included.
-- Public `AIQ_MCP_*`, `NVIDIA_API_KEY`, `TAVILY_API_KEY`, and `AIQ_CHECKPOINT_DB` settings replace private startup
+- Public `DEEP_RESEARCHER_MCP_*`, `NVIDIA_API_KEY`, `TAVILY_API_KEY`, and `DEEP_RESEARCHER_CHECKPOINT_DB` settings replace private startup
   inputs.
 - The default workflow uses public NIM and Tavily only; enterprise sources, private prompts/indexes, and paper
   search are not part of this configuration.

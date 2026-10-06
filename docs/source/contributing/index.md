@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Contributing
 
-Guidelines for contributing to the AI-Q blueprint.
+Guidelines for contributing to the Deep Researcher Agent blueprint.
 
 - **[Development Setup](./development-setup.md)** — Clone, install, and configure your dev environment
 - **[Code Organization](./code-organization.md)** — Directory structure, plugin system, entry points

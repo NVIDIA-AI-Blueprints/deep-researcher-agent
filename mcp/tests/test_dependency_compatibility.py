@@ -14,7 +14,7 @@ import pytest
 from mcp.shared.version import LATEST_PROTOCOL_VERSION
 from mcp.shared.version import SUPPORTED_PROTOCOL_VERSIONS
 
-from aiq_mcp.workflow_runner import WorkflowRunner
+from deep_researcher_mcp.workflow_runner import WorkflowRunner
 from nat.builder.context import Context
 from nat.runtime.loader import load_workflow
 from nat.runtime.session import SessionManager
@@ -27,7 +27,7 @@ def test_runtime_dependency_versions_are_the_validated_compatibility_baseline() 
     assert version("mcp") == "1.28.1"
     assert version("nvidia-nat") == "1.8.0"
     assert version("nvidia-nat-core") == "1.8.0"
-    assert version("aiq-agent") == "2.2.0"
+    assert version("deep-researcher-agent") == "2.2.0"
     assert version("cryptography") == "50.0.0"
 
 
@@ -73,10 +73,10 @@ def test_reference_snapshot_and_intentional_deviations_are_recorded() -> None:
 async def test_nat_18_loads_the_real_public_mcp_workflow(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    postgres_url = os.getenv("AIQ_MCP_TEST_DB_URL")
+    postgres_url = os.getenv("DEEP_RESEARCHER_MCP_TEST_DB_URL")
     if not postgres_url:
-        pytest.skip("set AIQ_MCP_TEST_DB_URL to load the real NAT MCP workflow")
-    monkeypatch.setenv("AIQ_CHECKPOINT_DB", postgres_url)
+        pytest.skip("set DEEP_RESEARCHER_MCP_TEST_DB_URL to load the real NAT MCP workflow")
+    monkeypatch.setenv("DEEP_RESEARCHER_CHECKPOINT_DB", postgres_url)
     monkeypatch.setenv("NVIDIA_API_KEY", "not-a-real-key")  # pragma: allowlist secret
     monkeypatch.setenv("TAVILY_API_KEY", "not-a-real-key")  # pragma: allowlist secret
     runner = WorkflowRunner(_REPO_ROOT / "configs" / "config_mcp.yml")

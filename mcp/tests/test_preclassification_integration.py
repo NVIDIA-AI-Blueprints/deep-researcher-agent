@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Integration guard for AIQ-001: the caller's depth decision is reused by the real workflow.
+"""Integration guard for DeepResearcher-001: the caller's depth decision is reused by the real workflow.
 
 Loads the real public MCP workflow and drives its ``intent_classifier`` node through the
 genuine ``nat.Function.ainvoke`` wrapper (not a hand-rolled stand-in), with the intent LLM
@@ -19,11 +19,11 @@ import pytest
 from langchain_core.messages import AIMessage
 from langchain_core.messages import HumanMessage
 
-from aiq_agent.agents.chat_researcher.models import ChatResearcherState
-from aiq_agent.agents.chat_researcher.preclassification import preclassified_depth
-from aiq_mcp.jobs import _extract_depth
-from aiq_mcp.jobs import _extract_intent
-from aiq_mcp.workflow_runner import WorkflowRunner
+from deep_researcher_agent.agents.chat_researcher.models import ChatResearcherState
+from deep_researcher_agent.agents.chat_researcher.preclassification import preclassified_depth
+from deep_researcher_mcp.jobs import _extract_depth
+from deep_researcher_mcp.jobs import _extract_intent
+from deep_researcher_mcp.workflow_runner import WorkflowRunner
 from nat.builder.workflow_builder import WorkflowBuilder
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -58,14 +58,14 @@ async def test_preclassified_depth_overrides_intent_llm_through_real_workflow(
     * with the hook set to a *different* depth (``shallow``), the node short-circuits — the
       intent LLM is not invoked a second time and the preset depth wins.
 
-    That is exactly the AIQ-001 contract: the classification made once in ``submit()`` is the
+    That is exactly the DeepResearcher-001 contract: the classification made once in ``submit()`` is the
     one the workflow executes, rather than a fresh temperature-``0.5`` decision that can differ.
     """
-    postgres_url = os.getenv("AIQ_MCP_TEST_DB_URL")
+    postgres_url = os.getenv("DEEP_RESEARCHER_MCP_TEST_DB_URL")
     if not postgres_url:
-        pytest.skip("set AIQ_MCP_TEST_DB_URL to load the real NAT MCP workflow")
+        pytest.skip("set DEEP_RESEARCHER_MCP_TEST_DB_URL to load the real NAT MCP workflow")
 
-    monkeypatch.setenv("AIQ_CHECKPOINT_DB", postgres_url)
+    monkeypatch.setenv("DEEP_RESEARCHER_CHECKPOINT_DB", postgres_url)
     monkeypatch.setenv("NVIDIA_API_KEY", "not-a-real-key")  # pragma: allowlist secret
     monkeypatch.setenv("TAVILY_API_KEY", "not-a-real-key")  # pragma: allowlist secret
 

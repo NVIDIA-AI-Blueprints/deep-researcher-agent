@@ -32,14 +32,14 @@ from knowledge_layer.register import _format_results
 from knowledge_layer.register import _setup_backend
 from pydantic import SecretStr
 
-from aiq_agent.knowledge import BaseIngestor
-from aiq_agent.knowledge import BaseRetriever
-from aiq_agent.knowledge import ContentType
-from aiq_agent.knowledge import RetrievalResult
-from aiq_agent.knowledge.factory import is_ingestor_registered
-from aiq_agent.knowledge.factory import is_retriever_registered
-from aiq_agent.knowledge.schema import FileStatus
-from aiq_agent.knowledge.schema import JobState
+from deep_researcher_agent.knowledge import BaseIngestor
+from deep_researcher_agent.knowledge import BaseRetriever
+from deep_researcher_agent.knowledge import ContentType
+from deep_researcher_agent.knowledge import RetrievalResult
+from deep_researcher_agent.knowledge.factory import is_ingestor_registered
+from deep_researcher_agent.knowledge.factory import is_retriever_registered
+from deep_researcher_agent.knowledge.schema import FileStatus
+from deep_researcher_agent.knowledge.schema import JobState
 
 
 class FakeIndexingResult:
@@ -281,7 +281,7 @@ def _config(**overrides):
         "embed_dim": 4,
         "embed_base_url": "https://integrate.api.nvidia.com/v1",
         "start_ttl_cleanup": False,
-        "index_prefix": "aiq-test",
+        "index_prefix": "deep-researcher-test",
     }
     config.update(overrides)
     return config
@@ -372,10 +372,10 @@ def test_config_requires_endpoint_and_omits_removed_azure_options(monkeypatch):
 def test_config_uses_shared_environment_defaults(monkeypatch):
     monkeypatch.setenv("AZURE_SEARCH_ENDPOINT", "https://env.search.windows.net")
     monkeypatch.setenv("AZURE_SEARCH_API_KEY", "env-search-key")
-    monkeypatch.setenv("AIQ_AZURE_SEARCH_INDEX_PREFIX", "env-aiq")
-    monkeypatch.setenv("AIQ_EMBED_BASE_URL", "https://embed.example.com/v1")
-    monkeypatch.setenv("AIQ_EMBED_MODEL", "env-embed")
-    monkeypatch.setenv("AIQ_EMBED_DIM", "8")
+    monkeypatch.setenv("DEEP_RESEARCHER_AZURE_SEARCH_INDEX_PREFIX", "env-deep-researcher")
+    monkeypatch.setenv("DEEP_RESEARCHER_EMBED_BASE_URL", "https://embed.example.com/v1")
+    monkeypatch.setenv("DEEP_RESEARCHER_EMBED_MODEL", "env-embed")
+    monkeypatch.setenv("DEEP_RESEARCHER_EMBED_DIM", "8")
 
     config = KnowledgeRetrievalConfig(backend="azure_ai_search")
     backend, backend_config = _setup_backend(config)
@@ -384,7 +384,7 @@ def test_config_uses_shared_environment_defaults(monkeypatch):
     assert backend == "azure_ai_search"
     assert backend_config["endpoint"] == "https://env.search.windows.net/"
     assert backend_config["api_key"].get_secret_value() == "env-search-key"
-    assert backend_config["index_prefix"] == "env-aiq"
+    assert backend_config["index_prefix"] == "env-deep-researcher"
     assert backend_config["embed_base_url"] == "https://embed.example.com/v1"
     assert backend_config["embed_model"] == "env-embed"
     assert backend_config["embed_dim"] == 8
@@ -392,22 +392,22 @@ def test_config_uses_shared_environment_defaults(monkeypatch):
 
 
 def test_config_uses_defaults_for_empty_azure_environment_values(monkeypatch):
-    monkeypatch.setenv("AIQ_AZURE_SEARCH_INDEX_PREFIX", "")
-    monkeypatch.setenv("AIQ_EMBED_DIM", "")
+    monkeypatch.setenv("DEEP_RESEARCHER_AZURE_SEARCH_INDEX_PREFIX", "")
+    monkeypatch.setenv("DEEP_RESEARCHER_EMBED_DIM", "")
 
     config = KnowledgeRetrievalConfig(
         backend="azure_ai_search",
         azure_search_endpoint="https://example.search.windows.net",
     )
 
-    assert config.azure_search_index_prefix == "aiq"
+    assert config.azure_search_index_prefix == "deep-researcher"
     assert config.embed_dim == 2048
 
 
 def test_shared_embedding_defaults_match_adapter(monkeypatch):
-    monkeypatch.setenv("AIQ_EMBED_BASE_URL", "")
-    monkeypatch.delenv("AIQ_EMBED_MODEL", raising=False)
-    monkeypatch.delenv("AIQ_EMBED_DIM", raising=False)
+    monkeypatch.setenv("DEEP_RESEARCHER_EMBED_BASE_URL", "")
+    monkeypatch.delenv("DEEP_RESEARCHER_EMBED_MODEL", raising=False)
+    monkeypatch.delenv("DEEP_RESEARCHER_EMBED_DIM", raising=False)
 
     config = KnowledgeRetrievalConfig(
         backend="azure_ai_search",
@@ -440,14 +440,14 @@ def test_setup_backend_preserves_secrets_and_prefix(monkeypatch):
         backend="azure_ai_search",
         azure_search_endpoint="https://example.search.windows.net",
         azure_search_api_key="test-search-key",  # pragma: allowlist secret
-        azure_search_index_prefix="tenant-aiq",
+        azure_search_index_prefix="tenant-deep-researcher",
     )
 
     backend, backend_config = _setup_backend(config)
 
     assert backend == "azure_ai_search"
     assert isinstance(backend_config["api_key"], SecretStr)
-    assert backend_config["index_prefix"] == "tenant-aiq"
+    assert backend_config["index_prefix"] == "tenant-deep-researcher"
 
 
 def test_search_api_key_survives_nat_json_serialization():
@@ -464,11 +464,11 @@ def test_search_api_key_survives_nat_json_serialization():
 
 
 def test_index_name_is_stable_and_changes_with_embedding_configuration():
-    index = _index_name_for_config("AIQ Prod", "test/embed", 2048)
+    index = _index_name_for_config("Deep Researcher Agent Prod", "test/embed", 2048)
 
-    assert index == _index_name_for_config("AIQ Prod", "test/embed", 2048)
-    assert index != _index_name_for_config("AIQ Prod", "other/embed", 2048)
-    assert index != _index_name_for_config("AIQ Prod", "test/embed", 1024)
+    assert index == _index_name_for_config("Deep Researcher Agent Prod", "test/embed", 2048)
+    assert index != _index_name_for_config("Deep Researcher Agent Prod", "other/embed", 2048)
+    assert index != _index_name_for_config("Deep Researcher Agent Prod", "test/embed", 1024)
     assert len(index) <= 128
     assert re.fullmatch(r"[a-z0-9-]+", index)
     _validate_index_name(index)
@@ -477,9 +477,9 @@ def test_index_name_is_stable_and_changes_with_embedding_configuration():
 
 
 def test_marker_and_schema_validation_reject_unowned_and_mismatched_indexes():
-    cfg = SimpleNamespace(embed_model="test-embed", embed_dim=4, index_prefix="aiq-test")
+    cfg = SimpleNamespace(embed_model="test-embed", embed_dim=4, index_prefix="deep-researcher-test")
     marker = _new_marker(cfg)
-    index = _build_index_schema("aiq-docs-123456789abc", 4, _encode_marker(marker))
+    index = _build_index_schema("deep-researcher-docs-123456789abc", 4, _encode_marker(marker))
 
     assert _validate_index_schema(index, cfg)["schema_version"] == 1
     assert "metadata" not in marker
@@ -534,8 +534,8 @@ def test_mismatched_and_foreign_indexes_are_ignored():
     ingestor, _client = _ingestor()
     mismatched_marker = _new_marker(ingestor.cfg)
     mismatched_marker["schema_version"] = azure_adapter._SCHEMA_VERSION + 1
-    ingestor._index_client.indexes["aiq-test-docs-mismatched"] = _build_index_schema(
-        "aiq-test-docs-mismatched",
+    ingestor._index_client.indexes["deep-researcher-test-docs-mismatched"] = _build_index_schema(
+        "deep-researcher-test-docs-mismatched",
         ingestor.cfg.embed_dim,
         _encode_marker(mismatched_marker),
     )
@@ -1435,7 +1435,7 @@ async def test_health_checks_run_sync_sdk_off_event_loop(monkeypatch):
 
 
 def test_index_schema_uses_requested_dimensions_and_fields():
-    schema = _build_index_schema("aiq-session-123456789abc", 4096)
+    schema = _build_index_schema("deep-researcher-session-123456789abc", 4096)
     fields = {field.name: field for field in schema.fields}
 
     assert fields["embedding"].vector_search_dimensions == 4096

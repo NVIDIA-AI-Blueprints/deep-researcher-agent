@@ -12,7 +12,7 @@ This is a good starting point for understanding the config structure before addi
 ```{warning}
 This example preserves the shipped Lightning shallow profile. The NVIDIA API Catalog serving profile has a known
 [shallow citation-output limitation](../resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog).
-AI-Q fails closed rather than publishing citation-incomplete drafts. Use Nemotron Ultra for the shallow role or a
+Deep Researcher Agent fails closed rather than publishing citation-incomplete drafts. Use Nemotron Ultra for the shallow role or a
 validated self-hosted Lightning profile when reliability is the priority.
 ```
 
@@ -108,8 +108,8 @@ To serve the shallow researcher over HTTP, add a `front_end` section:
 ```yaml
 general:
   front_end:
-    _type: aiq_api
-    runner_class: aiq_api.plugin.AIQAPIWorker
+    _type: deep_researcher_api
+    runner_class: deep_researcher_api.plugin.DeepResearcherAPIWorker
     db_url: sqlite+aiosqlite:///./jobs.db
     expiry_seconds: 86400
   telemetry:

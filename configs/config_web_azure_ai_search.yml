@@ -12,8 +12,8 @@ general:
         level: INFO
 
   front_end:
-    _type: aiq_api
-    runner_class: aiq_api.plugin.AIQAPIWorker
+    _type: deep_researcher_api
+    runner_class: deep_researcher_api.plugin.DeepResearcherAPIWorker
     # =========================================================================
     # Knowledge API is automatically enabled when knowledge_retrieval function
     # is configured
@@ -57,7 +57,7 @@ llms:
       enable_thinking: false
 
   # Known limitation: Build-hosted Lightning can intermittently produce citation-incomplete shallow drafts.
-  # AI-Q fails closed; see docs/source/resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog.
+  # Deep Researcher Agent fails closed; see docs/source/resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog.
   nemotron_lightning_agent_llm:
     _type: nim
     model_name: nvidia/nemotron-3.5-lightning-30b-a3b
@@ -166,10 +166,10 @@ functions:
   knowledge_search:
     _type: knowledge_retrieval
     backend: azure_ai_search
-    collection_name: ${COLLECTION_NAME:-aiq_default}
+    collection_name: ${COLLECTION_NAME:-deep_researcher_default}
     generate_summary: true
     summary_model: summary_llm                     # Required when generate_summary: true
-    summary_db: ${AIQ_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
+    summary_db: ${DEEP_RESEARCHER_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
     top_k: 5
 
   # Paper Search (optional - requires SERPER_API_KEY)
@@ -229,4 +229,4 @@ workflow:
   enable_escalation: true
   enable_clarifier: true
   use_async_deep_research: true
-  checkpoint_db: ${AIQ_CHECKPOINT_DB:-./checkpoints.db}
+  checkpoint_db: ${DEEP_RESEARCHER_CHECKPOINT_DB:-./checkpoints.db}

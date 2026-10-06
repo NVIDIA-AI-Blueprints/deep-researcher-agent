@@ -1,0 +1,43 @@
+[
+  {
+    "id": "deep-researcher-deploy-001-install-asks-mode",
+    "question": "I want to install Deep Researcher Agent.",
+    "expected_skill": "deep-researcher-deploy",
+    "expected_script": null,
+    "ground_truth": "The agent treats this as an ambiguous deployment request and asks how the user wants to run Deep Researcher Agent before starting services.",
+    "expected_behavior": [
+      "Routes to deep-researcher-deploy",
+      "Asks the deployment mode selection question",
+      "Includes Skill backend, CLI, UI, and Custom as choices",
+      "Does not start services before the user chooses a mode"
+    ]
+  },
+  {
+    "id": "deep-researcher-deploy-002-skill-backend",
+    "question": "Deploy Deep Researcher Agent as a Skill backend so deep-researcher-research can use it.",
+    "expected_skill": "deep-researcher-deploy",
+    "expected_script": null,
+    "ground_truth": "The agent routes to deep-researcher-deploy, follows the Skill backend deployment path, prepares deploy/.env only if needed, avoids printing secrets, starts a backend-only Deep Researcher Agent service, runs basic validation, and returns DEEP_RESEARCHER_SERVER_URL for deep-researcher-research.",
+    "expected_behavior": [
+      "Routes to deep-researcher-deploy",
+      "Locates or clones the Deep Researcher Agent repository",
+      "Creates deploy/.env from deploy/.env.example only when missing",
+      "Checks secret presence without printing secret values",
+      "Starts a backend-only service without requiring the browser UI",
+      "Runs basic validation",
+      "Reports the verified DEEP_RESEARCHER_SERVER_URL"
+    ]
+  },
+  {
+    "id": "deep-researcher-deploy-003-negative-research-request",
+    "question": "Use Deep Researcher Agent to write a deep research report about GPU memory optimization.",
+    "expected_skill": null,
+    "expected_script": null,
+    "ground_truth": "The agent does not use deep-researcher-deploy for a research request. It should use deep-researcher-research if a backend is already available, or only route to deployment if no backend exists.",
+    "expected_behavior": [
+      "Does not route to deep-researcher-deploy as the primary skill",
+      "Does not ask for deployment mode immediately",
+      "Does not start services before checking whether an Deep Researcher Agent backend is available"
+    ]
+  }
+]

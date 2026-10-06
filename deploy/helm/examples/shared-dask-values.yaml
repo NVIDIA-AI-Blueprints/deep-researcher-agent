@@ -6,14 +6,14 @@
 # cross-job parallelism and isolation; a single job's internal async research
 # fan-out remains inside the worker that owns that job.
 
-x-aiq-agent-image: &aiq-agent-image
+x-deep-researcher-agent-image: &deep-researcher-agent-image
   repository: nvcr.io/nvidia/blueprint/aiq-agent
   tag: "2.2.0"
   pullPolicy: IfNotPresent
 
-x-dask-scheduler-address: &dask-scheduler-address tls://aiq-dask-scheduler:8786
+x-dask-scheduler-address: &dask-scheduler-address tls://deep-researcher-dask-scheduler:8786
 
-aiq:
+deep-researcher:
   apps:
     backend:
       env:
@@ -29,10 +29,10 @@ aiq:
       volumes:
         - name: postgres-init
           configMap:
-            name: aiq-postgres-init
+            name: deep-researcher-postgres-init
         - name: dask-client-tls
           secret:
-            secretName: aiq-dask-client-tls # pragma: allowlist secret
+            secretName: deep-researcher-dask-client-tls # pragma: allowlist secret
 
     dask-scheduler:
       enabled: true
@@ -40,7 +40,7 @@ aiq:
       replicas: 1
       deploymentStrategy:
         type: Recreate
-      image: *aiq-agent-image
+      image: *deep-researcher-agent-image
       command:
         - dask-scheduler
       args:
@@ -108,12 +108,12 @@ aiq:
       volumes:
         - name: dask-scheduler-tls
           secret:
-            secretName: aiq-dask-scheduler-tls # pragma: allowlist secret
+            secretName: deep-researcher-dask-scheduler-tls # pragma: allowlist secret
 
     dask-worker:
       enabled: true
       replicas: 4
-      image: *aiq-agent-image
+      image: *deep-researcher-agent-image
       command:
         - dask-worker
       args:
@@ -145,13 +145,13 @@ aiq:
       env:
         NAT_DASK_SCHEDULER_ADDRESS: *dask-scheduler-address
         CONFIG_FILE: configs/config_web_default_llamaindex.yml
-        NAT_JOB_STORE_DB_URL: postgresql+asyncpg://$(DB_USER_NAME):$(DB_USER_PASSWORD)@aiq-postgres:5432/aiq_jobs
-        AIQ_CHECKPOINT_DB: postgresql://$(DB_USER_NAME):$(DB_USER_PASSWORD)@aiq-postgres:5432/aiq_jobs
-        AIQ_SUMMARY_DB: postgresql+asyncpg://$(DB_USER_NAME):$(DB_USER_PASSWORD)@aiq-postgres:5432/aiq_jobs
+        NAT_JOB_STORE_DB_URL: postgresql+asyncpg://$(DB_USER_NAME):$(DB_USER_PASSWORD)@deep-researcher-postgres:5432/deep_researcher_jobs
+        DEEP_RESEARCHER_CHECKPOINT_DB: postgresql://$(DB_USER_NAME):$(DB_USER_PASSWORD)@deep-researcher-postgres:5432/deep_researcher_jobs
+        DEEP_RESEARCHER_SUMMARY_DB: postgresql+asyncpg://$(DB_USER_NAME):$(DB_USER_PASSWORD)@deep-researcher-postgres:5432/deep_researcher_jobs
         RAG_SERVER_URL: http://rag-server:8080
         RAG_INGEST_URL: http://rag-ingest:8080
         COLLECTION_NAME: default_collection
-        AIQ_CHROMA_DIR: /app/data/chroma
+        DEEP_RESEARCHER_CHROMA_DIR: /app/data/chroma
         MODE: web
         DASK_DISTRIBUTED__LOGGING__DISTRIBUTED: warning
         DASK_DISTRIBUTED__COMM__REQUIRE_ENCRYPTION: "true"
@@ -164,4 +164,4 @@ aiq:
       volumes:
         - name: dask-worker-tls
           secret:
-            secretName: aiq-dask-worker-tls # pragma: allowlist secret
+            secretName: deep-researcher-dask-worker-tls # pragma: allowlist secret

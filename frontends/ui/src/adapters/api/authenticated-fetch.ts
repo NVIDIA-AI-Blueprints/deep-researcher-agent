@@ -5,7 +5,7 @@
  * Authenticated Fetch Wrapper
  *
  * Provides a fetch wrapper that automatically adds authentication headers
- * to requests sent to the AI-Q backend.
+ * to requests sent to the Deep Researcher Agent backend.
  */
 
 import { getSession } from 'next-auth/react'

@@ -11,16 +11,16 @@ from types import SimpleNamespace
 import pytest
 from langchain_core.messages import HumanMessage
 
-from aiq_agent.agents.chat_researcher.models import RESEARCH_WORKFLOW_FAILURE_ERROR
-from aiq_agent.agents.chat_researcher.models import ChatResearcherResponse
-from aiq_agent.agents.chat_researcher.models import ChatResearcherState
-from aiq_agent.agents.chat_researcher.models import WorkflowFailure
-from aiq_agent.agents.chat_researcher.models import WorkflowOutcome
-from aiq_agent.agents.chat_researcher.models import WorkflowSuccess
-from aiq_agent.common import _create_chat_response
-from aiq_agent.common.logging_utils import log_identifier_ref
-from aiq_mcp import workflow_runner as workflow_runner_module
-from aiq_mcp.workflow_runner import WorkflowRunner
+from deep_researcher_agent.agents.chat_researcher.models import RESEARCH_WORKFLOW_FAILURE_ERROR
+from deep_researcher_agent.agents.chat_researcher.models import ChatResearcherResponse
+from deep_researcher_agent.agents.chat_researcher.models import ChatResearcherState
+from deep_researcher_agent.agents.chat_researcher.models import WorkflowFailure
+from deep_researcher_agent.agents.chat_researcher.models import WorkflowOutcome
+from deep_researcher_agent.agents.chat_researcher.models import WorkflowSuccess
+from deep_researcher_agent.common import _create_chat_response
+from deep_researcher_agent.common.logging_utils import log_identifier_ref
+from deep_researcher_mcp import workflow_runner as workflow_runner_module
+from deep_researcher_mcp.workflow_runner import WorkflowRunner
 from nat.builder.context import Context
 
 
@@ -142,7 +142,7 @@ async def test_run_query_returns_structured_outcome_and_restores_context(
 
     runner = WorkflowRunner(tmp_path / "config.yml")
     runner._session_manager = _SessionManager()  # type: ignore[assignment]
-    caplog.set_level(logging.INFO, logger="aiq_mcp.workflow_runner")
+    caplog.set_level(logging.INFO, logger="deep_researcher_mcp.workflow_runner")
 
     with Context.scope(conversation_id="outer"):
         assert await runner.run_query("query", conversation_id=job_id) == workflow_outcome
@@ -162,7 +162,7 @@ async def test_run_query_returns_structured_outcome_and_restores_context(
 
 @pytest.mark.asyncio
 async def test_workflow_runner_closes_only_owned_checkpointers(monkeypatch, tmp_path) -> None:
-    from aiq_agent import common as aiq_common
+    from deep_researcher_agent import common as deep_researcher_common
 
     closed: list[str] = []
 
@@ -176,11 +176,11 @@ async def test_workflow_runner_closes_only_owned_checkpointers(monkeypatch, tmp_
 
     preexisting = object()
     monkeypatch.setattr(
-        aiq_common,
+        deep_researcher_common,
         "_checkpointers",
         {"preexisting": preexisting, "owned": SimpleNamespace(conn=_Connection())},
     )
-    monkeypatch.setattr(aiq_common, "_postgres_pools", {"owned": _Pool()})
+    monkeypatch.setattr(deep_researcher_common, "_postgres_pools", {"owned": _Pool()})
 
     runner = WorkflowRunner(tmp_path / "config.yml")
     runner._owned_checkpointer_keys = {"owned"}
@@ -188,23 +188,23 @@ async def test_workflow_runner_closes_only_owned_checkpointers(monkeypatch, tmp_
     await runner._close_owned_checkpointers()
 
     assert closed == ["connection", "pool"]
-    assert aiq_common._checkpointers == {"preexisting": preexisting}
-    assert aiq_common._postgres_pools == {}
+    assert deep_researcher_common._checkpointers == {"preexisting": preexisting}
+    assert deep_researcher_common._postgres_pools == {}
     assert runner._owned_checkpointer_keys == set()
 
 
 @pytest.mark.asyncio
 async def test_close_owned_checkpointers_warns_when_expected_caches_missing(monkeypatch, tmp_path, caplog) -> None:
-    """If aiq_agent renames/removes the private caches, cleanup must warn, not silently no-op."""
-    from aiq_agent import common as aiq_common
+    """If deep_researcher_agent renames/removes the private caches, cleanup must warn, not silently no-op."""
+    from deep_researcher_agent import common as deep_researcher_common
 
-    monkeypatch.delattr(aiq_common, "_checkpointers", raising=False)
-    monkeypatch.delattr(aiq_common, "_postgres_pools", raising=False)
+    monkeypatch.delattr(deep_researcher_common, "_checkpointers", raising=False)
+    monkeypatch.delattr(deep_researcher_common, "_postgres_pools", raising=False)
 
     runner = WorkflowRunner(tmp_path / "config.yml")
     runner._owned_checkpointer_keys = {"owned"}
 
-    caplog.set_level(logging.WARNING, logger="aiq_mcp.workflow_runner")
+    caplog.set_level(logging.WARNING, logger="deep_researcher_mcp.workflow_runner")
     await runner._close_owned_checkpointers()
 
     warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
@@ -218,15 +218,15 @@ async def test_close_owned_checkpointers_warns_when_expected_caches_missing(monk
 async def test_close_owned_checkpointers_warns_even_without_recorded_owned_keys(monkeypatch, tmp_path, caplog) -> None:
     """The rename case: start() records no owned keys because the snapshot read the old
     name, so the warning must fire even though _owned_checkpointer_keys is empty."""
-    from aiq_agent import common as aiq_common
+    from deep_researcher_agent import common as deep_researcher_common
 
-    monkeypatch.delattr(aiq_common, "_checkpointers", raising=False)
-    monkeypatch.delattr(aiq_common, "_postgres_pools", raising=False)
+    monkeypatch.delattr(deep_researcher_common, "_checkpointers", raising=False)
+    monkeypatch.delattr(deep_researcher_common, "_postgres_pools", raising=False)
 
     runner = WorkflowRunner(tmp_path / "config.yml")
     assert runner._owned_checkpointer_keys == set()
 
-    caplog.set_level(logging.WARNING, logger="aiq_mcp.workflow_runner")
+    caplog.set_level(logging.WARNING, logger="deep_researcher_mcp.workflow_runner")
     await runner._close_owned_checkpointers()
 
     assert [r for r in caplog.records if r.levelno == logging.WARNING], "rename must still warn"
@@ -235,15 +235,15 @@ async def test_close_owned_checkpointers_warns_even_without_recorded_owned_keys(
 @pytest.mark.asyncio
 async def test_close_owned_checkpointers_silent_when_caches_present_but_unowned(monkeypatch, tmp_path, caplog) -> None:
     """Present-but-empty caches with nothing owned is normal — must not warn (no false positive)."""
-    from aiq_agent import common as aiq_common
+    from deep_researcher_agent import common as deep_researcher_common
 
-    monkeypatch.setattr(aiq_common, "_checkpointers", {})
-    monkeypatch.setattr(aiq_common, "_postgres_pools", {})
+    monkeypatch.setattr(deep_researcher_common, "_checkpointers", {})
+    monkeypatch.setattr(deep_researcher_common, "_postgres_pools", {})
 
     runner = WorkflowRunner(tmp_path / "config.yml")
     assert runner._owned_checkpointer_keys == set()
 
-    caplog.set_level(logging.WARNING, logger="aiq_mcp.workflow_runner")
+    caplog.set_level(logging.WARNING, logger="deep_researcher_mcp.workflow_runner")
     await runner._close_owned_checkpointers()
 
     assert not [r for r in caplog.records if r.levelno == logging.WARNING]

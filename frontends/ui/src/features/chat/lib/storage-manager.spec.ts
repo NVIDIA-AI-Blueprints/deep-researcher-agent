@@ -37,7 +37,7 @@ const setStoreData = (conversations: Conversation[], currentId: string | null = 
     },
     version: 0,
   }
-  localStorage.setItem('aiq-chat-store', JSON.stringify(storeData))
+  localStorage.setItem('deep-researcher-chat-store', JSON.stringify(storeData))
 }
 
 describe('storage-manager', () => {
@@ -67,7 +67,7 @@ describe('storage-manager', () => {
 
   describe('calculateChatStoreSize', () => {
     test('calculates chat store size', () => {
-      localStorage.setItem('aiq-chat-store', 'test data')
+      localStorage.setItem('deep-researcher-chat-store', 'test data')
 
       const size = calculateChatStoreSize()
 
@@ -83,7 +83,7 @@ describe('storage-manager', () => {
 
   describe('checkStorageHealth', () => {
     test('returns healthy when under threshold', () => {
-      localStorage.setItem('aiq-chat-store', 'small data')
+      localStorage.setItem('deep-researcher-chat-store', 'small data')
 
       const health = checkStorageHealth()
 
@@ -94,7 +94,7 @@ describe('storage-manager', () => {
 
     test('returns unhealthy when over threshold', () => {
       const largeData = 'x'.repeat(2_500_000) // ~5MB
-      localStorage.setItem('aiq-chat-store', largeData)
+      localStorage.setItem('deep-researcher-chat-store', largeData)
 
       const health = checkStorageHealth()
 
@@ -236,7 +236,7 @@ describe('storage-manager', () => {
 
       cleanupOldSessions('s_current', 'user1')
 
-      const stored = JSON.parse(localStorage.getItem('aiq-chat-store') || '{}')
+      const stored = JSON.parse(localStorage.getItem('deep-researcher-chat-store') || '{}')
       const remainingIds = stored.state?.conversations?.map((c: Conversation) => c.id) || []
 
       expect(remainingIds).toContain('s_current')
@@ -277,13 +277,13 @@ describe('storage-manager', () => {
     })
 
     test('does not throw error when storage is healthy', () => {
-      localStorage.setItem('aiq-chat-store', '{"state":{"conversations":[]}}')
+      localStorage.setItem('deep-researcher-chat-store', '{"state":{"conversations":[]}}')
 
       expect(() => ensureStorageCapacity(null, null)).not.toThrow()
     })
 
     test('accepts userId parameter', () => {
-      localStorage.setItem('aiq-chat-store', '{"state":{"conversations":[]}}')
+      localStorage.setItem('deep-researcher-chat-store', '{"state":{"conversations":[]}}')
 
       expect(() => ensureStorageCapacity('s_1', 'user1')).not.toThrow()
     })

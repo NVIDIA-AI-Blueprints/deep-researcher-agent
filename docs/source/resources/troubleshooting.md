@@ -5,13 +5,13 @@ SPDX-License-Identifier: Apache-2.0
 
 # Troubleshooting
 
-Common issues and solutions for the AI-Q blueprint.
+Common issues and solutions for the Deep Researcher Agent blueprint.
 
 ## Installation Issues
 
 | Issue | Cause | Fix |
 |-------|-------|-----|
-| `ModuleNotFoundError: aiq_agent` | Package not installed in editable mode | `uv pip install -e .` |
+| `ModuleNotFoundError: deep_researcher_agent` | Package not installed in editable mode | `uv pip install -e .` |
 | `nat` command not found | Using system `nat` instead of venv | Use `.venv/bin/nat` or activate the venv |
 | NeMo Agent Toolkit plugins not found | Plugins not installed | `uv pip install -e .` to register entry points |
 | Pre-commit hook failures | Missing pre-commit setup | `pre-commit install && pre-commit run --all-files` |
@@ -24,7 +24,7 @@ Common issues and solutions for the AI-Q blueprint.
 | `[404] Not found for account` | Invalid or expired NVIDIA API key | Regenerate key at [build.nvidia.com](https://build.nvidia.com) |
 | `Gateway timeout (504)` | Model endpoint overloaded or unavailable | Retry, or switch to a different model in config |
 | Tavily search returns empty | Invalid `TAVILY_API_KEY` | Verify key at [tavily.com](https://tavily.com) |
-| You.com tools return an unavailable or 401 error | Missing or invalid `YDC_API_KEY` | Create or verify the key using the [You.com quickstart](https://you.com/docs/quickstart) and restart AI-Q |
+| You.com tools return an unavailable or 401 error | Missing or invalid `YDC_API_KEY` | Create or verify the key using the [You.com quickstart](https://you.com/docs/quickstart) and restart Deep Researcher Agent |
 | Exa search returns empty or 401 | Invalid or missing `EXA_API_KEY` | Verify key at [exa.ai](https://exa.ai) |
 | Nimble search returns empty or 401 | Invalid or missing `NIMBLE_API_KEY` | Verify the key through [Nimble](https://nimbleway.com/) |
 | Nimble search returns 403 with "enterprise" | `search_depth: fast` requires an Enterprise plan | Switch to `search_depth: lite` (default) or `deep`, or upgrade your Nimble plan |
@@ -45,7 +45,7 @@ Common issues and solutions for the AI-Q blueprint.
 
 ## Nemotron Hosted Endpoint Availability
 
-Nemotron 3.5 Lightning (`nvidia/nemotron-3.5-lightning-30b-a3b`) and Nemotron 3 Ultra (`nvidia/nemotron-3-ultra-550b-a55b`) are compatible and tested with AIQ, but their NVIDIA-hosted endpoints can have limited availability during high demand. During peak periods you may observe:
+Nemotron 3.5 Lightning (`nvidia/nemotron-3.5-lightning-30b-a3b`) and Nemotron 3 Ultra (`nvidia/nemotron-3-ultra-550b-a55b`) are compatible and tested with Deep Researcher Agent, but their NVIDIA-hosted endpoints can have limited availability during high demand. During peak periods you may observe:
 
 - Elevated latency or timeouts on LLM inference calls
 - HTTP 429 (rate-limited) or 503 (service unavailable) responses from the Build API
@@ -60,7 +60,7 @@ For production and staging deployments that require consistent throughput and lo
 - [Self-host Nemotron 3.5 Lightning 30B A3B](https://build.nvidia.com/nvidia/nemotron-3.5-lightning-30b-a3b?nim=self-hosted) for the default intent and shallow-research roles
 - [Self-host Nemotron 3 Ultra 550B A55B](https://build.nvidia.com/nvidia/nemotron-3-ultra-550b-a55b?nim=self-hosted) for the default clarification and deep-research roles
 
-Once your self-hosted endpoint is running, update the corresponding `base_url` in your config to point at it. AIQ's configuration validator currently requires `NVIDIA_API_KEY` for every `_type: nim` profile, even when a local NIM does not enforce client authentication. Set a non-secret placeholder for the local deployment before starting AIQ:
+Once your self-hosted endpoint is running, update the corresponding `base_url` in your config to point at it. Deep Researcher Agent's configuration validator currently requires `NVIDIA_API_KEY` for every `_type: nim` profile, even when a local NIM does not enforce client authentication. Set a non-secret placeholder for the local deployment before starting Deep Researcher Agent:
 
 ```bash
 export NVIDIA_API_KEY=local-nim
@@ -88,7 +88,7 @@ llms:
 
 The default profiles retain Nemotron 3.5 Lightning for intent classification and shallow research. When the shallow
 role uses Lightning through the NVIDIA API Catalog endpoint (`integrate.api.nvidia.com`), the hosted serving profile
-can intermittently return citation-incomplete or malformed final drafts. AI-Q verifies the draft against the captured
+can intermittently return citation-incomplete or malformed final drafts. Deep Researcher Agent verifies the draft against the captured
 source registry and fails closed instead of publishing an unsupported answer, so an affected request ends with a
 failed workflow outcome even when its search completed successfully.
 
@@ -97,7 +97,7 @@ validation with the tested self-hosted NVFP4 vLLM profile. For a deployment that
 reliability, use one of these configurations:
 
 - Assign Nemotron Ultra to `shallow_research_agent.llm`, while keeping Lightning for intent classification.
-- Serve Lightning through a self-hosted profile that you validate end to end with AI-Q's citation and tool-calling
+- Serve Lightning through a self-hosted profile that you validate end to end with Deep Researcher Agent's citation and tool-calling
   workflow.
 
 The Brev getting-started launchable uses the first option. This keeps the launchable reliable without changing the
@@ -122,7 +122,7 @@ model assignment in the general-purpose shipped profiles.
 
 ## VM / Remote Development
 
-If you are running the AI-Q blueprint on a remote VM (cloud instance, WSL, SSH server) and accessing it from your local browser, `localhost:3000` and `localhost:8000` will not resolve because the services are listening on the VM — not your local machine.
+If you are running the Deep Researcher Agent blueprint on a remote VM (cloud instance, WSL, SSH server) and accessing it from your local browser, `localhost:3000` and `localhost:8000` will not resolve because the services are listening on the VM — not your local machine.
 
 ### SSH Port Forwarding
 
@@ -185,7 +185,7 @@ workflow:
           - type: openinference
             endpoint: ${RELAY_OTEL_ENDPOINT:-http://localhost:6006/v1/traces}
             resource_attributes:
-              openinference.project.name: aiq-relay
+              openinference.project.name: deep-researcher-relay
 ```
 
 Then open [http://localhost:6006](http://localhost:6006) to inspect traces, token usage, and latency.

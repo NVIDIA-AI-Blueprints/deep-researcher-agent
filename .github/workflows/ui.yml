@@ -1,4 +1,4 @@
-name: AIQ UI CI
+name: Deep Researcher Agent UI CI
 
 # Trigger: push-only. All PRs (internal and external) are mirrored to
 # pull-request/<N> branches by copy-pr-bot after `/ok to test` approval.
@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: aiq-ui-${{ github.ref }}
+  group: deep-researcher-ui-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

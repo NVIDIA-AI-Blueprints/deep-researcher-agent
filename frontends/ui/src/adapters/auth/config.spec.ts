@@ -247,7 +247,7 @@ describe('provider lifecycle hooks', () => {
     vi.stubEnv('REQUIRE_AUTH', 'true')
     vi.stubEnv('NEXTAUTH_SECRET', 'test-secret')
 
-    const onSession = vi.fn().mockReturnValue({ hasAccess: true, dlGroup: 'aiq-users' })
+    const onSession = vi.fn().mockReturnValue({ hasAccess: true, dlGroup: 'deep-researcher-users' })
     const { authOptions } = await loadConfigWithProvider({ onSession })
 
     const result = await authOptions.callbacks!.session!({
@@ -258,7 +258,7 @@ describe('provider lifecycle hooks', () => {
         expiresAt: 9999999999,
         userId: 'u1',
         hasAccess: true,
-        dlGroup: 'aiq-users',
+        dlGroup: 'deep-researcher-users',
       },
       user: { id: 'u1', name: 'Test', email: 'test@example.com', image: null, emailVerified: null },
       trigger: 'update',
@@ -270,7 +270,7 @@ describe('provider lifecycle hooks', () => {
     // static type — access via bracket notation (they exist at runtime)
     const sessionObj = result as unknown as Record<string, unknown>
     expect(sessionObj.hasAccess).toBe(true)
-    expect(sessionObj.dlGroup).toBe('aiq-users')
+    expect(sessionObj.dlGroup).toBe('deep-researcher-users')
     expect(sessionObj.idToken).toBe('it')
     expect(sessionObj.idTokenExpiresAt).toBe(9999999999)
   })

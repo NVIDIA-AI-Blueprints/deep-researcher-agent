@@ -16,7 +16,7 @@
         "read_accounting": "included_in_prompt_tokens"
       },
       "pricing_as_of": "2026-08-18",
-      "pricing_source": "NVIDIA-hosted API access used by this AI-Q profile; zero is access-path-specific, not a self-hosting cost estimate"
+      "pricing_source": "NVIDIA-hosted API access used by this Deep Researcher Agent profile; zero is access-path-specific, not a self-hosting cost estimate"
     },
     {
       "provider": "nvidia",
@@ -33,7 +33,7 @@
         "read_accounting": "included_in_prompt_tokens"
       },
       "pricing_as_of": "2026-08-18",
-      "pricing_source": "NVIDIA-hosted API access used by this AI-Q profile; zero is access-path-specific, not a self-hosting cost estimate"
+      "pricing_source": "NVIDIA-hosted API access used by this Deep Researcher Agent profile; zero is access-path-specific, not a self-hosting cost estimate"
     }
   ]
 }

@@ -15,14 +15,14 @@
 
 """Tests for tokenomics profile dataclasses.
 
-Module under test: src/aiq_agent/tokenomics/profile.py
+Module under test: src/deep_researcher_agent/tokenomics/profile.py
 """
 
-from aiq_agent.tokenomics.profile import PHASE_ORCHESTRATOR
-from aiq_agent.tokenomics.profile import PHASE_PLANNER
-from aiq_agent.tokenomics.profile import PHASE_RESEARCHER
-from aiq_agent.tokenomics.profile import PhaseStats
-from aiq_agent.tokenomics.profile import RequestProfile
+from deep_researcher_agent.tokenomics.profile import PHASE_ORCHESTRATOR
+from deep_researcher_agent.tokenomics.profile import PHASE_PLANNER
+from deep_researcher_agent.tokenomics.profile import PHASE_RESEARCHER
+from deep_researcher_agent.tokenomics.profile import PhaseStats
+from deep_researcher_agent.tokenomics.profile import RequestProfile
 
 
 def test_phase_stats_derived_fields():

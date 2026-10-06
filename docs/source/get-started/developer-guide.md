@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Developer Guide
 
-New to AI-Q? This page walks you through the
+New to Deep Researcher Agent? This page walks you through the
 documentation in the order that will get you productive fastest.
 
 ## 1. Install

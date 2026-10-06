@@ -69,7 +69,7 @@ htmlcov/
 *.db
 *.sqlite
 *.db-*
-.aiq-data/
+.deep-researcher-data/
 
 # Temporary files
 tmp/

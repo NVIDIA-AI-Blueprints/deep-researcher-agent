@@ -2,7 +2,7 @@
 SPDX-FileCopyrightText: Copyright (c) 2025-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 -->
-# Deep Research Bench Evaluation of NVIDIA AI-Q Blueprint
+# Deep Research Bench Evaluation of NVIDIA Deep Researcher Agent Blueprint
 
 [DeepResearch Bench](https://github.com/Ayanami0730/deep_research_bench/tree/main) is one of the most popular benchmarks for evaluating deep research agents. The benchmark was introduced in [DeepResearch Bench: A Comprehensive Benchmark for Deep Research Agent](https://arxiv.org/pdf/2506.11763). It contains 100 research  tasks (50 English, 50 Chinese) from 22 domains. It proposed 2 different evaluation metrics: RACE and FACT to assess the quality of the research reports.
 
@@ -61,7 +61,7 @@ Follow instructions in the [Deep Research Bench Github Repository](https://githu
 
 ## Optional: Relay and Phoenix Tracing
 
-AI-Q evaluation uses the same NeMo Relay observability path as interactive and
+Deep Researcher Agent evaluation uses the same NeMo Relay observability path as interactive and
 async workflows. ATOF is enabled by default. To visualize the evaluation in
 Phoenix, enable the Relay OpenInference OTEL endpoint in the evaluated workflow
 and start Phoenix before running `nat eval`.
@@ -82,11 +82,11 @@ workflow:
           - type: openinference
             endpoint: http://localhost:6006/v1/traces
             resource_attributes:
-              openinference.project.name: aiq-deepresearch-bench
+              openinference.project.name: deep-researcher-deepresearch-bench
 
 eval:
   general:
-    workflow_alias: "aiq-deepresearch-v2-baseline"
+    workflow_alias: "deep-researcher-deepresearch-v2-baseline"
 ```
 
 See [Observability with NeMo Relay](../../deployment/observability.md) for ATOF

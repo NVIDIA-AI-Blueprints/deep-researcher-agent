@@ -15,7 +15,7 @@
 """
 OpenSearch adapter for the Knowledge Layer.
 
-This backend stores one OpenSearch vector index per AIQ collection/session and
+This backend stores one OpenSearch vector index per Deep Researcher Agent collection/session and
 supports three authentication modes:
 - none: self-hosted development clusters without authentication
 - basic: self-hosted clusters with username/password
@@ -37,20 +37,20 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from aiq_agent.knowledge.base import BaseIngestor
-from aiq_agent.knowledge.base import BaseRetriever
-from aiq_agent.knowledge.base import TTLCleanupMixin
-from aiq_agent.knowledge.factory import register_ingestor
-from aiq_agent.knowledge.factory import register_retriever
-from aiq_agent.knowledge.schema import Chunk
-from aiq_agent.knowledge.schema import CollectionInfo
-from aiq_agent.knowledge.schema import ContentType
-from aiq_agent.knowledge.schema import FileInfo
-from aiq_agent.knowledge.schema import FileProgress
-from aiq_agent.knowledge.schema import FileStatus
-from aiq_agent.knowledge.schema import IngestionJobStatus
-from aiq_agent.knowledge.schema import JobState
-from aiq_agent.knowledge.schema import RetrievalResult
+from deep_researcher_agent.knowledge.base import BaseIngestor
+from deep_researcher_agent.knowledge.base import BaseRetriever
+from deep_researcher_agent.knowledge.base import TTLCleanupMixin
+from deep_researcher_agent.knowledge.factory import register_ingestor
+from deep_researcher_agent.knowledge.factory import register_retriever
+from deep_researcher_agent.knowledge.schema import Chunk
+from deep_researcher_agent.knowledge.schema import CollectionInfo
+from deep_researcher_agent.knowledge.schema import ContentType
+from deep_researcher_agent.knowledge.schema import FileInfo
+from deep_researcher_agent.knowledge.schema import FileProgress
+from deep_researcher_agent.knowledge.schema import FileStatus
+from deep_researcher_agent.knowledge.schema import IngestionJobStatus
+from deep_researcher_agent.knowledge.schema import JobState
+from deep_researcher_agent.knowledge.schema import RetrievalResult
 
 logger = logging.getLogger(__name__)
 
@@ -70,11 +70,11 @@ DEFAULT_ENDPOINT = os.environ.get("OPENSEARCH_URL", "http://localhost:9200")
 # Auth mode for OpenSearch: none, basic, or sigv4.
 DEFAULT_AUTH_TYPE = os.environ.get("OPENSEARCH_AUTH_TYPE", "none")
 
-DEFAULT_INDEX_PREFIX = os.environ.get("OPENSEARCH_INDEX_PREFIX", "aiq")
+DEFAULT_INDEX_PREFIX = os.environ.get("OPENSEARCH_INDEX_PREFIX", "deep-researcher")
 DEFAULT_AWS_REGION = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
 DEFAULT_AWS_SERVICE = os.environ.get("OPENSEARCH_AWS_SERVICE", "aoss")
-DEFAULT_EMBED_MODEL = os.environ.get("AIQ_EMBED_MODEL", "nvidia/nemotron-3-embed-1b")
-DEFAULT_EMBED_BASE_URL = os.environ.get("AIQ_EMBED_BASE_URL", "https://integrate.api.nvidia.com/v1")
+DEFAULT_EMBED_MODEL = os.environ.get("DEEP_RESEARCHER_EMBED_MODEL", "nvidia/nemotron-3-embed-1b")
+DEFAULT_EMBED_BASE_URL = os.environ.get("DEEP_RESEARCHER_EMBED_BASE_URL", "https://integrate.api.nvidia.com/v1")
 DEFAULT_VECTOR_FIELD = os.environ.get("OPENSEARCH_VECTOR_FIELD", "embedding")
 DEFAULT_TEXT_FIELD = os.environ.get("OPENSEARCH_TEXT_FIELD", "content")
 DEFAULT_EMBEDDING_DIM = int(os.environ.get("OPENSEARCH_EMBEDDING_DIM", "2048"))
@@ -90,8 +90,8 @@ DEFAULT_AOSS_DELETE_MAX_BATCHES = int(os.environ.get("OPENSEARCH_AOSS_DELETE_MAX
 DEFAULT_AOSS_DELETE_BACKOFF_SECONDS = float(os.environ.get("OPENSEARCH_AOSS_DELETE_BACKOFF_SECONDS", "0.25"))
 
 # Collection TTL settings, aligned with the other knowledge backends.
-COLLECTION_TTL_HOURS = float(os.environ.get("AIQ_COLLECTION_TTL_HOURS", "24"))
-TTL_CLEANUP_INTERVAL_SECONDS = int(os.environ.get("AIQ_TTL_CLEANUP_INTERVAL_SECONDS", "3600"))
+COLLECTION_TTL_HOURS = float(os.environ.get("DEEP_RESEARCHER_COLLECTION_TTL_HOURS", "24"))
+TTL_CLEANUP_INTERVAL_SECONDS = int(os.environ.get("DEEP_RESEARCHER_TTL_CLEANUP_INTERVAL_SECONDS", "3600"))
 
 SUMMARY_MAX_INPUT_CHARS = 4000
 DEFAULT_BULK_BATCH_SIZE = 100
@@ -283,7 +283,7 @@ def _resolve_embedding_api_key(embed_base_url: str) -> str:
         raise RuntimeError(
             "NVIDIA_API_KEY is required for the hosted NVIDIA embeddings API "
             "(embed_base_url contains integrate.api.nvidia.com). Either set "
-            "NVIDIA_API_KEY or override AIQ_EMBED_BASE_URL to a self-hosted NIM endpoint."
+            "NVIDIA_API_KEY or override DEEP_RESEARCHER_EMBED_BASE_URL to a self-hosted NIM endpoint."
         )
     return api_key
 
@@ -309,7 +309,9 @@ class _OpenSearchConfigMixin:
         self.timeout = self.config.get("timeout", DEFAULT_TIMEOUT)
         self.max_retries = self.config.get("max_retries", 3)
         self.retry_on_timeout = self.config.get("retry_on_timeout", True)
-        self.index_prefix = _sanitize_index_part(self.config.get("index_prefix", DEFAULT_INDEX_PREFIX), "aiq")
+        self.index_prefix = _sanitize_index_part(
+            self.config.get("index_prefix", DEFAULT_INDEX_PREFIX), "deep-researcher"
+        )
         self.vector_field = self.config.get("vector_field", DEFAULT_VECTOR_FIELD)
         self.text_field = self.config.get("text_field", DEFAULT_TEXT_FIELD)
         self.embedding_dim = int(self.config.get("embedding_dim", DEFAULT_EMBEDDING_DIM))
@@ -493,7 +495,7 @@ class _OpenSearchConfigMixin:
 
         raise RuntimeError(
             f"OpenSearch index {index_name!r} uses embedding model {persisted_model!r} with dimension "
-            f"{persisted_dim!r}, but AI-Q is configured for {self.embed_model_name!r} with dimension "
+            f"{persisted_dim!r}, but Deep Researcher Agent is configured for {self.embed_model_name!r} with dimension "
             f"{self.embedding_dim}. Delete and re-ingest the collection before using the new embedding model."
         )
 
@@ -764,7 +766,7 @@ class OpenSearchIngestor(TTLCleanupMixin, _OpenSearchConfigMixin, BaseIngestor):
                 worker_config,
                 payloads,
                 collection_name,
-                key=f"aiq-opensearch-ingest-{job_id}",
+                key=f"deep-researcher-opensearch-ingest-{job_id}",
                 pure=False,
             )
         except Exception:
@@ -887,7 +889,7 @@ class OpenSearchIngestor(TTLCleanupMixin, _OpenSearchConfigMixin, BaseIngestor):
                 )
                 summary = item.get("summary")
                 if summary:
-                    from aiq_agent.knowledge import register_summary
+                    from deep_researcher_agent.knowledge import register_summary
 
                     register_summary(job.collection_name, detail.file_name, summary)
                     tracked = self._files.get(detail.file_id)
@@ -975,7 +977,7 @@ class OpenSearchIngestor(TTLCleanupMixin, _OpenSearchConfigMixin, BaseIngestor):
             if not client.indices.exists(index=index_name):
                 return False
             client.indices.delete(index=index_name)
-            from aiq_agent.knowledge import clear_collection_summaries
+            from deep_researcher_agent.knowledge import clear_collection_summaries
 
             clear_collection_summaries(name)
             with self._lock:
@@ -986,7 +988,7 @@ class OpenSearchIngestor(TTLCleanupMixin, _OpenSearchConfigMixin, BaseIngestor):
             return False
 
     def list_collections(self) -> list[CollectionInfo]:
-        """List all AIQ-managed OpenSearch collections visible under the configured index prefix."""
+        """List all DeepResearcher-managed OpenSearch collections visible under the configured index prefix."""
         client = self._get_client()
         pattern = f"{self.index_prefix}-*"
         try:
@@ -1086,7 +1088,7 @@ class OpenSearchIngestor(TTLCleanupMixin, _OpenSearchConfigMixin, BaseIngestor):
                         elif tracked_id == file_id:
                             self._files.pop(tracked_id, None)
 
-                from aiq_agent.knowledge import unregister_summary
+                from deep_researcher_agent.knowledge import unregister_summary
 
                 unregister_summary(collection_name, resolved_name)
                 self._update_collection_timestamp(collection_name)
@@ -1316,7 +1318,7 @@ class OpenSearchIngestor(TTLCleanupMixin, _OpenSearchConfigMixin, BaseIngestor):
                     if self.generate_summary_enabled:
                         summary = self.generate_summary(summary_text, file_name)
                         if summary:
-                            from aiq_agent.knowledge import register_summary
+                            from deep_researcher_agent.knowledge import register_summary
 
                             register_summary(collection_name, file_name, summary)
                             with self._lock:

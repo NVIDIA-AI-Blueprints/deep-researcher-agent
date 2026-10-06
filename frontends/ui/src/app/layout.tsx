@@ -21,7 +21,7 @@ import { isAuthRequired, AUTH_PROVIDER_ID, TOKEN_REFRESH_BUFFER_SECONDS } from '
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'AI-Q',
+  title: 'Deep Researcher Agent',
   description: 'AI-powered research assistant',
   icons: {
     icon: '/favicon.ico',

@@ -13,13 +13,13 @@ DRY_RUN=false
 ASSUME_YES=false
 USE_COLIMA=false
 DOCKER_HOST_VALUE=""
-GATEWAY_NAME="${AIQ_OPENSHELL_GATEWAY_NAME:-openshell}"
+GATEWAY_NAME="${DEEP_RESEARCHER_OPENSHELL_GATEWAY_NAME:-openshell}"
 
 usage() {
     cat <<'EOF'
 Usage: scripts/openshell/install_gateway.sh [options]
 
-Installs or reinstalls AI-Q's certified OpenShell release through OpenShell's
+Installs or reinstalls Deep Researcher Agent's certified OpenShell release through OpenShell's
 official tagged installer. This is local-demo tooling for Apple Silicon macOS;
 Linux and remote gateways remain operator-owned.
 
@@ -78,9 +78,9 @@ done
 
 [[ "$(id -u)" -ne 0 ]] || fail "Run this installer as the logged-in macOS user, not root"
 [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]] \
-    || fail "The AI-Q gateway installer supports Apple Silicon macOS local gateways only"
+    || fail "The Deep Researcher Agent gateway installer supports Apple Silicon macOS local gateways only"
 command -v brew >/dev/null 2>&1 || fail "Homebrew is required"
-[[ -x "$PYTHON_BIN" ]] || fail "AI-Q Python was not found; run ./scripts/setup.sh first"
+[[ -x "$PYTHON_BIN" ]] || fail "Deep Researcher Agent Python was not found; run ./scripts/setup.sh first"
 
 RELEASE_TAG="$($PYTHON_BIN "$SCRIPT_DIR/version_contract.py" --field release-tag)"
 EXPECTED_SHA256="$($PYTHON_BIN "$SCRIPT_DIR/version_contract.py" --field installer-sha256)"
@@ -152,7 +152,7 @@ if [[ "$ASSUME_YES" != "true" ]]; then
     esac
 fi
 
-installer_file="$(mktemp -t aiq-openshell-installer.XXXXXX)"
+installer_file="$(mktemp -t deep-researcher-openshell-installer.XXXXXX)"
 trap 'rm -f "$installer_file"' EXIT
 if ! curl -fLsS --retry 3 --max-redirs 5 -o "$installer_file" "$INSTALLER_URL"; then
     fail "gateway_installer_download_failed"

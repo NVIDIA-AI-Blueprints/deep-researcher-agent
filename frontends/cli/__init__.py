@@ -12,4 +12,4 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""CLI frontend for the AI-Q blueprint."""
+"""CLI frontend for the Deep Researcher Agent blueprint."""

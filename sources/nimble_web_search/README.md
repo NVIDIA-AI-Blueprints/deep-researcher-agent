@@ -4,9 +4,9 @@ NAT-based [Nimble](https://nimbleway.com/) web search tool for agentic search wo
 
 ## When to use
 
-Use `nimble_web_search` when your AI-Q agent needs fresh web context from Nimble's real-time web intelligence infrastructure. The provider is designed for agentic search workflows that benefit from live web discovery, structured results, and reliable retrieval through Nimble's search layer.
+Use `nimble_web_search` when your Deep Researcher Agent needs fresh web context from Nimble's real-time web intelligence infrastructure. The provider is designed for agentic search workflows that benefit from live web discovery, structured results, and reliable retrieval through Nimble's search layer.
 
-Choose `nimble_web_search` when Tavily or Exa are not the right fit for your workflow, or when you want to standardize web-search retrieval through Nimble. The provider follows the same integration pattern as `exa_web_search` and `tavily_web_search`, making it straightforward to configure as an alternative search backend in AI-Q.
+Choose `nimble_web_search` when Tavily or Exa are not the right fit for your workflow, or when you want to standardize web-search retrieval through Nimble. The provider follows the same integration pattern as `exa_web_search` and `tavily_web_search`, making it straightforward to configure as an alternative search backend in Deep Researcher Agent.
 
 ## Install
 
@@ -52,7 +52,7 @@ uv run pytest sources/nimble_web_search -v
 # → credential-free tests pass; the opt-in live test is skipped
 
 # 2. Live integration test (opt-in; exactly one API call, bounded at 120 s)
-AIQ_NIMBLE_LIVE_TESTS=1 NIMBLE_API_KEY=<key> \
+DEEP_RESEARCHER_NIMBLE_LIVE_TESTS=1 NIMBLE_API_KEY=<key> \
     uv run pytest sources/nimble_web_search/tests -m integration -v
 
 # Lint
@@ -62,11 +62,11 @@ uv run ruff format --check sources/nimble_web_search
 
 - **Mocked unit tests** (`test_nimble_register.py`) cover: config defaults / all fields / invalid `search_depth` rejection, missing-key stub + warn-once, direct config-key passthrough to the SDK, successful render + description fallback, deep depth passthrough, query/content truncation, empty/error handling, retry-then-success, final-retry failure, 401, 403 enterprise-tier, non-default country/locale passthrough, and renderer behavior on titles containing special characters.
 - **Recorded-response replay** (`test_nimble_recorded_replay.py`) replays real, redacted `NimbleSearchRetriever` responses ([`tests/fixtures/README.md`](tests/fixtures/README.md)) through the full provider pipeline — a deterministic test mode that needs no network and no key.
-- **Live integration** (`test_nimble_live_integration.py`) runs the canned query `NVIDIA CUDA Toolkit documentation` once against the real API with the shipped defaults and asserts the structural output contract: a non-error response containing 1..`max_results` `<Document>` blocks, every block with an http(s) `href` and a title, every block XML-parseable, and at least one non-empty body. Assertions are structural — never content-exact — so ordinary result variation cannot flake the run. To run it in a dedicated opt-in CI job, add `NIMBLE_API_KEY` as a repository secret and set `AIQ_NIMBLE_LIVE_TESTS=1` in the job.
+- **Live integration** (`test_nimble_live_integration.py`) runs the canned query `NVIDIA CUDA Toolkit documentation` once against the real API with the shipped defaults and asserts the structural output contract: a non-error response containing 1..`max_results` `<Document>` blocks, every block with an http(s) `href` and a title, every block XML-parseable, and at least one non-empty body. Assertions are structural — never content-exact — so ordinary result variation cannot flake the run. To run it in a dedicated opt-in CI job, add `NIMBLE_API_KEY` as a repository secret and set `DEEP_RESEARCHER_NIMBLE_LIVE_TESTS=1` in the job.
 
 ## Verification
 
-Beyond the mocked unit tests above, verify the provider is fully integrated with AI-Q by walking the [adding-a-data-source checklist](../../docs/source/extending/adding-a-data-source.md):
+Beyond the mocked unit tests above, verify the provider is fully integrated with Deep Researcher Agent by walking the [adding-a-data-source checklist](../../docs/source/extending/adding-a-data-source.md):
 
 ```bash
 # 1. Mocked unit tests + recorded replay pass (CI-safe, no credentials)
@@ -87,11 +87,11 @@ export NIMBLE_API_KEY=...
 nat run --config_file <your-workflow.yml> --input "your test query"
 ```
 
-Step 4 satisfies the checklist's "Installed and tested with `nat run`" item. Any of the existing AI-Q web search configs (`configs/config_cli_default.yml`, `configs/config_web_default_llamaindex.yml`, etc.) becomes a Nimble-backed test by swapping `_type: tavily_web_search` → `_type: nimble_web_search` and translating `advanced_search: true` → `search_depth: deep`.
+Step 4 satisfies the checklist's "Installed and tested with `nat run`" item. Any of the existing Deep Researcher Agent web search configs (`configs/config_cli_default.yml`, `configs/config_web_default_llamaindex.yml`, etc.) becomes a Nimble-backed test by swapping `_type: tavily_web_search` → `_type: nimble_web_search` and translating `advanced_search: true` → `search_depth: deep`.
 
 ## Native capabilities
 
-The provider exposes the following Nimble-specific surface. Defaults are tuned for the common AI-Q research workflow (lite-mode SERP for a few results, US/English regional bias):
+The provider exposes the following Nimble-specific surface. Defaults are tuned for the common Deep Researcher Agent research workflow (lite-mode SERP for a few results, US/English regional bias):
 
 | Capability | Field | Default | Notes |
 |---|---|---|---|
@@ -118,7 +118,7 @@ If you do not know your tier, leave `search_depth: lite` and let the description
 
 ## Known limitations
 
-- `max_results` is a **soft cap**. The Nimble API may return up to N+2 documents when asked for N. The provider returns them all; AI-Q's downstream consumers can slice if they need a hard cap.
+- `max_results` is a **soft cap**. The Nimble API may return up to N+2 documents when asked for N. The provider returns them all; Deep Researcher Agent's downstream consumers can slice if they need a hard cap.
 - `lite` mode returns `page_content == ""` per result. The provider falls back to `description` (~150 chars per result, organic-result quality).
 - `include_answer` is **not exposed** in this initial integration. It can be added in a follow-up.
 
@@ -126,5 +126,5 @@ If you do not know your tier, leave `search_depth: lite` and let the description
 
 - API key handling follows the existing `EXA_API_KEY` / `TAVILY_API_KEY` pattern: env var or `SecretStr` config; never logged.
 - Untrusted API fields (`url`, `title`, body) are HTML-escaped before being rendered into the `<Document>` markup, so a result can't break the block or inject into downstream parsers.
-- Default CI is credential-free and network-free. An explicitly configured live-test job may access Nimble when `NIMBLE_API_KEY` and `AIQ_NIMBLE_LIVE_TESTS=1` are set.
+- Default CI is credential-free and network-free. An explicitly configured live-test job may access Nimble when `NIMBLE_API_KEY` and `DEEP_RESEARCHER_NIMBLE_LIVE_TESTS=1` are set.
 - The optional live smoke is documented in the PR description and uses a redacted output pattern.

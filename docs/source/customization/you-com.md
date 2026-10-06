@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # You.com API Suite
 
-AI-Q includes four NeMo Agent Toolkit functions backed by the You.com API. They can be enabled independently or
+Deep Researcher Agent includes four NeMo Agent Toolkit functions backed by the You.com API. They can be enabled independently or
 grouped into one entry in the [data source registry](./tools-and-sources.md#data-source-registry).
 
 | Function type | Purpose |
@@ -110,5 +110,5 @@ Research and contents functions accept these fields:
 | `you_contents` | `formats` | `[markdown, metadata]` | Any combination of `markdown`, `html`, and `metadata`. |
 | `you_contents` | `crawl_timeout` | `null` | Per-URL crawl timeout from 1 to 60 seconds. |
 
-When `YDC_API_KEY` and `api_key` are both absent, AI-Q still starts and registers diagnostic stubs for the configured
+When `YDC_API_KEY` and `api_key` are both absent, Deep Researcher Agent still starts and registers diagnostic stubs for the configured
 functions. Calls return an actionable missing-key error instead of failing workflow initialization.

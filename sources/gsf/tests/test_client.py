@@ -352,7 +352,7 @@ async def test_text_to_sql_retries_completion_wall_timeout(chat_sql_answer: dict
 
 @pytest.mark.asyncio
 async def test_text_to_pql_uses_prediction_routing_without_database_scope(chat_pql_answer: dict) -> None:
-    """Route predictions without selecting a database in the AI-Q tool call."""
+    """Route predictions without selecting a database in the Deep Researcher Agent tool call."""
 
     seen_payload: dict | None = None
 

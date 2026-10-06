@@ -77,13 +77,13 @@ repos:
         stages: [push]
       - id: pytest-root
         name: pytest (root)
-        entry: uv run --frozen --group dev pytest tests sources --cov=aiq_agent --cov-report=term --cov-fail-under=65
+        entry: uv run --frozen --group dev pytest tests sources --cov=deep_researcher_agent --cov-report=term --cov-fail-under=65
         language: system
         pass_filenames: false
         stages: [push]
       - id: pytest-mcp
         name: pytest (MCP)
-        entry: uv run --project mcp --frozen --extra dev pytest mcp/tests --cov=mcp/src/aiq_mcp --cov-report=term --cov-fail-under=90
+        entry: uv run --project mcp --frozen --extra dev pytest mcp/tests --cov=mcp/src/deep_researcher_mcp --cov-report=term --cov-fail-under=90
         language: system
         pass_filenames: false
         stages: [push]

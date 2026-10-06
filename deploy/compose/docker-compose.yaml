@@ -1,10 +1,10 @@
 # =============================================================================
-# AI-Q Blueprint - Docker Compose
+# Deep Researcher Agent Blueprint - Docker Compose
 # =============================================================================
 #
 # Services:
-#   aiq-agent - Backend API server
-#   frontend               - Next.js UI (aiq-blueprint-ui)
+#   deep-researcher-agent - Backend API server
+#   frontend               - Next.js UI (deep-researcher-blueprint-ui)
 #   postgres               - PostgreSQL for jobs and checkpoints
 #
 # Build targets (backend only):
@@ -28,24 +28,24 @@
 # =============================================================================
 
 services:
-  aiq-agent:
+  deep-researcher-agent:
     image: ${BACKEND_IMAGE:-nvcr.io/nvidia/blueprint/aiq-agent:2.2.0}
     build:
       context: ../..
       dockerfile: deploy/Dockerfile
       target: ${BUILD_TARGET:-dev}
-    container_name: aiq-agent
+    container_name: deep-researcher-agent
     env_file:
       - ../.env
     environment:
       - APP_ENV=${APP_ENV:-production}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       # Database config (with Docker defaults)
-      - NAT_JOB_STORE_DB_URL=${NAT_JOB_STORE_DB_URL:-postgresql+asyncpg://aiq:aiq_dev@postgres:5432/aiq_jobs}
-      - AIQ_CHECKPOINT_DB=${AIQ_CHECKPOINT_DB:-postgresql://aiq:aiq_dev@postgres:5432/aiq_checkpoints}
-      - AIQ_SUMMARY_DB=${AIQ_SUMMARY_DB:-postgresql+psycopg://aiq:aiq_dev@postgres:5432/aiq_jobs}
+      - NAT_JOB_STORE_DB_URL=${NAT_JOB_STORE_DB_URL:-postgresql+asyncpg://deep_researcher:deep_researcher_dev@postgres:5432/deep_researcher_jobs}
+      - DEEP_RESEARCHER_CHECKPOINT_DB=${DEEP_RESEARCHER_CHECKPOINT_DB:-postgresql://deep_researcher:deep_researcher_dev@postgres:5432/deep_researcher_checkpoints}
+      - DEEP_RESEARCHER_SUMMARY_DB=${DEEP_RESEARCHER_SUMMARY_DB:-postgresql+psycopg://deep_researcher:deep_researcher_dev@postgres:5432/deep_researcher_jobs}
       # LlamaIndex persistence (used by config_web_default_llamaindex.yml)
-      - AIQ_CHROMA_DIR=${AIQ_CHROMA_DIR:-/app/data/chroma_data}
+      - DEEP_RESEARCHER_CHROMA_DIR=${DEEP_RESEARCHER_CHROMA_DIR:-/app/data/chroma_data}
       # Server config
       # LlamaIndex (default)
       - CONFIG_FILE=${BACKEND_CONFIG:-/app/configs/config_web_default_llamaindex.yml}
@@ -56,10 +56,10 @@ services:
       - FILE_UPLOAD_MAX_SIZE_MB=${FILE_UPLOAD_MAX_SIZE_MB:-100}
       - FILE_UPLOAD_MAX_FILE_COUNT=${FILE_UPLOAD_MAX_FILE_COUNT:-10}
       # Default-on deep-research admission control
-      - AIQ_MAX_DEEP_RESEARCH_INPUT_CHARS=${AIQ_MAX_DEEP_RESEARCH_INPUT_CHARS:-32768}
-      - AIQ_MAX_ACTIVE_DEEP_RESEARCH_JOBS_PER_PRINCIPAL=${AIQ_MAX_ACTIVE_DEEP_RESEARCH_JOBS_PER_PRINCIPAL:-5}
-      - AIQ_MAX_ACTIVE_DEEP_RESEARCH_JOBS_GLOBAL=${AIQ_MAX_ACTIVE_DEEP_RESEARCH_JOBS_GLOBAL:-50}
-      - AIQ_MAX_DEEP_RESEARCH_SUBMISSIONS_PER_MINUTE=${AIQ_MAX_DEEP_RESEARCH_SUBMISSIONS_PER_MINUTE:-20}
+      - DEEP_RESEARCHER_MAX_DEEP_RESEARCH_INPUT_CHARS=${DEEP_RESEARCHER_MAX_DEEP_RESEARCH_INPUT_CHARS:-32768}
+      - DEEP_RESEARCHER_MAX_ACTIVE_DEEP_RESEARCH_JOBS_PER_PRINCIPAL=${DEEP_RESEARCHER_MAX_ACTIVE_DEEP_RESEARCH_JOBS_PER_PRINCIPAL:-5}
+      - DEEP_RESEARCHER_MAX_ACTIVE_DEEP_RESEARCH_JOBS_GLOBAL=${DEEP_RESEARCHER_MAX_ACTIVE_DEEP_RESEARCH_JOBS_GLOBAL:-50}
+      - DEEP_RESEARCHER_MAX_DEEP_RESEARCH_SUBMISSIONS_PER_MINUTE=${DEEP_RESEARCHER_MAX_DEEP_RESEARCH_SUBMISSIONS_PER_MINUTE:-20}
       # RAG config
       # - RAG_SERVER_URL=${RAG_SERVER_URL:-https://rag-backend}
       # - RAG_INGEST_URL=${RAG_INGEST_URL:-https://rag-ingest}
@@ -76,9 +76,9 @@ services:
       - "${PORT:-8000}:8000"
     volumes:
       - ../../configs:/app/configs:ro
-      - aiq-data:/app/data
+      - deep-researcher-data:/app/data
     networks:
-      - aiq-network
+      - deep-researcher-network
     depends_on:
       postgres:
         condition: service_healthy
@@ -89,10 +89,10 @@ services:
     build:
       context: ../../frontends/ui
       dockerfile: deploy/Dockerfile
-    container_name: aiq-blueprint-ui
+    container_name: deep-researcher-blueprint-ui
     environment:
       - REQUIRE_AUTH=${REQUIRE_AUTH:-false}
-      - BACKEND_URL=${BACKEND_URL:-http://aiq-agent:8000}
+      - BACKEND_URL=${BACKEND_URL:-http://deep-researcher-agent:8000}
       - FILE_UPLOAD_ACCEPTED_TYPES=${FILE_UPLOAD_ACCEPTED_TYPES:-.pdf,.docx,.txt,.md}
       - FILE_UPLOAD_MAX_SIZE_MB=${FILE_UPLOAD_MAX_SIZE_MB:-100}
       - FILE_UPLOAD_MAX_FILE_COUNT=${FILE_UPLOAD_MAX_FILE_COUNT:-10}
@@ -100,9 +100,9 @@ services:
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     networks:
-      - aiq-network
+      - deep-researcher-network
     depends_on:
-      - aiq-agent
+      - deep-researcher-agent
     deploy:
       resources:
         limits:
@@ -115,18 +115,18 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: aiq-postgres
+    container_name: deep-researcher-postgres
     environment:
-      POSTGRES_USER: aiq
-      POSTGRES_PASSWORD: aiq_dev
-      POSTGRES_DB: aiq_jobs
+      POSTGRES_USER: deep_researcher
+      POSTGRES_PASSWORD: deep_researcher_dev
+      POSTGRES_DB: deep_researcher_jobs
     ports:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     networks:
-      - aiq-network
+      - deep-researcher-network
     stdin_open: true
     tty: true
     deploy:
@@ -138,17 +138,17 @@ services:
           cpus: '1'
           memory: 2G
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U aiq -d aiq_jobs && pg_isready -U aiq -d aiq_checkpoints"]
+      test: ["CMD-SHELL", "pg_isready -U deep_researcher -d deep_researcher_jobs && pg_isready -U deep_researcher -d deep_researcher_checkpoints"]
       interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
 volumes:
-  aiq-data:
+  deep-researcher-data:
     driver: local
   postgres-data:
     driver: local
 networks:
-  aiq-network:
+  deep-researcher-network:
     driver: bridge

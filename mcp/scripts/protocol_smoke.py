@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Exercise the public AI-Q MCP server with a supported, unauthenticated client."""
+"""Exercise the public Deep Researcher Agent MCP server with a supported, unauthenticated client."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from mcp.client.streamable_http import streamable_http_client
 
 from mcp import ClientSession
 
-EXPECTED_SERVER_NAME = "aiq_deep_research"
+EXPECTED_SERVER_NAME = "deep_researcher_deep_research"
 EXPECTED_TOOLS = {"get_final_report", "poll_query", "submit_query"}
 EXPECTED_HEALTH_STATUS = "ready"
 UNKNOWN_JOB_ID = "00000000-0000-4000-8000-000000000000"

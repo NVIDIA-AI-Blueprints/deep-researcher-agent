@@ -5,13 +5,13 @@ SPDX-License-Identifier: Apache-2.0
 
 # Amazon OpenSearch Serverless
 
-AI-Q can use the built-in OpenSearch knowledge backend with Amazon OpenSearch Serverless vector collections. The backend
-uses SigV4 service `aoss`, creates one OpenSearch index per AI-Q collection/session, and supports Dask ingestion workers
+Deep Researcher Agent can use the built-in OpenSearch knowledge backend with Amazon OpenSearch Serverless vector collections. The backend
+uses SigV4 service `aoss`, creates one OpenSearch index per Deep Researcher Agent collection/session, and supports Dask ingestion workers
 by creating the OpenSearch client inside the worker process. Refer to [Knowledge Layer](../customization/knowledge-layer.md)
 for how OpenSearch compares with the LlamaIndex and Foundational RAG backends.
 
 ```{note}
-**Migrating from AI-Q v1.0.** On v1.0, OpenSearch support shipped through a custom Docker image
+**Migrating from Deep Researcher Agent v1.0.** On v1.0, OpenSearch support shipped through a custom Docker image
 built from [`awslabs/ai-on-eks`](https://github.com/awslabs/ai-on-eks) via `./deploy.sh build`. In
 the current implementation, OpenSearch is now a built-in knowledge backend selected through workflow
 YAML
@@ -22,7 +22,7 @@ YAML
 
 ```{mermaid}
 flowchart LR
-    user[User / UI] -->|HTTPS| backend[aiq-agent pod<br/>service account: aiq-backend]
+    user[User / UI] -->|HTTPS| backend[deep-researcher-agent pod<br/>service account: deep-researcher-backend]
     backend -->|submit ingest| dask_sched[Dask scheduler]
     dask_sched --> dask_worker[Dask worker<br/>same service account]
     backend -->|SigV4 retrieval| aoss[(Amazon OpenSearch<br/>Serverless collection)]
@@ -34,7 +34,7 @@ flowchart LR
 ```
 
 The backend pod and every Dask worker assume the same IAM role through the EKS Pod Identity
-association on the `aiq-backend` service account. Each Dask worker constructs its own OpenSearch
+association on the `deep-researcher-backend` service account. Each Dask worker constructs its own OpenSearch
 client, so SigV4 signing happens in the worker's process — no signer state is serialized across
 the cluster.
 
@@ -125,14 +125,14 @@ aws opensearchserverless batch-get-collection \
 Expected output: `ACTIVE   https://abc123.<region>.aoss.amazonaws.com`. Save the endpoint — it
 is the `OPENSEARCH_URL` value used in Helm values.
 
-## IAM role for the AIQ pod
+## IAM role for the Deep Researcher Agent pod
 
 Pod Identity assumes an IAM role through `pods.eks.amazonaws.com`. The trust policy for this role
 must allow `sts:AssumeRole` and `sts:TagSession` for that principal.
 
 ### 1. Trust policy
 
-Save as `aiq-trust-policy.json`:
+Save as `deep-researcher-trust-policy.json`:
 
 ```json
 {
@@ -150,7 +150,7 @@ Save as `aiq-trust-policy.json`:
 ### 2. Permissions policy
 
 The role needs `aoss:APIAccessAll` on the collection, plus the AOSS dashboard endpoint if you
-want to inspect indexes from the AWS console. Save as `aiq-permissions-policy.json` and substitute
+want to inspect indexes from the AWS console. Save as `deep-researcher-permissions-policy.json` and substitute
 your account ID and collection name:
 
 ```json
@@ -173,19 +173,19 @@ identifier), not the human-readable name.
 
 ```bash
 aws iam create-role \
-  --role-name aiq-opensearch-role \
-  --assume-role-policy-document file://aiq-trust-policy.json
+  --role-name deep-researcher-opensearch-role \
+  --assume-role-policy-document file://deep-researcher-trust-policy.json
 
 aws iam put-role-policy \
-  --role-name aiq-opensearch-role \
-  --policy-name aiq-opensearch-access \
-  --policy-document file://aiq-permissions-policy.json
+  --role-name deep-researcher-opensearch-role \
+  --policy-name deep-researcher-opensearch-access \
+  --policy-document file://deep-researcher-permissions-policy.json
 ```
 
 Capture the role ARN — it goes into the Pod Identity association in Task 6.
 
 ```bash
-aws iam get-role --role-name aiq-opensearch-role --query 'Role.Arn' --output text
+aws iam get-role --role-name deep-researcher-opensearch-role --query 'Role.Arn' --output text
 ```
 
 ## Grant the role access to AOSS
@@ -194,8 +194,8 @@ AOSS authorizes data plane operations (index create, document write, search) thr
 *data access policy* that is separate from IAM. The policy lists IAM principals and the
 collections/indexes they can act on.
 
-Save as `aiq-data-access-policy.json`. Substitute your role ARN and AIQ index prefix
-(`aiq` matches the default `OPENSEARCH_INDEX_PREFIX`):
+Save as `deep-researcher-data-access-policy.json`. Substitute your role ARN and Deep Researcher Agent index prefix
+(`deep-researcher` matches the default `OPENSEARCH_INDEX_PREFIX`):
 
 ```json
 [
@@ -208,7 +208,7 @@ Save as `aiq-data-access-policy.json`. Substitute your role ARN and AIQ index pr
       },
       {
         "ResourceType": "index",
-        "Resource": ["index/<collection-name>/aiq*"],
+        "Resource": ["index/<collection-name>/deep-researcher*"],
         "Permission": [
           "aoss:CreateIndex",
           "aoss:DeleteIndex",
@@ -219,8 +219,8 @@ Save as `aiq-data-access-policy.json`. Substitute your role ARN and AIQ index pr
         ]
       }
     ],
-    "Principal": ["arn:aws:iam::<account-id>:role/aiq-opensearch-role"],
-    "Description": "AIQ backend access to AOSS indexes"
+    "Principal": ["arn:aws:iam::<account-id>:role/deep-researcher-opensearch-role"],
+    "Description": "Deep Researcher Agent backend access to AOSS indexes"
   }
 ]
 ```
@@ -228,28 +228,28 @@ Save as `aiq-data-access-policy.json`. Substitute your role ARN and AIQ index pr
 ```bash
 aws opensearchserverless create-access-policy \
   --region "$REGION" \
-  --name "${COLLECTION}-aiq" \
+  --name "${COLLECTION}-deep-researcher" \
   --type data \
-  --policy file://aiq-data-access-policy.json
+  --policy file://deep-researcher-data-access-policy.json
 ```
 
-The index resource pattern `index/<collection>/aiq*` covers every AIQ session collection, since
-the OpenSearch backend creates indexes named `aiq-<collection>` (or `aiq-s_<uuid>` for session
+The index resource pattern `index/<collection>/deep-researcher*` covers every Deep Researcher Agent session collection, since
+the OpenSearch backend creates indexes named `deep-researcher-<collection>` (or `deep-researcher-s_<uuid>` for session
 collections).
 
-## Associate the role with the AIQ service account
+## Associate the role with the Deep Researcher Agent service account
 
 EKS Pod Identity binds an IAM role to a Kubernetes service account. The commands in this
-guide install the source chart into `ns-aiq`, and the backend service account is
-`aiq-backend`. The source chart honors the namespace passed with `helm -n`; if you choose
+guide install the source chart into `ns-deep-researcher`, and the backend service account is
+`deep-researcher-backend`. The source chart honors the namespace passed with `helm -n`; if you choose
 another namespace, use it for this association and every Secret and `kubectl` command.
 
 ```bash
 aws eks create-pod-identity-association \
   --cluster-name <cluster-name> \
-  --namespace ns-aiq \
-  --service-account aiq-backend \
-  --role-arn arn:aws:iam::<account-id>:role/aiq-opensearch-role
+  --namespace ns-deep-researcher \
+  --service-account deep-researcher-backend \
+  --role-arn arn:aws:iam::<account-id>:role/deep-researcher-opensearch-role
 ```
 
 The same service account is used by the embedded Dask scheduler and worker, so SigV4
@@ -276,12 +276,12 @@ functions:
     opensearch_auth_type: sigv4
     opensearch_aws_region: ${AWS_REGION}
     opensearch_aws_service: aoss
-    opensearch_index_prefix: ${OPENSEARCH_INDEX_PREFIX:-aiq}
+    opensearch_index_prefix: ${OPENSEARCH_INDEX_PREFIX:-deep-researcher}
     opensearch_ingestion_mode: ${OPENSEARCH_INGESTION_MODE:-auto}
     opensearch_dask_file_transfer: ${OPENSEARCH_DASK_FILE_TRANSFER:-bytes}
 ```
 
-Session collection names such as `s_<uuid>` map to physical indexes like `aiq-s_<uuid>` inside the same Serverless
+Session collection names such as `s_<uuid>` map to physical indexes like `deep-researcher-s_<uuid>` inside the same Serverless
 collection endpoint. The backend stores collection metadata in mapping `_meta` and the TTL cleanup thread deletes
 expired session indexes.
 
@@ -295,9 +295,9 @@ The example values reference `nvcr.io/nvidia/blueprint/aiq-agent`. Create an NGC
 [`ngc.nvidia.com`](https://ngc.nvidia.com), then create the pull secret in the release namespace:
 
 ```bash
-kubectl create namespace ns-aiq --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace ns-deep-researcher --dry-run=client -o yaml | kubectl apply -f -
 
-kubectl -n ns-aiq create secret docker-registry ngc-image-pull-secret \
+kubectl -n ns-deep-researcher create secret docker-registry ngc-image-pull-secret \
   --docker-server=nvcr.io \
   --docker-username='$oauthtoken' \
   --docker-password=<your-ngc-api-key>
@@ -318,20 +318,20 @@ Create the shared credentials secret once and the example values' `secretEnv` bl
 `NVIDIA_API_KEY` into the backend container:
 
 ```bash
-kubectl -n ns-aiq create secret generic aiq-credentials \
+kubectl -n ns-deep-researcher create secret generic deep-researcher-credentials \
   --from-literal=NVIDIA_API_KEY=<your-nvidia-api-key>
 ```
 
 The chart's `secretEnv` pattern maps env-var names to keys in this shared secret. Add other
 keys (database credentials, etc.) to the same secret if your release needs them.
 
-**Option B: Self-hosted NIM on the same cluster.** Override `AIQ_EMBED_BASE_URL` to point at
+**Option B: Self-hosted NIM on the same cluster.** Override `DEEP_RESEARCHER_EMBED_BASE_URL` to point at
 your in-cluster NIM service and leave `NVIDIA_API_KEY` empty. Add to `backend.env` in your
 values:
 
 ```yaml
-        AIQ_EMBED_BASE_URL: http://nim-embedqa.ns-nim.svc.cluster.local:8000/v1
-        AIQ_EMBED_MODEL: nvidia/nemotron-3-embed-1b
+        DEEP_RESEARCHER_EMBED_BASE_URL: http://nim-embedqa.ns-nim.svc.cluster.local:8000/v1
+        DEEP_RESEARCHER_EMBED_MODEL: nvidia/nemotron-3-embed-1b
 ```
 
 The embedding model dimension must match `OPENSEARCH_EMBEDDING_DIM` in the workflow config
@@ -339,19 +339,19 @@ The embedding model dimension must match `OPENSEARCH_EMBEDDING_DIM` in the workf
 as `mapper_parsing_exception` on the first ingest.
 
 ```bash
-helm upgrade --install aiq deploy/helm/deployment-k8s \
-  -n ns-aiq --create-namespace \
+helm upgrade --install deep-researcher deploy/helm/deployment-k8s \
+  -n ns-deep-researcher --create-namespace \
   -f deploy/helm/examples/aws-opensearch-serverless-values.yaml
 ```
 
 Override the backend image when testing unreleased code:
 
 ```yaml
-aiq:
+deep-researcher:
   apps:
     backend:
       image:
-        repository: <registry>/<aiq-agent-image>
+        repository: <registry>/<deep-researcher-agent-image>
         tag: <tag>
 ```
 
@@ -360,8 +360,8 @@ aiq:
 ### 1. Pod is running and Pod Identity is attached
 
 ```bash
-kubectl -n ns-aiq get pods -l app=aiq-backend
-kubectl -n ns-aiq describe pod -l app=aiq-backend | grep -A2 'AWS_CONTAINER_CREDENTIALS'
+kubectl -n ns-deep-researcher get pods -l app=deep-researcher-backend
+kubectl -n ns-deep-researcher describe pod -l app=deep-researcher-backend | grep -A2 'AWS_CONTAINER_CREDENTIALS'
 ```
 
 Expected: pod is `Running`, the describe output shows
@@ -372,11 +372,11 @@ and service-account triple in the previous section.
 ### 2. Backend health check
 
 ```bash
-kubectl -n ns-aiq port-forward svc/aiq-backend 8000:8000 &
+kubectl -n ns-deep-researcher port-forward svc/deep-researcher-backend 8000:8000 &
 curl -sf http://localhost:8000/health
 ```
 
-Expected: `{"status":"healthy"}` (the `aiq_api` front end exposes a JSON health route at `/health`).
+Expected: `{"status":"healthy"}` (the `deep_researcher_api` front end exposes a JSON health route at `/health`).
 
 ### 3. Upload a document
 
@@ -395,7 +395,7 @@ The Dask scheduler and workers run embedded in the backend pod, so ingestion err
 Read the raw tail rather than filtering it, so an auth failure that doesn't mention "opensearch" is not hidden:
 
 ```bash
-kubectl -n ns-aiq logs -l app=aiq-backend --tail=200
+kubectl -n ns-deep-researcher logs -l app=deep-researcher-backend --tail=200
 ```
 
 ### 4. Confirm the index appears in AOSS
@@ -408,13 +408,13 @@ aws opensearchserverless list-collections --region "$REGION"
 curl -sf "http://localhost:8000/v1/collections" | jq
 ```
 
-Expected: an `aiq-smoke-<hash>` index visible in the AOSS console under the collection's index browser
+Expected: an `deep-researcher-smoke-<hash>` index visible in the AOSS console under the collection's index browser
 (the physical index name appends a stable disambiguator to the logical `smoke` collection),
-and the `smoke` collection listed by the AIQ API.
+and the `smoke` collection listed by the Deep Researcher Agent API.
 
 ```{note}
 **AOSS visibility delay.** AOSS is eventually consistent for search after writes. A `_count` immediately
-after a successful upload may report `0` for ~5–30 seconds before catching up. If the AIQ status says
+after a successful upload may report `0` for ~5–30 seconds before catching up. If the Deep Researcher Agent status says
 `completed` but the AOSS console index browser shows zero docs, wait 30s and refresh — the index will
 populate. This is also why the live-test suite includes a polling visibility wait.
 ```
@@ -443,7 +443,7 @@ unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_CREDENTIAL_E
 aws sso login --profile cs-admin
 aws sts get-caller-identity --profile cs-admin
 
-AIQ_OPENSEARCH_SERVERLESS_LIVE_TESTS=1 \
+DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_LIVE_TESTS=1 \
 OPENSEARCH_URL=https://abc123.us-west-2.aoss.amazonaws.com \
 AWS_REGION=us-west-2 \
 AWS_PROFILE=cs-admin \
@@ -463,17 +463,17 @@ uv run python -m pytest tests/knowledge_layer_tests/test_opensearch_serverless_l
 ## Cleanup
 
 ```bash
-helm uninstall aiq -n ns-aiq
-kubectl delete namespace ns-aiq
+helm uninstall deep-researcher -n ns-deep-researcher
+kubectl delete namespace ns-deep-researcher
 
 aws eks delete-pod-identity-association \
   --cluster-name <cluster-name> \
   --association-id <association-id>
 
-aws iam delete-role-policy --role-name aiq-opensearch-role --policy-name aiq-opensearch-access
-aws iam delete-role --role-name aiq-opensearch-role
+aws iam delete-role-policy --role-name deep-researcher-opensearch-role --policy-name deep-researcher-opensearch-access
+aws iam delete-role --role-name deep-researcher-opensearch-role
 
-aws opensearchserverless delete-access-policy --type data --name "${COLLECTION}-aiq"
+aws opensearchserverless delete-access-policy --type data --name "${COLLECTION}-deep-researcher"
 aws opensearchserverless delete-collection --id <collection-id>
 aws opensearchserverless delete-security-policy --type network --name "${COLLECTION}-net"
 aws opensearchserverless delete-security-policy --type encryption --name "${COLLECTION}-enc"
@@ -483,8 +483,8 @@ Get the Pod Identity `<association-id>` with:
 
 ```bash
 aws eks list-pod-identity-associations \
-  --cluster-name <cluster-name> --namespace ns-aiq \
-  --query 'associations[?serviceAccount==`aiq-backend`].associationId' --output text
+  --cluster-name <cluster-name> --namespace ns-deep-researcher \
+  --query 'associations[?serviceAccount==`deep-researcher-backend`].associationId' --output text
 ```
 
 Get the AOSS `<collection-id>` with:

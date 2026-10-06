@@ -28,7 +28,7 @@ const WARNING_THRESHOLD_MB = 4.2
 const TARGET_SIZE_MB = 3.5
 
 /** Storage key for chat store */
-const STORAGE_KEY = 'aiq-chat-store'
+const STORAGE_KEY = 'deep-researcher-chat-store'
 
 /** Sessions older than this are eligible for Tier 1 cleanup */
 const STALE_SESSION_MS = 24 * 60 * 60 * 1000 // 1 day

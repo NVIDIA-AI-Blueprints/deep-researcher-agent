@@ -1,13 +1,13 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
-# AI-Q skill eval. Two jobs on the aiq-eval self-hosted runner:
+# Deep Researcher Agent skill eval. Two jobs on the deep-researcher-eval self-hosted runner:
 #   - generate-datasets: spec validation, no credentials.
 #   - harbor-eval:       full Harbor trial; auto on push, or dispatch w/ run_harbor.
 # Push-triggered on develop/release/pull-request/<N> (copy-pr-bot mirror after a
 # vetter's `/ok to test`); workflow_dispatch for manual full sweeps.
 # Credentials and runtime knobs live in a runner-side .env;
-# see README-aiq-runner-bootstrap.md.
+# see README-deep-researcher-runner-bootstrap.md.
 
 name: Skills Eval
 
@@ -30,7 +30,7 @@ on:
   workflow_dispatch:
     inputs:
       run_harbor:
-        description: "Run Harbor trials on the self-hosted aiq-eval runner"
+        description: "Run Harbor trials on the self-hosted deep-researcher-eval runner"
         required: false
         default: false
         type: boolean
@@ -43,7 +43,7 @@ on:
           - claude-code
           - codex
       model:
-        description: "Override AIQ_SKILL_EVAL_MODEL for this dispatch (blank = use runner .env default)"
+        description: "Override DEEP_RESEARCHER_SKILL_EVAL_MODEL for this dispatch (blank = use runner .env default)"
         required: false
         default: ""
         type: string
@@ -52,7 +52,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: aiq-skills-eval-${{ github.ref }}
+  group: deep-researcher-skills-eval-${{ github.ref }}
   cancel-in-progress: true
 
 defaults:
@@ -60,7 +60,7 @@ defaults:
     shell: bash
 
 env:
-  RUNNER_ENV_FILE: /home/ubuntu/aiq-eval/.env
+  RUNNER_ENV_FILE: /home/ubuntu/deep-researcher-eval/.env
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -119,7 +119,7 @@ jobs:
     # skipped the whole eval is skipped. Only trusted refs / dispatch can trigger.
     needs: detect-changes
     if: needs.detect-changes.outputs.relevant == 'true'
-    runs-on: [self-hosted, aiq-eval]
+    runs-on: [self-hosted, deep-researcher-eval]
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -143,19 +143,19 @@ jobs:
             *)              SCOPE="--all" ;;
           esac
           python3 .github/skill-eval/skills_eval_agent.py $SCOPE \
-            --output-dir /tmp/aiq-skill-eval/datasets
+            --output-dir /tmp/deep-researcher-skill-eval/datasets
 
       - name: Upload generated datasets
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: aiq-skill-eval-datasets-${{ github.run_id }}
-          path: /tmp/aiq-skill-eval/datasets
+          name: deep-researcher-skill-eval-datasets-${{ github.run_id }}
+          path: /tmp/deep-researcher-skill-eval/datasets
           if-no-files-found: error
           retention-days: 7
 
   # ---------------------------------------------------------------------------
-  # harbor-eval: bring up AI-Q from PR HEAD, run Harbor trials, tear down.
+  # harbor-eval: bring up Deep Researcher Agent from PR HEAD, run Harbor trials, tear down.
   # Gated on workflow_dispatch + inputs.run_harbor=true.
   # ---------------------------------------------------------------------------
   harbor-eval:
@@ -165,7 +165,7 @@ jobs:
     if: >
       github.event_name == 'push' ||
       (github.event_name == 'workflow_dispatch' && inputs.run_harbor)
-    runs-on: [self-hosted, aiq-eval]
+    runs-on: [self-hosted, deep-researcher-eval]
     timeout-minutes: 60
     needs: generate-datasets
     # Global single-flight: the stack is stateful on one runner, so only one
@@ -173,7 +173,7 @@ jobs:
     # cross-cancelled by a different PR. (Same-PR new commits are aborted by the
     # workflow-level concurrency above, whose always() teardown clears the stack.)
     concurrency:
-      group: aiq-harbor-eval
+      group: deep-researcher-harbor-eval
       cancel-in-progress: false
     steps:
       - name: Checkout
@@ -193,7 +193,7 @@ jobs:
         run: |
           if [ ! -r "$RUNNER_ENV_FILE" ]; then
             echo "::error::Runner credential file missing or unreadable at $RUNNER_ENV_FILE"
-            echo "See README-aiq-runner-bootstrap.md for the one-time setup."
+            echo "See README-deep-researcher-runner-bootstrap.md for the one-time setup."
             exit 1
           fi
           # Print only the *names* of keys present, never values.
@@ -203,11 +203,11 @@ jobs:
       - name: Materialize deploy/.env from runner credentials
         run: |
           # docker-compose.yaml has `env_file: [../.env]` paths that resolve to
-          # aiq/deploy/.env. That file is gitignored. Copy the runner's
+          # deep-researcher/deploy/.env. That file is gitignored. Copy the runner's
           # canonical .env into place for the duration of this job.
           install -m 0600 "$RUNNER_ENV_FILE" deploy/.env
 
-      - name: Bring up AI-Q stack from PR HEAD
+      - name: Bring up Deep Researcher Agent stack from PR HEAD
         working-directory: deploy/compose
         run: |
           set -a
@@ -216,24 +216,24 @@ jobs:
           set +a
           # Mirror local recipe: build from source, tag with run id so
           # concurrent runs (if any) don't collide.
-          export BACKEND_IMAGE="aiq-agent:ci-${{ github.run_id }}"
-          docker compose --env-file ../.env -f docker-compose.yaml up -d --build aiq-agent postgres
+          export BACKEND_IMAGE="deep-researcher-agent:ci-${{ github.run_id }}"
+          docker compose --env-file ../.env -f docker-compose.yaml up -d --build deep-researcher-agent postgres
 
-      - name: Wait for AI-Q /health
+      - name: Wait for Deep Researcher Agent /health
         run: |
-          # Poll up to 5 minutes. AI-Q cold start on the runner is typically
+          # Poll up to 5 minutes. Deep Researcher Agent cold start on the runner is typically
           # <2 min; 5 min gives margin for the postgres init + first build.
           for i in $(seq 1 60); do
             if curl -sf http://localhost:8000/health >/dev/null 2>&1; then
-              echo "AI-Q healthy after ${i} x 5s"
+              echo "Deep Researcher Agent healthy after ${i} x 5s"
               curl -s http://localhost:8000/health | head -c 400; echo
               exit 0
             fi
             sleep 5
           done
-          echo "::error::AI-Q did not report healthy within 5 minutes"
+          echo "::error::Deep Researcher Agent did not report healthy within 5 minutes"
           docker compose --env-file deploy/.env -f deploy/compose/docker-compose.yaml ps || true
-          docker compose --env-file deploy/.env -f deploy/compose/docker-compose.yaml logs --tail 200 aiq-agent || true
+          docker compose --env-file deploy/.env -f deploy/compose/docker-compose.yaml logs --tail 200 deep-researcher-agent || true
           exit 1
 
       - name: Run Harbor trials
@@ -241,7 +241,7 @@ jobs:
           # Constant in our architecture. The adapter emits
           # extra_hosts: host.docker.internal:host-gateway so this resolves
           # from inside the Harbor task container too (see A0).
-          AIQ_SERVER_URL: http://host.docker.internal:8000
+          DEEP_RESEARCHER_SERVER_URL: http://host.docker.internal:8000
           # Pass inputs/context via env; never interpolate ${{ }} into the shell
           # body -- a free-form `model` input would otherwise allow injection.
           AGENT_INPUT: ${{ inputs.agent }}
@@ -257,9 +257,9 @@ jobs:
           set +a
           # Honor dispatch override of model when provided.
           if [ -n "$MODEL_INPUT" ]; then
-            export AIQ_SKILL_EVAL_MODEL="$MODEL_INPUT"
+            export DEEP_RESEARCHER_SKILL_EVAL_MODEL="$MODEL_INPUT"
           fi
-          export AIQ_SKILL_EVAL_AGENT="$AGENT"
+          export DEEP_RESEARCHER_SKILL_EVAL_AGENT="$AGENT"
           # pull-request/<N> mirror branch: only skills changed vs develop.
           # Direct develop/release push or manual dispatch: full sweep.
           case "$REF_NAME" in
@@ -267,27 +267,27 @@ jobs:
             *)              SCOPE="--all" ;;
           esac
           python3 .github/skill-eval/skills_eval_agent.py $SCOPE --run-harbor \
-            --output-dir /tmp/aiq-skill-eval/datasets
+            --output-dir /tmp/deep-researcher-skill-eval/datasets
 
       - name: Upload Harbor results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: aiq-skill-eval-results-${{ github.run_id }}
+          name: deep-researcher-skill-eval-results-${{ github.run_id }}
           # Only this job's results (skills_eval_agent.py isolates output under
           # <results>/<run_id>-<attempt>/), not the shared root's accumulated history.
-          path: /tmp/aiq-skill-eval/results/${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/deep-researcher-skill-eval/results/${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Tear down AI-Q stack
+      - name: Tear down Deep Researcher Agent stack
         if: always()
         working-directory: deploy/compose
         run: |
           # Conservative cleanup: stop+remove containers, drop volumes so
           # Postgres doesn't leak state between runs, prune dangling images
           # so we don't fill the runner disk. Keep the image cache for the
-          # `aiq-agent` build layers (next run is faster).
+          # `deep-researcher-agent` build layers (next run is faster).
           docker compose --env-file ../.env -f docker-compose.yaml down -v --remove-orphans || true
           docker image prune -f || true
 
@@ -302,4 +302,4 @@ jobs:
       - name: Clean ephemeral image
         if: always()
         run: |
-          docker image rm "aiq-agent:ci-${{ github.run_id }}" 2>/dev/null || true
+          docker image rm "deep-researcher-agent:ci-${{ github.run_id }}" 2>/dev/null || true

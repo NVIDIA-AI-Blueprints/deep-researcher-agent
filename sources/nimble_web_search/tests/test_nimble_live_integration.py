@@ -16,7 +16,7 @@
 """Live Nimble integration test — the minimal repeatable CI check.
 
 Opt-in (mirrors ``tests/knowledge_layer_tests/test_opensearch_live.py``): set
-``AIQ_NIMBLE_LIVE_TESTS=1`` and provide a real ``NIMBLE_API_KEY``. Cost per
+``DEEP_RESEARCHER_NIMBLE_LIVE_TESTS=1`` and provide a real ``NIMBLE_API_KEY``. Cost per
 run: exactly one API call, bounded at 120 seconds.
 
 The test performs no retries of its own — the provider's built-in retry loop
@@ -26,7 +26,7 @@ reliability signal CI should surface.
 
 Run:
 
-    AIQ_NIMBLE_LIVE_TESTS=1 NIMBLE_API_KEY=<key> \
+    DEEP_RESEARCHER_NIMBLE_LIVE_TESTS=1 NIMBLE_API_KEY=<key> \
         uv run pytest sources/nimble_web_search/tests -m integration -v
 """
 
@@ -55,8 +55,8 @@ def _env_bool(name: str, default: bool = False) -> bool:
 pytestmark = [
     pytest.mark.integration,
     pytest.mark.skipif(
-        not _env_bool("AIQ_NIMBLE_LIVE_TESTS"),
-        reason="Set AIQ_NIMBLE_LIVE_TESTS=1 to run live Nimble integration tests.",
+        not _env_bool("DEEP_RESEARCHER_NIMBLE_LIVE_TESTS"),
+        reason="Set DEEP_RESEARCHER_NIMBLE_LIVE_TESTS=1 to run live Nimble integration tests.",
     ),
     pytest.mark.skipif(
         not os.environ.get("NIMBLE_API_KEY"),

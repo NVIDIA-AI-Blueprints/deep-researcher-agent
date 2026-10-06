@@ -31,16 +31,16 @@ from mcp.shared.version import LATEST_PROTOCOL_VERSION
 from mcp.types import Implementation
 from mcp.types import TextContent
 
-from aiq_agent.agents.chat_researcher.models import RESEARCH_WORKFLOW_FAILURE_ERROR
-from aiq_agent.agents.chat_researcher.models import WorkflowFailure
-from aiq_agent.agents.chat_researcher.models import WorkflowSuccess
-from aiq_mcp.db_url import normalize_postgres_url
-from aiq_mcp.db_url import require_test_database_url
-from aiq_mcp.job_store import Job
-from aiq_mcp.job_store import JobStore
-from aiq_mcp.jobs import JobManager
-from aiq_mcp.server import MCPRuntime
-from aiq_mcp.server import ServerSettings
+from deep_researcher_agent.agents.chat_researcher.models import RESEARCH_WORKFLOW_FAILURE_ERROR
+from deep_researcher_agent.agents.chat_researcher.models import WorkflowFailure
+from deep_researcher_agent.agents.chat_researcher.models import WorkflowSuccess
+from deep_researcher_mcp.db_url import normalize_postgres_url
+from deep_researcher_mcp.db_url import require_test_database_url
+from deep_researcher_mcp.job_store import Job
+from deep_researcher_mcp.job_store import JobStore
+from deep_researcher_mcp.jobs import JobManager
+from deep_researcher_mcp.server import MCPRuntime
+from deep_researcher_mcp.server import ServerSettings
 from mcp import ClientSession
 
 _DB_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -238,7 +238,7 @@ async def _serve_runtime(runtime_factory) -> AsyncIterator[tuple[MCPRuntime, str
         ws="none",
     )
     server = uvicorn.Server(config)
-    server_task = asyncio.create_task(server.serve(sockets=[listener]), name="aiq-mcp-test-uvicorn")
+    server_task = asyncio.create_task(server.serve(sockets=[listener]), name="deep-researcher-mcp-test-uvicorn")
     try:
         async with asyncio.timeout(10):
             while not server.started:
@@ -276,7 +276,7 @@ async def _client_session(
                 read_stream,
                 write_stream,
                 read_timeout_seconds=timedelta(seconds=5),
-                client_info=Implementation(name="aiq-mcp-integration-test", version="1.0"),
+                client_info=Implementation(name="deep-researcher-mcp-integration-test", version="1.0"),
             ) as session:
                 initialized = await session.initialize()
                 yield session, initialized, get_session_id
@@ -305,7 +305,7 @@ async def _exercise_complete_client_flow(
             get_submit_session_id,
         ):
             assert initialized.protocolVersion == LATEST_PROTOCOL_VERSION == "2025-11-25"
-            assert initialized.serverInfo.name == "aiq_deep_research"
+            assert initialized.serverInfo.name == "deep_researcher_deep_research"
             assert initialized.serverInfo.version == "1.28.1"
             assert initialized.capabilities.tools is not None
             assert initialized.capabilities.tools.listChanged is False
@@ -348,7 +348,7 @@ async def _exercise_complete_client_flow(
             second_initialized,
             get_poll_session_id,
         ):
-            assert second_initialized.serverInfo.name == "aiq_deep_research"
+            assert second_initialized.serverInfo.name == "deep_researcher_deep_research"
             assert get_poll_session_id() is None
             assert _structured(await poll_session.call_tool("poll_query", {"job_id": job_id})) == {
                 "job_id": job_id,
@@ -510,9 +510,9 @@ async def test_real_client_surfaces_structured_workflow_failure() -> None:
 
 @pytest.fixture()
 async def phase6_postgres_url() -> str:
-    db_url = os.getenv("AIQ_MCP_TEST_DB_URL")
+    db_url = os.getenv("DEEP_RESEARCHER_MCP_TEST_DB_URL")
     if not db_url:
-        pytest.skip("set AIQ_MCP_TEST_DB_URL to run the real-client Postgres parity test")
+        pytest.skip("set DEEP_RESEARCHER_MCP_TEST_DB_URL to run the real-client Postgres parity test")
     try:
         await _ensure_database(db_url)
         await _reset_schema(db_url)
@@ -578,7 +578,7 @@ async def test_real_client_flow_persists_anonymous_job_across_manager_restart(
 
 
 async def _ensure_database(db_url: str) -> None:
-    db_url = require_test_database_url(db_url, label="AIQ_MCP_TEST_DB_URL")
+    db_url = require_test_database_url(db_url, label="DEEP_RESEARCHER_MCP_TEST_DB_URL")
     maintenance_url, db_name = _maintenance_url(db_url)
     conn = await asyncpg.connect(maintenance_url)
     try:
@@ -590,7 +590,7 @@ async def _ensure_database(db_url: str) -> None:
 
 
 async def _reset_schema(db_url: str) -> None:
-    db_url = require_test_database_url(db_url, label="AIQ_MCP_TEST_DB_URL")
+    db_url = require_test_database_url(db_url, label="DEEP_RESEARCHER_MCP_TEST_DB_URL")
     conn = await asyncpg.connect(db_url)
     try:
         await conn.execute("DROP TABLE IF EXISTS public.mcp_jobs")
@@ -600,7 +600,7 @@ async def _reset_schema(db_url: str) -> None:
 
 
 def _maintenance_url(db_url: str) -> tuple[str, str]:
-    parts = urlsplit(normalize_postgres_url(db_url, label="AIQ_MCP_TEST_DB_URL"))
+    parts = urlsplit(normalize_postgres_url(db_url, label="DEEP_RESEARCHER_MCP_TEST_DB_URL"))
     db_name = parts.path.lstrip("/") or "postgres"
     maintenance = urlunsplit((parts.scheme, parts.netloc, "/postgres", parts.query, parts.fragment))
     return maintenance, db_name

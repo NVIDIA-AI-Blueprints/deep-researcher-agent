@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [project]
-name = "aiq-nemo-retriever-local-environment"
+name = "deep-researcher-nemo-retriever-local-environment"
 version = "0.1.0"
-description = "Isolated Python 3.12 environment for AI-Q's embedded NeMo Retriever backend"
+description = "Isolated Python 3.12 environment for Deep Researcher Agent's embedded NeMo Retriever backend"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "aiq-agent",
-    "aiq-api",
+    "deep-researcher-agent",
+    "deep-researcher-api",
     "filelock>=3.20.3,<4",
     "knowledge-layer",
     "nemo-retriever",
@@ -25,8 +25,8 @@ required-environments = [
     "sys_platform == 'win32' and platform_machine == 'AMD64'",
 ]
 [tool.uv.sources]
-aiq-agent = { path = "../..", editable = true }
-aiq-api = { path = "../../frontends/aiq_api", editable = true }
+deep-researcher-agent = { path = "../..", editable = true }
+deep-researcher-api = { path = "../../frontends/deep_researcher_api", editable = true }
 knowledge-layer = { path = "../../sources/knowledge_layer", editable = true }
 nemo-retriever = { git = "https://github.com/NVIDIA/NeMo-Retriever.git", rev = "c80f4a5189ee10b98cbdb93e2f853ceb7b699c3b", subdirectory = "nemo_retriever" } # pragma: allowlist secret
 tavily-web-search = { path = "../../sources/tavily_web_search", editable = true }

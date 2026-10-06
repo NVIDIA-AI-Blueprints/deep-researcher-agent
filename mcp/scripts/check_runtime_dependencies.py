@@ -23,16 +23,16 @@ _ALLOWED_INCOMPATIBILITIES = {
 
 # Release-image import canary: every module the server needs at runtime must be
 # importable from the production closure, the release pins must match exactly,
-# and the NAT plugin entry point must be discoverable. Importing aiq_mcp.server
-# requires AIQ_MCP_CONFIG (or a source checkout) because the module builds its
+# and the NAT plugin entry point must be discoverable. Importing deep_researcher_mcp.server
+# requires DEEP_RESEARCHER_MCP_CONFIG (or a source checkout) because the module builds its
 # default ASGI app at import time.
 _REQUIRED_IMPORTS = (
-    "aiq_mcp",
-    "aiq_mcp.server",
-    "aiq_mcp.jobs",
-    "aiq_mcp.job_store",
-    "aiq_mcp.workflow_runner",
-    "aiq_agent.common",
+    "deep_researcher_mcp",
+    "deep_researcher_mcp.server",
+    "deep_researcher_mcp.jobs",
+    "deep_researcher_mcp.job_store",
+    "deep_researcher_mcp.workflow_runner",
+    "deep_researcher_agent.common",
     "tavily_web_search",
     "knowledge_layer",
     "asyncpg",
@@ -135,7 +135,7 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit(str(exc)) from exc
     print(json.dumps(result, sort_keys=True))
     if "--verify-imports" in arguments:
-        print("AI-Q MCP runtime verified")
+        print("Deep Researcher Agent MCP runtime verified")
     return 0
 
 

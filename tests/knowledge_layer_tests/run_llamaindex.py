@@ -119,8 +119,8 @@ async def main():
     from knowledge_layer.llamaindex.adapter import LlamaIndexIngestor  # noqa: F401
     from knowledge_layer.llamaindex.adapter import LlamaIndexRetriever  # noqa: F401
 
-    from aiq_agent.knowledge import get_ingestor
-    from aiq_agent.knowledge import get_retriever
+    from deep_researcher_agent.knowledge import get_ingestor
+    from deep_researcher_agent.knowledge import get_retriever
 
     # Configuration
     persist_dir = args.chroma_dir

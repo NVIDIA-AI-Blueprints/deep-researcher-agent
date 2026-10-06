@@ -12,8 +12,8 @@ general:
         level: INFO
 
   front_end:
-    _type: aiq_api
-    runner_class: aiq_api.plugin.AIQAPIWorker
+    _type: deep_researcher_api
+    runner_class: deep_researcher_api.plugin.DeepResearcherAPIWorker
     # =========================================================================
     # Knowledge API is automatically enabled when knowledge_retrieval function
     # is configured
@@ -57,7 +57,7 @@ llms:
       enable_thinking: false
 
   # Known limitation: Build-hosted Lightning can intermittently produce citation-incomplete shallow drafts.
-  # AI-Q fails closed; see docs/source/resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog.
+  # Deep Researcher Agent fails closed; see docs/source/resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog.
   nemotron_lightning_agent_llm:
     _type: nim
     model_name: nvidia/nemotron-3-ultra-550b-a55b
@@ -169,9 +169,9 @@ functions:
     collection_name: ${COLLECTION_NAME:-test_collection}
     generate_summary: true
     summary_model: summary_llm                     # Required when generate_summary: true
-    summary_db: ${AIQ_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
+    summary_db: ${DEEP_RESEARCHER_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
     top_k: 5
-    chroma_dir: ${AIQ_CHROMA_DIR:-/tmp/chroma_data}
+    chroma_dir: ${DEEP_RESEARCHER_CHROMA_DIR:-/tmp/chroma_data}
 
   # Paper Search (optional - requires SERPER_API_KEY)
   # Uncomment the block below and set SERPER_API_KEY to enable academic paper search.
@@ -228,24 +228,24 @@ workflow:
   enable_escalation: true
   enable_clarifier: true
   use_async_deep_research: true
-  checkpoint_db: ${AIQ_CHECKPOINT_DB:-./checkpoints.db}
+  checkpoint_db: ${DEEP_RESEARCHER_CHECKPOINT_DB:-./checkpoints.db}
   relay:
     observability:
       atof:
         enabled: true
         output_directory: ./relay
-        filename: aiq-relay.atof.jsonl
+        filename: deep-researcher-relay.atof.jsonl
         mode: append
       opentelemetry:
         enabled: true
         endpoints:
           - type: openinference
             endpoint: http://localhost:6006/v1/traces
-            service_name: aiq-relay
+            service_name: deep-researcher-relay
             resource_attributes:
-              openinference.project.name: aiq-relay
+              openinference.project.name: deep-researcher-relay
               deployment.environment: development
     pricing:
       sources:
         - type: file
-          path: ${AIQ_RELAY_PRICING_CATALOG:-/app/configs/nemo_relay/relay_pricing_catalog.json}
+          path: ${DEEP_RESEARCHER_RELAY_PRICING_CATALOG:-/app/configs/nemo_relay/relay_pricing_catalog.json}

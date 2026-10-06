@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# Direct local Data Science Agent profile. This bypasses the top-level AI-Q
+# Direct local Data Science Agent profile. This bypasses the top-level Deep Researcher Agent
 # router until the data-science route is integrated.
 #
-# Required: AIQ_DATA_SCIENCE_MODEL, INFERENCE_NVIDIA_API_KEY, AIQ_INFERENCE_BASE_URL,
+# Required: DEEP_RESEARCHER_DATA_SCIENCE_MODEL, INFERENCE_NVIDIA_API_KEY, DEEP_RESEARCHER_INFERENCE_BASE_URL,
 # TAVILY_API_KEY, GSF_BASE_URL, GSF_EMAIL, GSF_PASSWORD, RAG_SERVER_URL,
 # COLLECTION_NAME.
 
@@ -18,8 +18,8 @@ general:
 llms:
   data_science_llm:
     _type: openai
-    model_name: ${AIQ_DATA_SCIENCE_MODEL}
-    base_url: ${AIQ_INFERENCE_BASE_URL}
+    model_name: ${DEEP_RESEARCHER_DATA_SCIENCE_MODEL}
+    base_url: ${DEEP_RESEARCHER_INFERENCE_BASE_URL}
     api_key: ${INFERENCE_NVIDIA_API_KEY}
     reasoning_effort: medium
     max_tokens: 32768
@@ -71,7 +71,7 @@ functions:
     # This direct workflow is retrieval-only; fail closed if an ingestion path is invoked.
     ingest_url: http://127.0.0.1:9/v1
     timeout: ${RAG_RETRIEVAL_TIMEOUT_SECONDS:-300}
-    summary_db: ${AIQ_SUMMARY_DB:-sqlite+aiosqlite:////tmp/aiq-ds-summaries.db}
+    summary_db: ${DEEP_RESEARCHER_SUMMARY_DB:-sqlite+aiosqlite:////tmp/deep-researcher-ds-summaries.db}
     # Keep certificate verification enabled by default; trusted test routes with a
     # self-signed chain can opt out locally with RAG_VERIFY_SSL=false.
     verify_ssl: ${RAG_VERIFY_SSL:-true}
@@ -90,7 +90,7 @@ functions:
       provider: gsf
       catalog_tools: [gsf__catalog_search]
       analytical_tools: [gsf__text_to_sql]
-    interaction_mode: ${AIQ_DS_INTERACTION_MODE:-interactive}
+    interaction_mode: ${DEEP_RESEARCHER_DS_INTERACTION_MODE:-interactive}
     recursion_limit: 64
     verbose: true
 

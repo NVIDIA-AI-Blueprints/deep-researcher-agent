@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a reproducible AI-Q defect.
+description: Report a reproducible Deep Researcher Agent defect.
 title: "[Bug]: "
 body:
   - type: markdown
@@ -28,9 +28,9 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: Include AI-Q version or commit, Python version, OS, deployment mode, and relevant package versions.
+      description: Include Deep Researcher Agent version or commit, Python version, OS, deployment mode, and relevant package versions.
       placeholder: |
-        AI-Q commit:
+        Deep Researcher Agent commit:
         Python:
         OS:
         Deployment:

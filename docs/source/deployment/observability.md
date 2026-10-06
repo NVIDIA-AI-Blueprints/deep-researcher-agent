@@ -5,9 +5,9 @@ SPDX-License-Identifier: Apache-2.0
 
 # Observability with NeMo Relay
 
-AI-Q uses [NeMo Relay](https://docs.nvidia.com/nemo/relay) as its observability runtime.
+Deep Researcher Agent uses [NeMo Relay](https://docs.nvidia.com/nemo/relay) as its observability runtime.
 
-Relay gives AI-Q users four complementary views:
+Relay gives Deep Researcher Agent users four complementary views:
 
 - **Developer logs** show agent, LLM, and tool activity in the terminal.
 - **ATOF JSONL** provides a durable, machine-readable event stream for debugging
@@ -18,7 +18,7 @@ Relay gives AI-Q users four complementary views:
   matches the observed model.
 
 Logging, ATOF export, full observability payloads, and redaction are enabled by
-default. OTEL export is opt-in so a default AI-Q installation does not attempt
+default. OTEL export is opt-in so a default Deep Researcher Agent installation does not attempt
 to contact an observability server. Pricing is enabled with no catalog sources;
 token usage is still recorded, but monetary cost is not estimated until you
 configure prices.
@@ -26,7 +26,7 @@ configure prices.
 ## Installation
 
 NeMo Relay and the LangChain, LangGraph, and Deep Agents integrations are
-installed with AI-Q:
+installed with Deep Researcher Agent:
 
 ```bash
 ./scripts/setup.sh
@@ -44,11 +44,11 @@ Verify the installed version:
 uv run python -c 'from importlib.metadata import version; print(version("nemo-relay"))'
 ```
 
-AI-Q supports the Relay version range pinned in `pyproject.toml`.
+Deep Researcher Agent supports the Relay version range pinned in `pyproject.toml`.
 
 ## Configuration walkthrough
 
-Relay is configured under the top-level AI-Q workflow:
+Relay is configured under the top-level Deep Researcher Agent workflow:
 
 ```yaml
 workflow:
@@ -60,7 +60,7 @@ workflow:
       atof:
         enabled: true
         output_directory: ./relay
-        filename: aiq-relay.atof.jsonl
+        filename: deep-researcher-relay.atof.jsonl
         mode: append
       opentelemetry:
         enabled: false
@@ -73,7 +73,7 @@ you intend to change.
 
 | Setting | Default | Purpose |
 |---|---:|---|
-| `logging` | `true` | Register AI-Q's Relay console subscriber. |
+| `logging` | `true` | Register Deep Researcher Agent's Relay console subscriber. |
 | `observability.enable_full_payloads` | `true` | Preserve supported inputs, outputs, metadata, and annotated usage for sanitization and export. |
 | `observability.atof.enabled` | `true` | Write Relay events to ATOF JSONL. |
 | `observability.atof.mode` | `append` | Preserve events across turns and async jobs. Use `overwrite` only for a single isolated run. |
@@ -95,44 +95,44 @@ workflow:
       atof:
         enabled: true
         output_directory: ./observability/traces
-        filename: aiq-development.atof.jsonl
+        filename: deep-researcher-development.atof.jsonl
         mode: append
 ```
 
-Relative directories are resolved from the working directory where AI-Q is
+Relative directories are resolved from the working directory where Deep Researcher Agent is
 started. Use an absolute directory for containers, services, or async workers
 when their working directories might differ:
 
 ```yaml
-output_directory: /var/lib/aiq/relay
+output_directory: /var/lib/deep-researcher/relay
 ```
 
 The resulting file is
-`/var/lib/aiq/relay/aiq-development.atof.jsonl`. Ensure every worker can write
+`/var/lib/deep-researcher/relay/deep-researcher-development.atof.jsonl`. Ensure every worker can write
 to the directory. Keep `mode: append` when multiple user turns or async jobs
 share a file; choose a unique filename instead of `overwrite` when you need
 per-run isolation.
 
 ## Inspect ATOF traces
 
-By default, AI-Q appends events to:
+By default, Deep Researcher Agent appends events to:
 
 ```text
-relay/aiq-relay.atof.jsonl
+relay/deep-researcher-relay.atof.jsonl
 ```
 
 Each line is one JSON event. Use `jq` to inspect it:
 
 ```bash
-# Follow new events while AI-Q runs.
-tail -f relay/aiq-relay.atof.jsonl | jq -c .
+# Follow new events while Deep Researcher Agent runs.
+tail -f relay/deep-researcher-relay.atof.jsonl | jq -c .
 
 # Count scope starts by category.
 jq -s '
   [.[] | select(.kind == "scope" and .scope_category == "start")]
   | group_by(.category)
   | map({category: .[0].category, count: length})
-' relay/aiq-relay.atof.jsonl
+' relay/deep-researcher-relay.atof.jsonl
 
 # Show LLM usage recorded on completed LLM scopes.
 jq -c '
@@ -142,7 +142,7 @@ jq -c '
       usage: .category_profile.annotated_response.usage,
       status: .metadata["otel.status_code"]
     }
-' relay/aiq-relay.atof.jsonl
+' relay/deep-researcher-relay.atof.jsonl
 
 # Find scopes that do not have exactly one start and one end.
 jq -s '
@@ -156,7 +156,7 @@ jq -s '
       ends: map(select(.scope_category == "end")) | length
     })
   | map(select(.starts != 1 or .ends != 1))
-' relay/aiq-relay.atof.jsonl
+' relay/deep-researcher-relay.atof.jsonl
 ```
 
 An empty final result from the balance check means every recorded scope closed
@@ -166,7 +166,7 @@ events written by an earlier job.
 
 ## Relay logging subscriber
 
-AI-Q registers a process-wide Relay subscriber when `workflow.relay.logging` is
+Deep Researcher Agent registers a process-wide Relay subscriber when `workflow.relay.logging` is
 enabled. It reads the sanitized Relay lifecycle stream and renders developer logs:
 
 ```text
@@ -181,7 +181,7 @@ enabled. It reads the sanitized Relay lifecycle stream and renders developer log
 ```
 
 The subscriber does not instrument the workflow itself. Relay's maintained
-framework integrations and AI-Q's semantic agent/tool scopes produce events;
+framework integrations and Deep Researcher Agent's semantic agent/tool scopes produce events;
 the subscriber only formats those events. This keeps console logging aligned
 with ATOF and OTEL rather than maintaining a second callback-based trace.
 
@@ -202,7 +202,7 @@ uvx --from arize-phoenix phoenix serve
 ```
 
 Phoenix is available at [http://localhost:6006](http://localhost:6006). OTEL is
-commented out in the default AI-Q configs. Uncomment or add this Relay block:
+commented out in the default Deep Researcher Agent configs. Uncomment or add this Relay block:
 
 ```yaml
 workflow:
@@ -213,15 +213,15 @@ workflow:
         endpoints:
           - type: openinference
             endpoint: http://localhost:6006/v1/traces
-            service_name: aiq-relay
+            service_name: deep-researcher-relay
             resource_attributes:
-              openinference.project.name: aiq-relay
+              openinference.project.name: deep-researcher-relay
               deployment.environment: development
 ```
 
 The `openinference` projection gives Phoenix semantic LLM, agent, and tool span
 attributes and the corresponding UI icons. `openinference.project.name`
-selects the Phoenix project. Use a distinct project name for each AI-Q
+selects the Phoenix project. Use a distinct project name for each Deep Researcher Agent
 environment that you want to compare independently.
 
 Relay also supports `full` and `gen_ai` OTEL projections. Use `full` when the
@@ -234,13 +234,13 @@ should normally use `openinference`.
 If a trace does not appear in the expected Phoenix project:
 
 1. Check that Phoenix is listening at the configured endpoint.
-2. Confirm `opentelemetry.enabled: true` and inspect the AI-Q log for export
+2. Confirm `opentelemetry.enabled: true` and inspect the Deep Researcher Agent log for export
    errors.
 3. Look in Phoenix's `default` project and any project configured globally on
    the machine.
 4. Inspect `~/.config/nemo-relay/plugins.toml`. NeMo Relay automatically
    discovers user-level plugin configuration. If Relay was already configured
-   for another application or coding agent, that exporter can send the AI-Q
+   for another application or coding agent, that exporter can send the Deep Researcher Agent
    trace to its globally configured Phoenix project instead of the project you
    are currently viewing.
 5. Compare the Phoenix trace with the local ATOF file. If ATOF contains the
@@ -248,12 +248,12 @@ If a trace does not appear in the expected Phoenix project:
    project selection, export, or batching.
 
 Keep personal Relay configuration when it is needed by other applications.
-Use an AI-Q-specific project in the workflow configuration and account for all
+Use an Deep Researcher Agent-specific project in the workflow configuration and account for all
 discovered exporters when validating where telemetry is sent.
 
-## Read AI-Q traces
+## Read Deep Researcher Agent traces
 
-AI-Q creates one root trace for each user turn. Multiple turns in the same
+Deep Researcher Agent creates one root trace for each user turn. Multiple turns in the same
 conversation have different trace IDs and share the Phoenix `session.id`, so
 the session view groups them without merging their execution trees.
 
@@ -291,7 +291,7 @@ Use the tree in this order:
    errors.
 5. For parallel researchers, compare sibling spans rather than adding their
    wall-clock durations.
-6. For a failed async job, search by `aiq.job.id` and confirm the root scope has
+6. For a failed async job, search by `deep-researcher.job.id` and confirm the root scope has
    one start, one end, and an `ERROR` terminal status.
 
 Internal graph-routing nodes are represented as decision metadata/events where
@@ -300,9 +300,9 @@ appear when the underlying integration exposes a real execution boundary.
 
 ## Redaction and privacy
 
-Relay redaction runs before the AI-Q logging subscriber, ATOF sink, and OTEL
+Relay redaction runs before the Deep Researcher Agent logging subscriber, ATOF sink, and OTEL
 exporter. The default detectors cover common credentials and personal data.
-AI-Q can also request privacy-mode sanitization for supported `data` and
+Deep Researcher Agent can also request privacy-mode sanitization for supported `data` and
 `category_profile` payloads through request privacy context.
 
 Redaction reduces accidental disclosure; it is not a substitute for auditing
@@ -312,7 +312,7 @@ full payloads in a production environment.
 
 ## Pricing and cost analysis
 
-Default AI-Q configs omit the Relay pricing block. The resulting empty source
+Default Deep Researcher Agent configs omit the Relay pricing block. The resulting empty source
 list records token usage without claiming a monetary cost. Pricing depends on
 the provider, deployment, contract, region, cache policy, and date.
 
@@ -339,13 +339,13 @@ cost information to the annotated LLM usage. Review and date every rate before
 using it operationally. A zero-dollar hosted API rate does not mean that a
 self-hosted deployment has no infrastructure cost.
 
-Relay's pricing catalog covers model usage. AI-Q's tokenomics report also
+Relay's pricing catalog covers model usage. Deep Researcher Agent's tokenomics report also
 supports per-call prices for external tools such as web search. After a run,
 generate the report with:
 
 ```bash
-PYTHONPATH=src python -m aiq_agent.tokenomics.report \
-  --trace relay/aiq-relay.atof.jsonl \
+PYTHONPATH=src python -m deep_researcher_agent.tokenomics.report \
+  --trace relay/deep-researcher-relay.atof.jsonl \
   --config frontends/benchmarks/deepresearch_bench/configs/config_tokenomics_pricing.yml
 ```
 
@@ -357,14 +357,14 @@ pricing maintenance.
 
 ## Validate the configuration
 
-Validate an edited workflow before starting AI-Q:
+Validate an edited workflow before starting Deep Researcher Agent:
 
 ```bash
-uv run python .agents/skills/aiq-configure-workflow/scripts/validate_config.py \
+uv run python .agents/skills/deep-researcher-configure-workflow/scripts/validate_config.py \
   configs/config_web_default_llamaindex.yml
 ```
 
-Then start AI-Q, run one shallow turn and one deep-research job, and verify all
+Then start Deep Researcher Agent, run one shallow turn and one deep-research job, and verify all
 three views that you enabled:
 
 - console logs show agent, LLM, and tool lifecycle activity;

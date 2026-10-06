@@ -1,5 +1,5 @@
 name: Feature Request
-description: Propose a new AI-Q capability or behavior change.
+description: Propose a new Deep Researcher Agent capability or behavior change.
 title: "[Feature]: "
 body:
   - type: textarea

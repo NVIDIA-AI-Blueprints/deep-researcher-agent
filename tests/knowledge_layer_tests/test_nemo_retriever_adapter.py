@@ -31,16 +31,16 @@ from knowledge_layer.register import _setup_backend
 from pydantic import SecretStr
 from pydantic import ValidationError
 
-from aiq_agent.knowledge import BaseIngestor
-from aiq_agent.knowledge import BaseRetriever
-from aiq_agent.knowledge import Chunk
-from aiq_agent.knowledge import ContentType
-from aiq_agent.knowledge import JobState
-from aiq_agent.knowledge.base import IngestionBatchTooLargeError
-from aiq_agent.knowledge.base import IngestionCapacityError
-from aiq_agent.knowledge.factory import is_ingestor_registered
-from aiq_agent.knowledge.factory import is_retriever_registered
-from aiq_agent.knowledge.schema import FileStatus
+from deep_researcher_agent.knowledge import BaseIngestor
+from deep_researcher_agent.knowledge import BaseRetriever
+from deep_researcher_agent.knowledge import Chunk
+from deep_researcher_agent.knowledge import ContentType
+from deep_researcher_agent.knowledge import JobState
+from deep_researcher_agent.knowledge.base import IngestionBatchTooLargeError
+from deep_researcher_agent.knowledge.base import IngestionCapacityError
+from deep_researcher_agent.knowledge.factory import is_ingestor_registered
+from deep_researcher_agent.knowledge.factory import is_retriever_registered
+from deep_researcher_agent.knowledge.schema import FileStatus
 
 NOW = "2026-07-17T12:00:00+00:00"
 
@@ -66,7 +66,7 @@ class FakeNRL:
                 "scope": "workspace-123",
                 "status": "active",
                 "description": "one",
-                "metadata": {"owner": "aiq", "table_name": "physical-secret"},
+                "metadata": {"owner": "deep-researcher", "table_name": "physical-secret"},
                 "created_at": NOW,
                 "updated_at": NOW,
                 "expires_at": None,

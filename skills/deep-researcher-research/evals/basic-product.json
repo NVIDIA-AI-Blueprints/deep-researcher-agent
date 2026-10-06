@@ -1,0 +1,27 @@
+{
+  "skills": ["deep-researcher-research"],
+  "resources": {
+    "platforms": {
+      "local": {
+        "modes": ["existing-server"]
+      }
+    }
+  },
+  "env": "Requires an Deep Researcher Agent server reachable at DEEP_RESEARCHER_SERVER_URL, defaulting to http://localhost:8000. The server can be started with the deep-researcher-deploy skill before running this eval. This smoke profile intentionally avoids model-generating /chat calls so it can verify the skill wrapper against a live server without consuming model credits.",
+  "expects": [
+    {
+      "query": "Use the deep-researcher-research skill to check whether the local Deep Researcher Agent server is healthy. Return a concise status and include the server URL you checked.",
+      "checks": [
+        "trajectory_contains:scripts/deep_researcher.py health",
+        "json_command:python3 /skills/deep-researcher-research/scripts/deep_researcher.py health"
+      ]
+    },
+    {
+      "query": "Use the deep-researcher-research skill to list the available async agent types. Return the result without truncating the JSON keys.",
+      "checks": [
+        "trajectory_contains:scripts/deep_researcher.py agents",
+        "json_command:python3 /skills/deep-researcher-research/scripts/deep_researcher.py agents"
+      ]
+    }
+  ]
+}

@@ -7,9 +7,9 @@ SPDX-License-Identifier: Apache-2.0
 
 The Intent Classifier is a single orchestration node that performs three roles
 in one LLM call: intent classification, meta response generation, and depth
-routing. It is the entry point for every query in the AI-Q workflow.
+routing. It is the entry point for every query in the Deep Researcher Agent workflow.
 
-**Location:** `src/aiq_agent/agents/chat_researcher/nodes/intent_classifier.py`
+**Location:** `src/deep_researcher_agent/agents/chat_researcher/nodes/intent_classifier.py`
 
 ## Purpose
 
@@ -82,7 +82,7 @@ The Intent Classifier reads from and writes to `ChatResearcherState`:
 
 ### IntentResult
 
-```{literalinclude} ../../../../src/aiq_agent/agents/chat_researcher/models/intent.py
+```{literalinclude} ../../../../src/deep_researcher_agent/agents/chat_researcher/models/intent.py
 :language: python
 :pyobject: IntentResult
 :caption: IntentResult model
@@ -90,7 +90,7 @@ The Intent Classifier reads from and writes to `ChatResearcherState`:
 
 ### DepthDecision
 
-```{literalinclude} ../../../../src/aiq_agent/agents/chat_researcher/models/depth.py
+```{literalinclude} ../../../../src/deep_researcher_agent/agents/chat_researcher/models/depth.py
 :language: python
 :pyobject: DepthDecision
 :caption: DepthDecision model
@@ -121,7 +121,7 @@ functions:
 ## Prompt Template
 
 The classifier uses `intent_classification.j2` located in
-`src/aiq_agent/agents/chat_researcher/prompts/`.
+`src/deep_researcher_agent/agents/chat_researcher/prompts/`.
 
 Template variables:
 

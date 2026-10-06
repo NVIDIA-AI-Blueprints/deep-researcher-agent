@@ -31,8 +31,8 @@ import pytest
 from knowledge_layer.opensearch.adapter import OpenSearchIngestor
 from knowledge_layer.opensearch.adapter import OpenSearchRetriever
 
-from aiq_agent.knowledge.schema import FileStatus
-from aiq_agent.knowledge.schema import JobState
+from deep_researcher_agent.knowledge.schema import FileStatus
+from deep_researcher_agent.knowledge.schema import JobState
 
 
 def _env_bool(name: str, default: bool = False) -> bool:
@@ -46,8 +46,8 @@ def _env_bool(name: str, default: bool = False) -> bool:
 pytestmark = [
     pytest.mark.integration,
     pytest.mark.skipif(
-        not _env_bool("AIQ_OPENSEARCH_LIVE_TESTS"),
-        reason="Set AIQ_OPENSEARCH_LIVE_TESTS=1 to run live OpenSearch integration tests.",
+        not _env_bool("DEEP_RESEARCHER_OPENSEARCH_LIVE_TESTS"),
+        reason="Set DEEP_RESEARCHER_OPENSEARCH_LIVE_TESTS=1 to run live OpenSearch integration tests.",
     ),
 ]
 
@@ -65,7 +65,7 @@ def _live_config() -> dict[str, Any]:
     if auth_type == "sigv4":
         pytest.importorskip("boto3")
 
-    prefix = os.environ.get("AIQ_OPENSEARCH_LIVE_INDEX_PREFIX", "aiq-live")
+    prefix = os.environ.get("DEEP_RESEARCHER_OPENSEARCH_LIVE_INDEX_PREFIX", "deep-researcher-live")
     run_suffix = uuid.uuid4().hex[:8]
 
     return {

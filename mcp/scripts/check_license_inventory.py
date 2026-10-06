@@ -19,7 +19,7 @@ from urllib.parse import parse_qs
 from urllib.parse import urlsplit
 
 _DIRECT_RUNTIME_DEPENDENCIES = {
-    "aiq-agent",
+    "deep-researcher-agent",
     "asyncpg",
     "langchain-core",
     "mcp",
@@ -32,7 +32,7 @@ _DIRECT_RUNTIME_DEPENDENCIES = {
 }
 _FORBIDDEN_COMPONENTS = {"maas-sdk", "mos-sdk"}
 _LOCAL_SOURCE_COMPONENTS = {
-    ("aiq-agent", "2.2.0"): "../",
+    ("deep-researcher-agent", "2.2.0"): "../",
     ("knowledge-layer", "1.0.0"): "../sources/knowledge_layer",
     ("tavily-web-search", "1.0.0"): "../sources/tavily_web_search",
 }
@@ -188,8 +188,8 @@ def validate_sbom(sbom: dict[str, Any]) -> None:
     if sbom.get("bomFormat") != "CycloneDX" or sbom.get("specVersion") != "1.5":
         raise ValueError("expected a CycloneDX 1.5 SBOM")
     root = sbom.get("metadata", {}).get("component", {})
-    if (root.get("name"), root.get("version")) != ("aiq-mcp-server", "0.1.0"):
-        raise ValueError("SBOM root must be aiq-mcp-server 0.1.0")
+    if (root.get("name"), root.get("version")) != ("deep-researcher-mcp-server", "0.1.0"):
+        raise ValueError("SBOM root must be deep-researcher-mcp-server 0.1.0")
 
     components = sbom.get("components")
     if not isinstance(components, list):
@@ -241,7 +241,7 @@ def validate_lock_sources(lock_path: Path = _MCP_LOCK_PATH) -> None:
     lock = tomllib.loads(lock_path.read_text())
     expected_local = {
         **_LOCAL_SOURCE_COMPONENTS,
-        ("aiq-mcp-server", "0.1.0"): ".",
+        ("deep-researcher-mcp-server", "0.1.0"): ".",
     }
     observed_local: dict[tuple[str, str], str] = {}
     for package in lock.get("package", []):
@@ -335,7 +335,7 @@ def build_inventory(sbom_path: Path) -> dict[str, Any]:
 
     counts = Counter(row["evidence_kind"] for row in rows)
     return {
-        "schema": "aiq-mcp-license-inventory-v2",
+        "schema": "deep-researcher-mcp-license-inventory-v2",
         "source_sbom_sha256": hashlib.sha256(sbom_bytes).hexdigest(),
         "source_components": source_components,
         "summary": {

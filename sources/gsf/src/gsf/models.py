@@ -23,7 +23,7 @@ DatabaseName = Annotated[
 
 
 class GSFRequest(BaseModel):
-    """Base model for data sent from AI-Q to GSF."""
+    """Base model for data sent from Deep Researcher Agent to GSF."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -94,7 +94,7 @@ class TextToPQLRequest(GSFRequest):
     question: str = Field(min_length=1, max_length=4_096)
     database_name: DatabaseName | None = Field(
         default=None,
-        description="Optional benchmark-only database selector; normal AI-Q calls leave this unset.",
+        description="Optional benchmark-only database selector; normal Deep Researcher Agent calls leave this unset.",
     )
     max_rows: int = Field(default=1_000, ge=1)
 

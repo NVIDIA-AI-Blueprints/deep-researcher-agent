@@ -29,7 +29,7 @@ while [[ $# -gt 0 ]]; do
         -h|--help)
             echo "Usage: $0 [OPTIONS]"
             echo ""
-            echo "Start the AI-Q API backend for Agent Skill use."
+            echo "Start the Deep Researcher Agent API backend for Agent Skill use."
             echo ""
             echo "Options:"
             echo "  --config_file PATH  Config file (default: configs/config_web_default_llamaindex.yml)"
@@ -90,8 +90,8 @@ else
     echo "Warning: No deploy/.env file found. Copy deploy/.env.example to deploy/.env"
 fi
 
-export AIQ_DEV_ENV=skill
-export AIQ_ENABLE_DEBUG=false
+export DEEP_RESEARCHER_DEV_ENV=skill
+export DEEP_RESEARCHER_ENABLE_DEBUG=false
 export PYTHONWARNINGS="${PYTHONWARNINGS:-ignore}"
 
 DISPLAY_HOST="$HOST"
@@ -111,13 +111,13 @@ fi
 
 echo ""
 echo "============================================"
-echo "  AI-Q Blueprint - Agent Skill Backend"
+echo "  Deep Researcher Agent Blueprint - Agent Skill Backend"
 echo "============================================"
 echo ""
 echo "Config:      $CONFIG_FILE"
 echo "Bind Host:   $HOST"
 echo "API Server:  $SKILL_SERVER_URL"
-echo "Skill URL:   AIQ_SERVER_URL=$SKILL_SERVER_URL"
+echo "Skill URL:   DEEP_RESEARCHER_SERVER_URL=$SKILL_SERVER_URL"
 echo "Debug UI:    disabled"
 echo ""
 echo "Starting server..."

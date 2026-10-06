@@ -1,6 +1,6 @@
 # Deploy
 
-This directory contains deployment assets for the AI-Q blueprint.
+This directory contains deployment assets for the Deep Researcher Agent blueprint.
 
 ## Docker Compose
 

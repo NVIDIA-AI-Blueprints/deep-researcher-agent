@@ -5,14 +5,14 @@ SPDX-License-Identifier: Apache-2.0
 
 # Example: Full Pipeline (Foundational RAG)
 
-The complete AI-Q blueprint configuration with all features enabled: intent classification, shallow and deep research agents, knowledge retrieval (Foundational RAG), paper search, web search, clarifier with human-in-the-loop clarification, and the async jobs API with SSE streaming.
+The complete Deep Researcher Agent blueprint configuration with all features enabled: intent classification, shallow and deep research agents, knowledge retrieval (Foundational RAG), paper search, web search, clarifier with human-in-the-loop clarification, and the async jobs API with SSE streaming.
 
 This is based on `configs/config_web_frag.yml`, which is the default for Helm deployments.
 
 ```{note}
 This example preserves the shipped Lightning shallow profile. The NVIDIA API Catalog serving profile has a known
 [shallow citation-output limitation](../resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog).
-AI-Q fails closed rather than publishing citation-incomplete drafts.
+Deep Researcher Agent fails closed rather than publishing citation-incomplete drafts.
 ```
 
 ## Configuration
@@ -34,13 +34,13 @@ general:
         level: INFO
 
   # ---------------------------------------------------------------------------
-  # Front-end: AI-Q API plugin
+  # Front-end: Deep Researcher Agent API plugin
   # ---------------------------------------------------------------------------
   # This enables the async jobs API, SSE streaming, and Knowledge API.
   # Without this section, `nat serve` uses NeMo Agent Toolkit's default WebSocket front-end.
   front_end:
-    _type: aiq_api
-    runner_class: aiq_api.plugin.AIQAPIWorker
+    _type: deep_researcher_api
+    runner_class: deep_researcher_api.plugin.DeepResearcherAPIWorker
 
     # Async job database (JobStore + EventStore)
     # SQLite for local dev, PostgreSQL for production
@@ -219,7 +219,7 @@ workflow:
   enable_escalation: true          # Allow shallow -> deep escalation
   enable_clarifier: true           # Enable clarification flow for deep research
   use_async_deep_research: true    # Run deep research asynchronously
-  checkpoint_db: ${AIQ_CHECKPOINT_DB:-./checkpoints.db}
+  checkpoint_db: ${DEEP_RESEARCHER_CHECKPOINT_DB:-./checkpoints.db}
 ```
 
 ## Required Environment Variables
@@ -235,7 +235,7 @@ export RAG_SERVER_URL="http://localhost:8081"
 export RAG_INGEST_URL="http://localhost:8082"
 
 # Optional: production database
-# export NAT_JOB_STORE_DB_URL="postgresql+asyncpg://user:pass@host:5432/aiq_jobs"  # pragma: allowlist secret
+# export NAT_JOB_STORE_DB_URL="postgresql+asyncpg://user:pass@host:5432/deep_researcher_jobs"  # pragma: allowlist secret
 ```
 
 ## How to Run
@@ -252,8 +252,8 @@ The server starts at `http://localhost:8000`. The API docs are at `http://localh
 ### Docker Compose
 
 The FRAG workflow requires separately deployed RAG query and ingestion services.
-Set both endpoints to addresses that are reachable from the `aiq-agent`
-container. Container-local `localhost` points back to the AI-Q backend and is not
+Set both endpoints to addresses that are reachable from the `deep-researcher-agent`
+container. Container-local `localhost` points back to the Deep Researcher Agent backend and is not
 a valid cross-service address.
 
 From the repository root:
@@ -270,13 +270,13 @@ docker compose --env-file deploy/.env \
 ```
 
 With the service-name endpoints shown above and both stacks running, connect
-the AI-Q backend to the RAG network:
+the Deep Researcher Agent backend to the RAG network:
 
 ```bash
-docker network connect nvidia-rag aiq-agent
+docker network connect nvidia-rag deep-researcher-agent
 ```
 
-Repeat this command whenever the `aiq-agent` container is recreated.
+Repeat this command whenever the `deep-researcher-agent` container is recreated.
 
 ### Test the Pipeline
 
@@ -315,7 +315,7 @@ This configuration enables every major feature:
 | Web search | `web_search_tool`, `advanced_web_search_tool` | Enabled |
 | Paper search | `paper_search_tool` | Enabled |
 | Knowledge layer | `knowledge_search` (Foundational RAG) | Enabled |
-| Async jobs API | `front_end._type: aiq_api` | Enabled |
-| SSE streaming | Automatic with `aiq_api` | Enabled |
+| Async jobs API | `front_end._type: deep_researcher_api` | Enabled |
+| SSE streaming | Automatic with `deep_researcher_api` | Enabled |
 | Knowledge API | Automatic when `knowledge_retrieval` configured | Enabled |
 | Conversation persistence | `checkpoint_db` | Enabled |

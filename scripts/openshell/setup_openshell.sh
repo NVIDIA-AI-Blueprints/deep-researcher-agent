@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Set up NVIDIA OpenShell for AI-Q per-job policy-backed sandboxes.
+# Set up NVIDIA OpenShell for Deep Researcher Agent per-job policy-backed sandboxes.
 
 set -euo pipefail
 
@@ -23,12 +23,12 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 VENV_DIR="$REPO_ROOT/.venv"
 
 OPENSHELL_RELEASE_TAG="$(awk -F'"' '
-    $0 == "[tool.aiq.openshell]" { in_contract = 1; next }
+    $0 == "[tool.deep-researcher.openshell]" { in_contract = 1; next }
     in_contract && /^\[/ { in_contract = 0 }
     in_contract && /^release-tag = / { print $2; exit }
 ' "$REPO_ROOT/pyproject.toml")"
 OPENSHELL_ADAPTER_VERSION="$(awk -F'"' '
-    $0 == "[tool.aiq.openshell]" { in_contract = 1; next }
+    $0 == "[tool.deep-researcher.openshell]" { in_contract = 1; next }
     in_contract && /^\[/ { in_contract = 0 }
     in_contract && /^adapter-version = / { print $2; exit }
 ' "$REPO_ROOT/pyproject.toml")"
@@ -37,20 +37,20 @@ OPENSHELL_ADAPTER_VERSION="$(awk -F'"' '
 [[ "$OPENSHELL_ADAPTER_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
     || { echo "ERROR: invalid OpenShell adapter contract" >&2; exit 1; }
 DEFAULT_OPENSHELL_VERSION="${OPENSHELL_RELEASE_TAG#v}"
-OPENSHELL_VERSION="${AIQ_OPENSHELL_VERSION:-}"
+OPENSHELL_VERSION="${DEEP_RESEARCHER_OPENSHELL_VERSION:-}"
 # Official OpenShell deepagents adapter: the `langchain-nvidia-openshell` partner
 # package, now published on PyPI. Override with LANGCHAIN_NVIDIA_REPO to use a git
 # spec or a local checkout (e.g. to test an unreleased adapter build).
 DEFAULT_LANGCHAIN_NVIDIA_INSTALL_SPEC="langchain-nvidia-openshell==$OPENSHELL_ADAPTER_VERSION"
 LANGCHAIN_NVIDIA_REPO="${LANGCHAIN_NVIDIA_REPO:-$DEFAULT_LANGCHAIN_NVIDIA_INSTALL_SPEC}"
-IMAGE_NAME="${AIQ_OPENSHELL_IMAGE:-aiq-openshell-demo:latest}"
+IMAGE_NAME="${DEEP_RESEARCHER_OPENSHELL_IMAGE:-deep-researcher-openshell-demo:latest}"
 # Sandbox log verbosity baked into the image (RUST_LOG). Default `warn` is OpenShell's
 # stock sandbox level; set to `debug` to surface in-container process/relay detail.
-SANDBOX_LOG_LEVEL="${AIQ_OPENSHELL_SANDBOX_LOG_LEVEL:-warn}"
-POLICY_PRESET="${AIQ_OPENSHELL_POLICY:-}"
-POLICY_ALLOWLIST="${AIQ_OPENSHELL_POLICY_ALLOWLIST:-${AIQ_OPENSHELL_POLICY_SERVICES:-}}"
-POLICY_FILE="${AIQ_OPENSHELL_POLICY_FILE:-$REPO_ROOT/configs/openshell/generated/aiq-openshell-policy.yaml}"
-LANDLOCK_COMPATIBILITY="${AIQ_OPENSHELL_LANDLOCK_COMPATIBILITY:-hard_requirement}"
+SANDBOX_LOG_LEVEL="${DEEP_RESEARCHER_OPENSHELL_SANDBOX_LOG_LEVEL:-warn}"
+POLICY_PRESET="${DEEP_RESEARCHER_OPENSHELL_POLICY:-}"
+POLICY_ALLOWLIST="${DEEP_RESEARCHER_OPENSHELL_POLICY_ALLOWLIST:-${DEEP_RESEARCHER_OPENSHELL_POLICY_SERVICES:-}}"
+POLICY_FILE="${DEEP_RESEARCHER_OPENSHELL_POLICY_FILE:-$REPO_ROOT/configs/openshell/generated/deep-researcher-openshell-policy.yaml}"
+LANDLOCK_COMPATIBILITY="${DEEP_RESEARCHER_OPENSHELL_LANDLOCK_COMPATIBILITY:-hard_requirement}"
 LANDLOCK_COMPATIBILITY_CLI=false
 LOCAL_DEMO=false
 DOCKER_BIN="${DOCKER_BIN:-}"
@@ -65,17 +65,17 @@ usage() {
     cat <<EOF
 Usage: scripts/openshell/setup_openshell.sh [options]
 
-Sets up OpenShell for AI-Q:
+Sets up OpenShell for Deep Researcher Agent:
   1. Detects macOS/Linux.
-  2. Loads the AI-Q-certified exact OpenShell release contract.
+  2. Loads the Deep Researcher Agent-certified exact OpenShell release contract.
   3. Installs the certified OpenShell Python package version.
   4. Installs the langchain-nvidia-openshell deepagents adapter.
   5. Generates an initial OpenShell policy.
-  6. Resolves Docker and builds the reusable AI-Q sandbox image.
+  6. Resolves Docker and builds the reusable Deep Researcher Agent sandbox image.
 
 This script never starts, stops, registers, or probes a gateway. Run
 scripts/openshell/start_openshell_gateway.sh after provisioning; per-job sandbox creation
-remains owned by the AI-Q runtime.
+remains owned by the Deep Researcher Agent runtime.
 
 Canonical operator guide: docs/source/deployment/openshell.md
 
@@ -87,11 +87,11 @@ Options:
   --allow LIST                  Comma-separated services for --policy custom.
                                 Services: $SUPPORTED_SERVICES
   --policy-file PATH            Output policy file.
-                                Default: configs/openshell/generated/aiq-openshell-policy.yaml
+                                Default: configs/openshell/generated/deep-researcher-openshell-policy.yaml
   --landlock-compatibility MODE hard_requirement (default) or best_effort (local demo only).
   --local-demo                 Shortcut for best_effort policy generation. Runtime commands
-                               must set AIQ_OPENSHELL_REQUIRE_HARD_LANDLOCK=false.
-  --image-name NAME             Docker image tag (default: aiq-openshell-demo:latest).
+                               must set DEEP_RESEARCHER_OPENSHELL_REQUIRE_HARD_LANDLOCK=false.
+  --image-name NAME             Docker image tag (default: deep-researcher-openshell-demo:latest).
   --sandbox-log-level LEVEL     In-container OpenShell log verbosity baked into the
                                 image via RUST_LOG (default: warn). Use "debug" to
                                 surface process/relay detail in the sandbox logs.
@@ -242,18 +242,18 @@ resolve_openshell_version() {
         OPENSHELL_VERSION="$DEFAULT_OPENSHELL_VERSION"
     fi
     if [[ "$OPENSHELL_VERSION" == "latest" || "$OPENSHELL_VERSION" != "$DEFAULT_OPENSHELL_VERSION" ]]; then
-        fail "OpenShell '$OPENSHELL_VERSION' is not certified for this AI-Q release. Use exact version $DEFAULT_OPENSHELL_VERSION; certify upgrades in a separate development change."
+        fail "OpenShell '$OPENSHELL_VERSION' is not certified for this Deep Researcher Agent release. Use exact version $DEFAULT_OPENSHELL_VERSION; certify upgrades in a separate development change."
     fi
     echo "OpenShell version selected: $OPENSHELL_VERSION"
 }
 
-ensure_aiq_env() {
+ensure_deep_researcher_env() {
     cd "$REPO_ROOT"
     if [[ ! -d "$VENV_DIR" ]]; then
-        log "Creating AI-Q virtual environment"
+        log "Creating Deep Researcher Agent virtual environment"
         ./scripts/setup.sh
     else
-        log "Using existing AI-Q virtual environment"
+        log "Using existing Deep Researcher Agent virtual environment"
     fi
     # Never let a caller's activated checkout redirect `uv pip` into another
     # repository. Provisioning must mutate only this repository's environment.
@@ -307,12 +307,12 @@ EOF
         exit 1
     fi
 
-    # Adapter 0.1.0 still declares deepagents<0.6 and can otherwise downgrade AI-Q's
-    # locked DeepAgents 0.6.x runtime. Restore the complete AI-Q lock while retaining
+    # Adapter 0.1.0 still declares deepagents<0.6 and can otherwise downgrade Deep Researcher Agent's
+    # locked DeepAgents 0.6.x runtime. Restore the complete Deep Researcher Agent lock while retaining
     # optional packages that are intentionally absent from the base project metadata.
     # This keeps repeated setup deterministic without pretending the upstream adapter
     # metadata is compatible; `pip check` remains a documented upstream limitation.
-    log "Restoring locked AI-Q dependencies while retaining optional OpenShell packages"
+    log "Restoring locked Deep Researcher Agent dependencies while retaining optional OpenShell packages"
     uv sync --dev --inexact
 
     # Adapter dependency resolution must not silently change the operator-selected
@@ -523,7 +523,7 @@ print_policy_menu() {
 Choose an OpenShell sandbox network policy:
 
   1. Offline (recommended)
-     No sandbox network access. AI-Q tools gather data; sandbox code computes on inputs.
+     No sandbox network access. Deep Researcher Agent tools gather data; sandbox code computes on inputs.
 
   2. Research APIs
      Allow GitHub, NVIDIA API, Tavily, and Serper.
@@ -656,7 +656,7 @@ version: 1
 filesystem_policy:
   include_workdir: true
   # Declare the proxy baseline up front so OpenShell does not create an enriched
-  # revision whose content/hash differs from the policy AI-Q submitted.
+  # revision whose content/hash differs from the policy Deep Researcher Agent submitted.
   read_only:
     - /usr
     - /lib
@@ -768,14 +768,14 @@ build_image() {
     log "Building sandbox image: $IMAGE_NAME (sandbox log level: $SANDBOX_LOG_LEVEL)"
     "$DOCKER_BIN" build -t "$IMAGE_NAME" \
         --build-arg OPENSHELL_SANDBOX_LOG_LEVEL="$SANDBOX_LOG_LEVEL" \
-        -f "$REPO_ROOT/deploy/openshell/Dockerfile.aiq-demo" "$REPO_ROOT/deploy/openshell"
+        -f "$REPO_ROOT/deploy/openshell/Dockerfile.deep-researcher-demo" "$REPO_ROOT/deploy/openshell"
 }
 
 diagnose_gateway_components() {
     log "Inspecting packaged gateway components"
     if ! "$VENV_DIR/bin/python" "$SCRIPT_DIR/check_versions.py" \
-        --gateway-name "${AIQ_OPENSHELL_GATEWAY_NAME:-openshell}" --skip-live; then
-        echo "Provisioning completed, but gateway remediation is required before readiness or AI-Q startup."
+        --gateway-name "${DEEP_RESEARCHER_OPENSHELL_GATEWAY_NAME:-openshell}" --skip-live; then
+        echo "Provisioning completed, but gateway remediation is required before readiness or Deep Researcher Agent startup."
     fi
 }
 
@@ -784,27 +784,27 @@ print_next_steps() {
     local runtime_env=""
     local landlock_note="Production defaults require hard Landlock; no runtime override is needed."
     if [[ "$LANDLOCK_COMPATIBILITY" == "best_effort" ]]; then
-        runtime_env="AIQ_OPENSHELL_REQUIRE_HARD_LANDLOCK=false "
+        runtime_env="DEEP_RESEARCHER_OPENSHELL_REQUIRE_HARD_LANDLOCK=false "
         landlock_note="This is a local best_effort policy. Prefix validation, CLI, and E2E commands with
-AIQ_OPENSHELL_REQUIRE_HARD_LANDLOCK=false."
+DEEP_RESEARCHER_OPENSHELL_REQUIRE_HARD_LANDLOCK=false."
     fi
     cat <<EOF
 
-OpenShell dependencies, policy, and image are provisioned for AI-Q.
+OpenShell dependencies, policy, and image are provisioned for Deep Researcher Agent.
 
 The default local gateway, image, policy path, and expected version are already
 wired into the launcher, config, and live suite. These are optional overrides
 for custom shells or remote gateways:
 
-  export AIQ_OPENSHELL_GATEWAY_NAME="openshell"
-  export AIQ_OPENSHELL_WORKSPACE="${AIQ_OPENSHELL_WORKSPACE:-default}"
-  export AIQ_OPENSHELL_IMAGE="$IMAGE_NAME"
-  export AIQ_OPENSHELL_POLICY_FILE="$POLICY_FILE"
-  export AIQ_OPENSHELL_EXPECTED_GATEWAY_VERSION="$OPENSHELL_VERSION"
+  export DEEP_RESEARCHER_OPENSHELL_GATEWAY_NAME="openshell"
+  export DEEP_RESEARCHER_OPENSHELL_WORKSPACE="${DEEP_RESEARCHER_OPENSHELL_WORKSPACE:-default}"
+  export DEEP_RESEARCHER_OPENSHELL_IMAGE="$IMAGE_NAME"
+  export DEEP_RESEARCHER_OPENSHELL_POLICY_FILE="$POLICY_FILE"
+  export DEEP_RESEARCHER_OPENSHELL_EXPECTED_GATEWAY_VERSION="$OPENSHELL_VERSION"
 
 $landlock_note
 
-Validate the AI-Q config:
+Validate the Deep Researcher Agent config:
 
   ${runtime_env}.venv/bin/nat validate --config_file $runtime_config
 
@@ -837,7 +837,7 @@ main() {
     fi
     resolve_openshell_version
     resolve_policy
-    ensure_aiq_env
+    ensure_deep_researcher_env
     install_openshell_python
     resolve_openshell_cli
     resolve_docker

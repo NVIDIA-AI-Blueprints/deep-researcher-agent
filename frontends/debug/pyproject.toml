@@ -18,9 +18,9 @@ requires = ["setuptools >= 64", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "aiq-debug"
+name = "deep-researcher-debug"
 version = "0.1.0"
-description = "Debug console for AI-Q async jobs"
+description = "Debug console for Deep Researcher Agent async jobs"
 requires-python = ">=3.11,<3.14"
 license = {text = "Apache-2.0"}
 dependencies = [

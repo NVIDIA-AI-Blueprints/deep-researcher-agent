@@ -15,15 +15,15 @@
 
 """Tests for tokenomics report data builders.
 
-Module under test: src/aiq_agent/tokenomics/report/_report_builders.py
+Module under test: src/deep_researcher_agent/tokenomics/report/_report_builders.py
 """
 
-from aiq_agent.tokenomics.pricing import PricingRegistry
-from aiq_agent.tokenomics.profile import PHASE_ORCHESTRATOR
-from aiq_agent.tokenomics.profile import PhaseStats
-from aiq_agent.tokenomics.profile import RequestProfile
-from aiq_agent.tokenomics.report._report_builders import _build_comparison_data
-from aiq_agent.tokenomics.report._report_builders import _build_report_data
+from deep_researcher_agent.tokenomics.pricing import PricingRegistry
+from deep_researcher_agent.tokenomics.profile import PHASE_ORCHESTRATOR
+from deep_researcher_agent.tokenomics.profile import PhaseStats
+from deep_researcher_agent.tokenomics.profile import RequestProfile
+from deep_researcher_agent.tokenomics.report._report_builders import _build_comparison_data
+from deep_researcher_agent.tokenomics.report._report_builders import _build_report_data
 
 
 def _minimal_pricing() -> PricingRegistry:

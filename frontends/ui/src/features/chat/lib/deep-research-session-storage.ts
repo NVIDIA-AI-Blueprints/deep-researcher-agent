@@ -11,7 +11,7 @@
 
 import type { DeepResearchJobStatus } from '../types'
 
-const STORAGE_KEY_PREFIX = 'aiq-deep-research-'
+const STORAGE_KEY_PREFIX = 'deep-researcher-deep-research-'
 const ONE_HOUR = 60 * 60 * 1000
 
 const getStorageKey = (jobId: string): string => `${STORAGE_KEY_PREFIX}${jobId}`

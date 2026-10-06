@@ -120,7 +120,7 @@ class TestNimbleWebSearchToolConfig:
             NimbleWebSearchToolConfig(focus="newsy")
 
     def test_no_include_answer_field(self):
-        # include_answer is intentionally not exposed as AI-Q-facing config in this
+        # include_answer is intentionally not exposed as Deep Researcher Agent-facing config in this
         # initial integration (see register.py / README).
         assert "include_answer" not in NimbleWebSearchToolConfig.model_fields
         assert "include_answers" not in NimbleWebSearchToolConfig.model_fields

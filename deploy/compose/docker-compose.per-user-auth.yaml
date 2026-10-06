@@ -2,7 +2,7 @@
 # Apply this file together with docker-compose.yaml; it is not standalone.
 
 services:
-  aiq-agent:
+  deep-researcher-agent:
     environment:
       CONFIG_FILE: /app/configs/config_web_frag_mcp_auth.yml
       MCP_TOKEN_STORE_TYPE: redis
@@ -18,7 +18,7 @@ services:
     volumes:
       - redis-data:/data
     networks:
-      - aiq-network
+      - deep-researcher-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

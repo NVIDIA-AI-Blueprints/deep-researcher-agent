@@ -160,7 +160,7 @@ def inspect_components(
         reason = "component_version_mismatch"
         remediation = (
             "Run ./scripts/openshell/setup_openshell.sh "
-            f"--openshell-version {certified} to repair the AI-Q environment."
+            f"--openshell-version {certified} to repair the Deep Researcher Agent environment."
         )
     elif local_macos and (formula_version != certified or packaged_cli_version != certified):
         reason = "component_version_mismatch"
@@ -196,8 +196,8 @@ def inspect_components(
 def _print_human(report: ComponentReport) -> None:
     values: list[tuple[str, Any]] = [
         ("Certified version", report.certified_version),
-        ("AI-Q SDK version", report.sdk_version),
-        ("AI-Q virtual-environment CLI version", report.virtualenv_cli_version),
+        ("Deep Researcher Agent SDK version", report.sdk_version),
+        ("Deep Researcher Agent virtual-environment CLI version", report.virtualenv_cli_version),
         ("Homebrew formula", report.homebrew_formula),
         ("Homebrew formula version", report.homebrew_formula_version),
         ("Packaged CLI version", report.packaged_cli_version),

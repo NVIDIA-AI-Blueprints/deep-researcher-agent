@@ -5,30 +5,30 @@ SPDX-License-Identifier: Apache-2.0
 
 # Prompts
 
-Each agent in the AI-Q blueprint uses [Jinja2](https://jinja.palletsprojects.com/) templates to define its system prompt. These templates control the agent's persona, instructions, output format, and behavior. By editing these templates you can customize how agents reason, what they prioritize, and how they format responses -- all without modifying Python code.
+Each agent in the Deep Researcher Agent blueprint uses [Jinja2](https://jinja.palletsprojects.com/) templates to define its system prompt. These templates control the agent's persona, instructions, output format, and behavior. By editing these templates you can customize how agents reason, what they prioritize, and how they format responses -- all without modifying Python code.
 
 ## Prompt Template Inventory
 
 | Template | Consumer | Purpose |
 |----------|----------|---------|
-| `src/aiq_agent/agents/chat_researcher/prompts/intent_classification.j2` | Intent Classifier | Classifies queries as meta or research, determines depth (shallow/deep), generates meta responses |
-| `src/aiq_agent/agents/chat_researcher/prompts/context_aware_intent_router.j2` | Context-aware Intent Router | Classifies interactions, selects classic depth, and performs bounded catalog discovery for GSF-enabled workflows |
-| `src/aiq_agent/agents/shallow_researcher/prompts/researcher.j2` | Shallow Researcher | Defines the research persona, tool usage strategy, source hierarchy, and citation rules |
-| `src/aiq_agent/agents/data_science/prompts/agent.j2` | Data Science Agent | Guides adaptive semantic discovery, structured queries, document/web evidence gathering, and analytical synthesis |
-| `src/aiq_agent/agents/deep_researcher/prompts/orchestrator.j2` | Deep Research Orchestrator | Coordinates ordered routing, planning, batched research, and writer delegation; it does not call source tools directly |
-| `src/aiq_agent/agents/deep_researcher/prompts/source_router.j2` | Source Router | Selects an advisory route from the request-allowed source catalog before planning |
-| `src/aiq_agent/agents/deep_researcher/prompts/planner.j2` | Deep Research Planner | Grounds and returns a structured `ResearchPlan` with independent `ResearchQuery` objects |
-| `src/aiq_agent/agents/deep_researcher/prompts/researcher.j2` | Researcher Worker | Executes one `ResearchQuery` and returns structured `ResearchNotes` using preferred and fallback tools as prompt guidance |
-| `src/aiq_agent/agents/deep_researcher/prompts/writer.j2` | Report Writer | Synthesizes the plan, research notes, and captured sources into `/shared/output.md` |
-| `src/aiq_agent/agents/deep_researcher/prompts/source_registry.j2` | Source Registry Middleware | Renders the captured source list exposed to the writer |
-| `src/aiq_agent/agents/clarifier/prompts/research_clarification.j2` | Clarifier | Determines whether a request needs clarification and asks focused follow-up questions; it does not create or approve a plan |
+| `src/deep_researcher_agent/agents/chat_researcher/prompts/intent_classification.j2` | Intent Classifier | Classifies queries as meta or research, determines depth (shallow/deep), generates meta responses |
+| `src/deep_researcher_agent/agents/chat_researcher/prompts/context_aware_intent_router.j2` | Context-aware Intent Router | Classifies interactions, selects classic depth, and performs bounded catalog discovery for GSF-enabled workflows |
+| `src/deep_researcher_agent/agents/shallow_researcher/prompts/researcher.j2` | Shallow Researcher | Defines the research persona, tool usage strategy, source hierarchy, and citation rules |
+| `src/deep_researcher_agent/agents/data_science/prompts/agent.j2` | Data Science Agent | Guides adaptive semantic discovery, structured queries, document/web evidence gathering, and analytical synthesis |
+| `src/deep_researcher_agent/agents/deep_researcher/prompts/orchestrator.j2` | Deep Research Orchestrator | Coordinates ordered routing, planning, batched research, and writer delegation; it does not call source tools directly |
+| `src/deep_researcher_agent/agents/deep_researcher/prompts/source_router.j2` | Source Router | Selects an advisory route from the request-allowed source catalog before planning |
+| `src/deep_researcher_agent/agents/deep_researcher/prompts/planner.j2` | Deep Research Planner | Grounds and returns a structured `ResearchPlan` with independent `ResearchQuery` objects |
+| `src/deep_researcher_agent/agents/deep_researcher/prompts/researcher.j2` | Researcher Worker | Executes one `ResearchQuery` and returns structured `ResearchNotes` using preferred and fallback tools as prompt guidance |
+| `src/deep_researcher_agent/agents/deep_researcher/prompts/writer.j2` | Report Writer | Synthesizes the plan, research notes, and captured sources into `/shared/output.md` |
+| `src/deep_researcher_agent/agents/deep_researcher/prompts/source_registry.j2` | Source Registry Middleware | Renders the captured source list exposed to the writer |
+| `src/deep_researcher_agent/agents/clarifier/prompts/research_clarification.j2` | Clarifier | Determines whether a request needs clarification and asks focused follow-up questions; it does not create or approve a plan |
 
 ## Template Directory Structure
 
 Each agent stores its prompts in a `prompts/` subdirectory co-located with the agent code:
 
 ```
-src/aiq_agent/agents/
+src/deep_researcher_agent/agents/
     shallow_researcher/
         prompts/
             researcher.j2              # Single system prompt
@@ -56,7 +56,7 @@ The naming convention follows each runtime role. `source_registry.j2` is a middl
 
 ## How Templates Are Loaded
 
-At runtime, templates flow through two utility functions in `src/aiq_agent/common/prompt_utils.py`:
+At runtime, templates flow through two utility functions in `src/deep_researcher_agent/common/prompt_utils.py`:
 
 ```
 prompts/researcher.j2  (Jinja2 source)
@@ -76,7 +76,7 @@ prompts/researcher.j2  (Jinja2 source)
 Loads a raw template file from the agent's `prompts/` directory. Automatically appends `.j2` if the file is not found by exact name.
 
 ```python
-from aiq_agent.common import load_prompt
+from deep_researcher_agent.common import load_prompt
 
 # Load the template file as a string
 template = load_prompt(Path(__file__).parent / "prompts", "researcher")
@@ -87,7 +87,7 @@ template = load_prompt(Path(__file__).parent / "prompts", "researcher")
 Renders a Jinja2 template string with the provided variables. Uses `jinja2.StrictUndefined` so that missing variables raise errors rather than producing silent empty strings.
 
 ```python
-from aiq_agent.common import render_prompt_template
+from deep_researcher_agent.common import render_prompt_template
 
 rendered = render_prompt_template(
     template,
@@ -214,7 +214,7 @@ The most common customization is editing the `.j2` files directly. Since templat
 
 **Example: Making the shallow researcher more concise**
 
-Open `src/aiq_agent/agents/shallow_researcher/prompts/researcher.j2` and modify the citation rules section:
+Open `src/deep_researcher_agent/agents/shallow_researcher/prompts/researcher.j2` and modify the citation rules section:
 
 ```jinja
 {#- 5. CITATION & FORMATTING -#}
@@ -245,7 +245,7 @@ To create a new prompt template for a custom or modified agent:
 **Step 1: Create the file**
 
 ```bash
-touch src/aiq_agent/agents/my_agent/prompts/system.j2
+touch src/deep_researcher_agent/agents/my_agent/prompts/system.j2
 ```
 
 **Step 2: Write the template**
@@ -334,7 +334,7 @@ Templates adapt based on which tools are available:
 {% endif %}
 ```
 
-For advanced Jinja2 patterns (source hierarchy, default values, whitespace control), refer to the existing templates in `src/aiq_agent/agents/*/prompts/`.
+For advanced Jinja2 patterns (source hierarchy, default values, whitespace control), refer to the existing templates in `src/deep_researcher_agent/agents/*/prompts/`.
 
 ## Testing Templates
 

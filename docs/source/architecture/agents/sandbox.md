@@ -22,7 +22,7 @@ access policy and is owner-scoped when `REQUIRE_AUTH=true`.
 
 > **Developer reference:** the full architecture, provider contract, config schema,
 > artifact pipeline, and troubleshooting live next to the code in
-> [`src/aiq_agent/agents/deep_researcher/sandbox/README.md`](https://github.com/NVIDIA-AI-Blueprints/aiq/blob/develop/src/aiq_agent/agents/deep_researcher/sandbox/README.md).
+> [`src/deep_researcher_agent/agents/deep_researcher/sandbox/README.md`](https://github.com/NVIDIA-AI-Blueprints/deep-researcher-agent/blob/develop/src/deep_researcher_agent/agents/deep_researcher/sandbox/README.md).
 > Operators should use the canonical [OpenShell deployment guide](../../deployment/openshell.md)
 > for setup, authenticated gateway lifecycle, supported platforms, acceptance, and cleanup.
 
@@ -60,7 +60,7 @@ and [Production Considerations](../../deployment/production.md#artifact-storage)
 ## Operational Notes
 
 - High-concurrency Modal and OpenShell runs create one sandbox per job. Optional submit-path
-  caps (`AIQ_MAX_SANDBOXES_PER_PRINCIPAL` / `AIQ_MAX_SANDBOXES_GLOBAL`, default-off) bound
+  caps (`DEEP_RESEARCHER_MAX_SANDBOXES_PER_PRINCIPAL` / `DEEP_RESEARCHER_MAX_SANDBOXES_GLOBAL`, default-off) bound
   concurrency and cost.
 - Custom client-supplied job IDs must not be reused for a new job.
 - Manifest checkpoints preserve completed artifacts after successful sandbox commands. The

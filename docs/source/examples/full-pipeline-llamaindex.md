@@ -5,14 +5,14 @@ SPDX-License-Identifier: Apache-2.0
 
 # Example: Full Pipeline (LlamaIndex)
 
-The complete AI-Q blueprint configuration using **LlamaIndex + ChromaDB** for knowledge retrieval. This is the recommended setup for local development -- zero external RAG infrastructure required.
+The complete Deep Researcher Agent blueprint configuration using **LlamaIndex + ChromaDB** for knowledge retrieval. This is the recommended setup for local development -- zero external RAG infrastructure required.
 
 This is based on `configs/config_web_default_llamaindex.yml`.
 
 ```{note}
 This example preserves the shipped Lightning shallow profile. The NVIDIA API Catalog serving profile has a known
 [shallow citation-output limitation](../resources/troubleshooting.md#nemotron-35-lightning-on-nvidia-api-catalog).
-AI-Q fails closed rather than publishing citation-incomplete drafts.
+Deep Researcher Agent fails closed rather than publishing citation-incomplete drafts.
 ```
 
 ## Configuration
@@ -34,8 +34,8 @@ general:
         level: INFO
 
   front_end:
-    _type: aiq_api
-    runner_class: aiq_api.plugin.AIQAPIWorker
+    _type: deep_researcher_api
+    runner_class: deep_researcher_api.plugin.DeepResearcherAPIWorker
     db_url: ${NAT_JOB_STORE_DB_URL:-sqlite+aiosqlite:///./jobs.db}
     expiry_seconds: 86400
     cors:
@@ -134,9 +134,9 @@ functions:
     collection_name: ${COLLECTION_NAME:-test_collection}
     generate_summary: true                                   # Generate per-doc summaries
     summary_model: summary_llm                               # LLM for summaries
-    summary_db: ${AIQ_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
+    summary_db: ${DEEP_RESEARCHER_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}
     top_k: 5
-    chroma_dir: ${AIQ_CHROMA_DIR:-/tmp/chroma_data}          # Local vector store
+    chroma_dir: ${DEEP_RESEARCHER_CHROMA_DIR:-/tmp/chroma_data}          # Local vector store
 
   # Paper Search (optional - requires SERPER_API_KEY)
   # Uncomment the block below and set SERPER_API_KEY to enable.
@@ -188,7 +188,7 @@ workflow:
   enable_escalation: true
   enable_clarifier: true
   use_async_deep_research: true
-  checkpoint_db: ${AIQ_CHECKPOINT_DB:-./checkpoints.db}
+  checkpoint_db: ${DEEP_RESEARCHER_CHECKPOINT_DB:-./checkpoints.db}
 ```
 
 ## Required Environment Variables

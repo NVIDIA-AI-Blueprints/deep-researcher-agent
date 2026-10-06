@@ -32,8 +32,8 @@ from knowledge_layer.nemo_retriever.local_adapter import NemoRetrieverLocalRetri
 from PIL import Image
 from PIL import ImageDraw
 
-from aiq_agent.knowledge import JobState
-from aiq_agent.knowledge.schema import ContentType
+from deep_researcher_agent.knowledge import JobState
+from deep_researcher_agent.knowledge.schema import ContentType
 
 _PHYSICAL_TABLE_PATTERN = re.compile(r"\bnrl_[0-9a-f]{40}\b")
 _UVICORN_PORT_PATTERN = re.compile(r"Uvicorn running on http://127\.0\.0\.1:(\d+)")
@@ -295,7 +295,7 @@ def _public_json(*values: Any) -> str:
 
 
 def test_embedded_lancedb_lifecycle_survives_restart_without_ray_or_physical_id_leaks(tmp_path, monkeypatch):
-    """Exercise AI-Q lifecycle over actual pinned NRL collection APIs and operators."""
+    """Exercise Deep Researcher Agent lifecycle over actual pinned NRL collection APIs and operators."""
     nemo_params = pytest.importorskip(
         "nemo_retriever.common.params",
         reason="embedded LanceDB coverage runs in environments/nemo_retriever_local",
@@ -502,10 +502,10 @@ def test_native_nat_serve_ingest_and_delete_without_retriever_service(tmp_path):
             env.pop(credential_name, None)
         env.update(
             {
-                "AIQ_AGENT_LLM_API_KEY": "local",  # pragma: allowlist secret
-                "AIQ_AGENT_LLM_BASE_URL": f"http://127.0.0.1:{embedding_server.server_port}/v1",
-                "AIQ_AGENT_LLM_MODEL": "openai/local-tool-model",
-                "AIQ_CHECKPOINT_DB": str(tmp_path / "checkpoints.db"),
+                "DEEP_RESEARCHER_AGENT_LLM_API_KEY": "local",  # pragma: allowlist secret
+                "DEEP_RESEARCHER_AGENT_LLM_BASE_URL": f"http://127.0.0.1:{embedding_server.server_port}/v1",
+                "DEEP_RESEARCHER_AGENT_LLM_MODEL": "openai/local-tool-model",
+                "DEEP_RESEARCHER_CHECKPOINT_DB": str(tmp_path / "checkpoints.db"),
                 "COLLECTION_NAME": "reports",
                 "NAT_JOB_STORE_DB_URL": f"sqlite+aiosqlite:///{tmp_path / 'jobs.db'}",
                 "NRL_EMBED_INVOKE_URL": f"http://127.0.0.1:{embedding_server.server_port}/v1/embeddings",

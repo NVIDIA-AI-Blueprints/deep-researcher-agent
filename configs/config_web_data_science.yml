@@ -13,8 +13,8 @@
 # Async jobs run in a Dask worker that reloads this file, so NAT_CONFIG_FILE
 # must point at it and NAT_DASK_SCHEDULER_ADDRESS must be set.
 #
-# Required: INFERENCE_NVIDIA_API_KEY, AIQ_INFERENCE_BASE_URL,
-# AIQ_DATA_SCIENCE_MODEL, TAVILY_API_KEY, GSF_BASE_URL, GSF_EMAIL,
+# Required: INFERENCE_NVIDIA_API_KEY, DEEP_RESEARCHER_INFERENCE_BASE_URL,
+# DEEP_RESEARCHER_DATA_SCIENCE_MODEL, TAVILY_API_KEY, GSF_BASE_URL, GSF_EMAIL,
 # GSF_PASSWORD, RAG_SERVER_URL, COLLECTION_NAME.
 
 general:
@@ -26,8 +26,8 @@ general:
         level: INFO
 
   front_end:
-    _type: aiq_api
-    runner_class: aiq_api.plugin.AIQAPIWorker
+    _type: deep_researcher_api
+    runner_class: deep_researcher_api.plugin.DeepResearcherAPIWorker
     db_url: ${NAT_JOB_STORE_DB_URL:-sqlite+aiosqlite:///./jobs.db}
     expiry_seconds: 86400  # 24 hours (min: 600, max: 604800/7 days)
     cors:
@@ -46,8 +46,8 @@ general:
 llms:
   data_science_llm:
     _type: openai
-    model_name: ${AIQ_DATA_SCIENCE_MODEL}
-    base_url: ${AIQ_INFERENCE_BASE_URL}
+    model_name: ${DEEP_RESEARCHER_DATA_SCIENCE_MODEL}
+    base_url: ${DEEP_RESEARCHER_INFERENCE_BASE_URL}
     api_key: ${INFERENCE_NVIDIA_API_KEY}
     reasoning_effort: medium
     max_tokens: 32768
@@ -102,7 +102,7 @@ functions:
     # This profile is retrieval-only; fail closed if an ingestion path is invoked.
     ingest_url: http://127.0.0.1:9/v1
     timeout: ${RAG_RETRIEVAL_TIMEOUT_SECONDS:-300}
-    summary_db: ${AIQ_SUMMARY_DB:-sqlite+aiosqlite:////tmp/aiq-ds-summaries.db}
+    summary_db: ${DEEP_RESEARCHER_SUMMARY_DB:-sqlite+aiosqlite:////tmp/deep-researcher-ds-summaries.db}
     # Keep certificate verification enabled by default; trusted test routes with a
     # self-signed chain can opt out locally with RAG_VERIFY_SSL=false.
     verify_ssl: ${RAG_VERIFY_SSL:-true}
@@ -120,7 +120,7 @@ functions:
     # An async job has no channel back to the user, so the job runner always
     # runs this agent headless regardless of the value set here. Leave it
     # interactive only if the same config also serves a synchronous CLI run.
-    interaction_mode: ${AIQ_DS_INTERACTION_MODE:-headless}
+    interaction_mode: ${DEEP_RESEARCHER_DS_INTERACTION_MODE:-headless}
     recursion_limit: 64
     verbose: true
 

@@ -4,30 +4,30 @@ SPDX-License-Identifier: Apache-2.0
 -->
 # Authentication
 
-AIQ authentication is disabled by default for local development. That mode represents
+Deep Researcher Agent authentication is disabled by default for local development. That mode represents
 one trusted user or trust domain; it is not a multi-user authorization boundary and
 must not be exposed directly to a shared or untrusted network. Customers operating a
-multi-user or externally reachable deployment must enable AIQ authentication or place
-AIQ behind a customer-managed authenticated gateway, and must own the corresponding
+multi-user or externally reachable deployment must enable Deep Researcher Agent authentication or place
+Deep Researcher Agent behind a customer-managed authenticated gateway, and must own the corresponding
 authorization policy, network isolation, and edge rate limits.
 
-When AIQ authentication is configured, the web UI signs users in with an OAuth/OIDC
+When Deep Researcher Agent authentication is configured, the web UI signs users in with an OAuth/OIDC
 provider, and the backend validates any presented bearer token or `idToken` cookie.
 External requests require a valid token when `REQUIRE_AUTH=true` and the request
-hostname is classified through `AIQ_EXTERNAL_HOSTNAMES`; requests outside that
+hostname is classified through `DEEP_RESEARCHER_EXTERNAL_HOSTNAMES`; requests outside that
 boundary remain on the trusted/internal path.
 
 Use this guide when you need to:
 
-- Require users to sign in before using AIQ.
-- Add an OAuth/OIDC provider to the AIQ UI.
+- Require users to sign in before using DeepResearcher.
+- Add an OAuth/OIDC provider to the Deep Researcher Agent UI.
 - Configure backend JWT validation.
-- Gate data sources that need an authenticated AIQ user.
-- Forward the AIQ user token to custom tools or MCP pass-through integrations.
+- Gate data sources that need an authenticated Deep Researcher Agent user.
+- Forward the Deep Researcher Agent user token to custom tools or MCP pass-through integrations.
 
-## How AIQ Auth Works
+## How Deep Researcher Agent Auth Works
 
-AIQ has two auth layers that must be configured together:
+Deep Researcher Agent has two auth layers that must be configured together:
 
 | Layer | Responsibility |
 |---|---|
@@ -120,7 +120,7 @@ Set these environment variables for the frontend:
 ```bash
 REQUIRE_AUTH=true
 NEXTAUTH_SECRET=<generate-with-openssl-rand-base64-32>
-NEXTAUTH_URL=https://aiq.example.com
+NEXTAUTH_URL=https://deep-researcher.example.com
 SESSION_MAX_AGE_HOURS=24
 
 MY_SSO_ISSUER=https://sso.example.com
@@ -135,11 +135,11 @@ are secure by default. For reverse proxies that terminate TLS, still use the ext
 ## Step 3: Add a Backend Token Validator
 
 The backend only enforces auth when `REQUIRE_AUTH=true` and a request is classified as external. Set
-`AIQ_EXTERNAL_HOSTNAMES` to the hostnames that should be treated as externally reachable:
+`DEEP_RESEARCHER_EXTERNAL_HOSTNAMES` to the hostnames that should be treated as externally reachable:
 
 ```bash
 REQUIRE_AUTH=true
-AIQ_EXTERNAL_HOSTNAMES=aiq-api.example.com
+DEEP_RESEARCHER_EXTERNAL_HOSTNAMES=deep-researcher-api.example.com
 ```
 
 Register a validator before the backend starts. The recommended approach for deployment packages is
@@ -147,46 +147,46 @@ an entry point:
 
 ```toml
 # pyproject.toml of your deployment package
-[project.entry-points."aiq_api.validators"]
-my_sso = "my_aiq_auth.validators:get_validators"
+[project.entry-points."deep_researcher_api.validators"]
+my_sso = "my_deep_researcher_auth.validators:get_validators"
 ```
 
 ```python
-# my_aiq_auth/validators.py
+# my_deep_researcher_auth/validators.py
 import os
 
-from aiq_api.auth.jwt_validator import JWTValidator
+from deep_researcher_api.auth.jwt_validator import JWTValidator
 
 
 def get_validators() -> list:
-    issuer = os.environ["AIQ_JWT_ISSUER"]
-    audience = os.environ.get("AIQ_JWT_AUDIENCE")
+    issuer = os.environ["DEEP_RESEARCHER_JWT_ISSUER"]
+    audience = os.environ.get("DEEP_RESEARCHER_JWT_AUDIENCE")
     return [JWTValidator(issuer_url=issuer, audience=audience)]
 ```
 
 Then set the validator environment:
 
 ```bash
-AIQ_JWT_ISSUER=https://sso.example.com
-AIQ_JWT_AUDIENCE=<optional-api-audience>
+DEEP_RESEARCHER_JWT_ISSUER=https://sso.example.com
+DEEP_RESEARCHER_JWT_AUDIENCE=<optional-api-audience>
 ```
 
-Install the deployment package into the backend environment before starting AIQ. At startup, AIQ
-loads validators from the `aiq_api.validators` entry point group. If `REQUIRE_AUTH=true` and no
+Install the deployment package into the backend environment before starting DeepResearcher. At startup, Deep Researcher Agent
+loads validators from the `deep_researcher_api.validators` entry point group. If `REQUIRE_AUTH=true` and no
 validators are registered, the backend fails fast.
 
 For simple embedded deployments, you can also register programmatically before `nat serve` starts:
 
 ```python
-from aiq_api.auth.jwt_validator import JWTValidator
-from aiq_api.plugin import register_validator
+from deep_researcher_api.auth.jwt_validator import JWTValidator
+from deep_researcher_api.plugin import register_validator
 
-register_validator(JWTValidator(issuer_url="https://sso.example.com", audience="api://aiq"))
+register_validator(JWTValidator(issuer_url="https://sso.example.com", audience="api://deep-researcher"))
 ```
 
 ## Step 4: Mark Authenticated Data Sources
 
-Use `requires_auth: true` for sources that require a signed-in AIQ user:
+Use `requires_auth: true` for sources that require a signed-in Deep Researcher Agent user:
 
 ```yaml
 functions:
@@ -195,22 +195,22 @@ functions:
     sources:
       - id: internal_mcp
         name: "Internal MCP"
-        description: "Call internal MCP tools using your AIQ sign-in."
+        description: "Call internal MCP tools using your Deep Researcher Agent sign-in."
         requires_auth: true
         tools:
           - internal_mcp
 ```
 
-The UI disables these sources until the user signs in to AIQ. This flag does not automatically
+The UI disables these sources until the user signs in to DeepResearcher. This flag does not automatically
 authenticate to an upstream MCP server or API. Tools still need service-account credentials, native
-MCP auth, or AIQ token pass-through.
+MCP auth, or Deep Researcher Agent token pass-through.
 
 ## Step 5: Use the Current User Token in Tools
 
-Custom tools can read the current AIQ request token with `get_auth_token()`:
+Custom tools can read the current Deep Researcher Agent request token with `get_auth_token()`:
 
 ```python
-from aiq_agent.auth import get_auth_token
+from deep_researcher_agent.auth import get_auth_token
 from nat.builder.function_info import FunctionInfo
 from nat.cli.register_workflow import register_function
 from nat.data_models.function import FunctionBaseConfig
@@ -237,17 +237,17 @@ async def internal_lookup(config: InternalLookupConfig, builder):
 
     yield FunctionInfo.from_fn(
         _lookup,
-        description="Look up internal information using the signed-in AIQ user's token.",
+        description="Look up internal information using the signed-in Deep Researcher Agent user's token.",
     )
 ```
 
-AIQ also propagates the request token into async Dask jobs, so custom tools should use
+Deep Researcher Agent also propagates the request token into async Dask jobs, so custom tools should use
 `get_auth_token()` instead of reading HTTP headers directly.
 
 Use `get_current_principal()` when you need trusted identity metadata:
 
 ```python
-from aiq_agent.auth import get_current_principal
+from deep_researcher_agent.auth import get_current_principal
 
 principal = get_current_principal()
 if principal:
@@ -261,12 +261,12 @@ Do not use unverified JWT payloads for authorization decisions.
 API clients can send a bearer token directly:
 
 ```bash
-curl -H "Authorization: Bearer ${AIQ_ID_TOKEN}" \
-     -H "X-AIQ-Mode: headless" \
-     https://aiq-api.example.com/v1/data_sources
+curl -H "Authorization: Bearer ${DEEP_RESEARCHER_ID_TOKEN}" \
+     -H "X-DeepResearcher-Mode: headless" \
+     https://deep-researcher-api.example.com/v1/data_sources
 ```
 
-`X-AIQ-Mode: headless` tells AIQ the caller cannot participate in interactive clarifier back-and-forth.
+`X-DeepResearcher-Mode: headless` tells Deep Researcher Agent the caller cannot participate in interactive clarifier back-and-forth.
 
 ## Troubleshooting
 
@@ -277,7 +277,7 @@ clear error if no validators are available.
 
 ### Requests Are Not Rejected
 
-Set `AIQ_EXTERNAL_HOSTNAMES` to the external backend hostname. AIQ treats requests to other hostnames
+Set `DEEP_RESEARCHER_EXTERNAL_HOSTNAMES` to the external backend hostname. Deep Researcher Agent treats requests to other hostnames
 as internal traffic for cluster-to-cluster communication.
 
 ### UI Shows Default User

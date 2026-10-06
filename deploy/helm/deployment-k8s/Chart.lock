@@ -1,0 +1,6 @@
+dependencies:
+- name: deep-researcher
+  repository: file://../helm-charts-k8s/deep-researcher
+  version: 0.0.5
+digest: sha256:985a373aa9ceb151197eb1b76579b566d7c9be43cfd17289596f804bf25cb2fa
+generated: "2026-09-30T09:44:43.335682+05:30"

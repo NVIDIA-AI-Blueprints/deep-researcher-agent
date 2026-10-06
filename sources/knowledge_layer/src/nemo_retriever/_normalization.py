@@ -9,9 +9,9 @@ import json
 from typing import Any
 from urllib.parse import urlparse
 
-from aiq_agent.knowledge import Chunk
-from aiq_agent.knowledge import ContentType
-from aiq_agent.knowledge.schema import FileStatus
+from deep_researcher_agent.knowledge import Chunk
+from deep_researcher_agent.knowledge import ContentType
+from deep_researcher_agent.knowledge.schema import FileStatus
 
 from ._models import QueryHitWire
 
@@ -47,7 +47,7 @@ def strict_bool(value: Any, *, name: str) -> bool:
 
 
 def status_to_file_status(status: str) -> FileStatus:
-    """Map NRL terminal and transient document states to the AI-Q contract."""
+    """Map NRL terminal and transient document states to the Deep Researcher Agent contract."""
     normalized = status.lower()
     if normalized in _SUCCESS_STATUSES:
         return FileStatus.SUCCESS
@@ -74,7 +74,7 @@ def scrub_metadata(value: Any) -> Any:
 
 
 def normalize_content_type(value: str | None) -> ContentType:
-    """Map NRL content labels to AI-Q's four public content types."""
+    """Map NRL content labels to Deep Researcher Agent's four public content types."""
     normalized = (value or "").strip().lower()
     if "table" in normalized:
         return ContentType.TABLE

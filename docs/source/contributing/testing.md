@@ -9,7 +9,7 @@ To run tests:
 ```bash
 uv sync --group dev
 uv run pytest
-uv run pytest --cov=src/aiq_agent --cov-report=html
+uv run pytest --cov=src/deep_researcher_agent --cov-report=html
 uv run pytest tests/path/to/test_file.py
 
 # MCP uses its own project, environment, and lockfile.

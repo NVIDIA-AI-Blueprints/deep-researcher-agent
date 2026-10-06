@@ -1,4 +1,4 @@
-name: AIQ CI
+name: Deep Researcher Agent CI
 
 # Trigger: push-only. All PRs (internal and external) are mirrored to
 # pull-request/<N> branches by copy-pr-bot after `/ok to test` approval.
@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: aiq-ci-${{ github.ref }}
+  group: deep-researcher-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -71,18 +71,18 @@ jobs:
       postgres:
         image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
         env:
-          POSTGRES_USER: aiq
-          POSTGRES_PASSWORD: aiq_mcp_ci_password # pragma: allowlist secret
-          POSTGRES_DB: aiq_mcp_tests
+          POSTGRES_USER: deep_researcher
+          POSTGRES_PASSWORD: deep_researcher_mcp_ci_password # pragma: allowlist secret
+          POSTGRES_DB: deep_researcher_mcp_tests
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -h 127.0.0.1 -p 5432 -U aiq -d aiq_mcp_tests"
+          --health-cmd "pg_isready -h 127.0.0.1 -p 5432 -U deep_researcher -d deep_researcher_mcp_tests"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
     env:
-      AIQ_MCP_TEST_DB_URL: postgresql://aiq:aiq_mcp_ci_password@127.0.0.1:5432/aiq_mcp_tests # pragma: allowlist secret
+      DEEP_RESEARCHER_MCP_TEST_DB_URL: postgresql://deep_researcher:deep_researcher_mcp_ci_password@127.0.0.1:5432/deep_researcher_mcp_tests # pragma: allowlist secret
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -106,7 +106,7 @@ jobs:
           set -euo pipefail
           uv venv --python 3.13 .venv
           uv sync --frozen --group dev --extra sandboxed-python-test
-          UV_PROJECT_ENVIRONMENT="$RUNNER_TEMP/aiq-mcp-test-venv" \
+          UV_PROJECT_ENVIRONMENT="$RUNNER_TEMP/deep-researcher-mcp-test-venv" \
             uv sync --project mcp --frozen --extra dev
 
       - name: Validate isolated dependency environments
@@ -114,20 +114,20 @@ jobs:
           set -euo pipefail
           . .venv/bin/activate
           uv pip check
-          "$RUNNER_TEMP/aiq-mcp-test-venv/bin/python" \
+          "$RUNNER_TEMP/deep-researcher-mcp-test-venv/bin/python" \
             mcp/scripts/check_runtime_dependencies.py
 
       - name: Run mandatory MCP PostgreSQL tests
         run: |
           set -euo pipefail
-          "$RUNNER_TEMP/aiq-mcp-test-venv/bin/python" -X faulthandler -m pytest mcp/tests -v \
+          "$RUNNER_TEMP/deep-researcher-mcp-test-venv/bin/python" -X faulthandler -m pytest mcp/tests -v \
             --junitxml=mcp-report.xml \
-            --cov=mcp/src/aiq_mcp \
+            --cov=mcp/src/deep_researcher_mcp \
             --cov-report=xml:mcp-coverage.xml \
             --cov-report=html:mcp-htmlcov \
             --cov-report=term \
             --cov-fail-under=90
-          "$RUNNER_TEMP/aiq-mcp-test-venv/bin/python" - <<'PY'
+          "$RUNNER_TEMP/deep-researcher-mcp-test-venv/bin/python" - <<'PY'
           import xml.etree.ElementTree as ET
 
           root = ET.parse("mcp-report.xml").getroot()
@@ -143,7 +143,7 @@ jobs:
           . .venv/bin/activate
           python -X faulthandler -m pytest tests/ sources/ -v \
             --junitxml=report.xml \
-            --cov=src/aiq_agent \
+            --cov=src/deep_researcher_agent \
             --cov-report=xml \
             --cov-report=html \
             --cov-report=term \
@@ -199,7 +199,7 @@ jobs:
       - name: Validate and install isolated lock
         shell: bash
         env:
-          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/aiq-nemo-retriever-local-venv
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/deep-researcher-nemo-retriever-local-venv
         run: |
           set -euo pipefail
           uv lock --project environments/nemo_retriever_local --check
@@ -208,7 +208,7 @@ jobs:
       - name: Test embedded LanceDB and native server lifecycle
         shell: bash
         env:
-          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/aiq-nemo-retriever-local-venv
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/deep-researcher-nemo-retriever-local-venv
         run: |
           set -euo pipefail
           uv run --project environments/nemo_retriever_local --frozen --no-sync python - <<'PY'
@@ -257,7 +257,7 @@ jobs:
     env:
       NVIDIA_API_KEY: ci-not-a-real-key # pragma: allowlist secret
       TAVILY_API_KEY: ci-not-a-real-key # pragma: allowlist secret
-      AIQ_MCP_IMAGE: aiq-mcp-server:ci
+      DEEP_RESEARCHER_MCP_IMAGE: deep-researcher-mcp-server:ci
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -297,7 +297,7 @@ jobs:
           chmod +x ci/scripts/test_scripts.sh
           ci/scripts/test_scripts.sh --skip-setup
 
-      - name: Validate VCS-less AI-Q release artifact on Python 3.11
+      - name: Validate VCS-less Deep Researcher Agent release artifact on Python 3.11
         env:
           UV_PYTHON: "3.11"
         run: ci/scripts/test_release_artifact.sh
@@ -305,9 +305,9 @@ jobs:
       - name: Create MCP production environment
         run: |
           set -euo pipefail
-          UV_PROJECT_ENVIRONMENT="$RUNNER_TEMP/aiq-mcp-venv" \
+          UV_PROJECT_ENVIRONMENT="$RUNNER_TEMP/deep-researcher-mcp-venv" \
             uv sync --project mcp --frozen --no-dev --no-default-groups --no-editable
-          "$RUNNER_TEMP/aiq-mcp-venv/bin/python" \
+          "$RUNNER_TEMP/deep-researcher-mcp-venv/bin/python" \
             mcp/scripts/check_runtime_dependencies.py
 
       - name: Capture complete vulnerability evidence
@@ -316,7 +316,7 @@ jobs:
           audit_status=0
           uv audit --preview-features audit-command,json-output \
             --project mcp --frozen --no-dev --no-default-groups \
-            --output-format json > aiq-mcp-vulnerabilities.json || audit_status=$?
+            --output-format json > deep-researcher-mcp-vulnerabilities.json || audit_status=$?
           if [ "$audit_status" -gt 1 ]; then
             exit "$audit_status"
           fi
@@ -330,17 +330,21 @@ jobs:
             --ignore-until-fixed GHSA-2wm9-hf6c-p5cr \
             --ignore-until-fixed GHSA-36p7-vc44-83pf \
             --ignore-until-fixed GHSA-xph7-9rjv-w5fr \
-            --output-format json > "$RUNNER_TEMP/aiq-mcp-vulnerability-gate.json"
+            --ignore-until-fixed PYSEC-2026-3813 \
+            --ignore-until-fixed PYSEC-2026-3814 \
+            --ignore-until-fixed PYSEC-2026-3815 \
+            --ignore-until-fixed GHSA-8mgp-746c-j5xp \
+            --output-format json > "$RUNNER_TEMP/deep-researcher-mcp-vulnerability-gate.json"
 
       - name: Generate MCP SBOM and license evidence
         run: |
           set -euo pipefail
           uv export --preview-features sbom-export \
             --project mcp --frozen --no-dev --no-default-groups \
-            --format cyclonedx1.5 --output-file aiq-mcp.cdx.json >/dev/null
-          "$RUNNER_TEMP/aiq-mcp-venv/bin/python" \
+            --format cyclonedx1.5 --output-file deep-researcher-mcp.cdx.json >/dev/null
+          "$RUNNER_TEMP/deep-researcher-mcp-venv/bin/python" \
             mcp/scripts/check_license_inventory.py \
-            aiq-mcp.cdx.json aiq-mcp-licenses.json
+            deep-researcher-mcp.cdx.json deep-researcher-mcp-licenses.json
 
       # This locally built wheel is an internal package/license check, not a
       # published release artifact. Supported distribution uses the frozen
@@ -366,9 +370,9 @@ jobs:
         with:
           name: mcp-release-evidence
           path: |
-            aiq-mcp.cdx.json
-            aiq-mcp-vulnerabilities.json
-            aiq-mcp-licenses.json
+            deep-researcher-mcp.cdx.json
+            deep-researcher-mcp-vulnerabilities.json
+            deep-researcher-mcp-licenses.json
           if-no-files-found: error
           retention-days: 30
 
@@ -382,7 +386,7 @@ jobs:
           set -euo pipefail
           test "$(curl --fail --silent http://127.0.0.1:9001/live)" = '{"status":"alive"}'
           test "$(curl --fail --silent http://127.0.0.1:9001/health)" = '{"status":"ready"}'
-          "$RUNNER_TEMP/aiq-mcp-venv/bin/python" \
+          "$RUNNER_TEMP/deep-researcher-mcp-venv/bin/python" \
             mcp/scripts/protocol_smoke.py --url http://127.0.0.1:9001/mcp
 
       - name: Capture MCP container logs

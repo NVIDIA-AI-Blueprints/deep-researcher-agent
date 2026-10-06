@@ -5,13 +5,13 @@ SPDX-License-Identifier: Apache-2.0
 
 # Example: Deep Research Skills and Sandbox
 
-This example shows how to run AI-Q deep research with DeepAgents skills and a provider-backed sandbox. The reference
-profile uses Modal; AI-Q also includes an experimental, policy-bound OpenShell profile.
+This example shows how to run Deep Researcher Agent deep research with DeepAgents skills and a provider-backed sandbox. The reference
+profile uses Modal; Deep Researcher Agent also includes an experimental, policy-bound OpenShell profile.
 
-Skills let a research agent discover task-specific instructions only when they are relevant. AI-Q mounts the assigned
+Skills let a research agent discover task-specific instructions only when they are relevant. Deep Researcher Agent mounts the assigned
 skill definitions read-only from the host. A skill can teach the agent a repeatable workflow, such as extracting numeric
 facts, normalizing a table, running calculations, and producing reusable text artifacts. When a skill invokes
-`execute`, the generated code runs outside the AI-Q process in one provider sandbox per deep-research job. Modal and
+`execute`, the generated code runs outside the Deep Researcher Agent process in one provider sandbox per deep-research job. Modal and
 OpenShell implement this job-scoped contract.
 
 For more background, refer to the LangChain DeepAgents docs:
@@ -23,7 +23,7 @@ For more background, refer to the LangChain DeepAgents docs:
 
 The example config enables:
 
-- built-in DeepAgents skills from `src/aiq_agent/agents/deep_researcher/skills/`
+- built-in DeepAgents skills from `src/deep_researcher_agent/agents/deep_researcher/skills/`
 - a fresh per-job Modal sandbox for Python execution
 - Python packages useful for analysis, including `pandas`, `numpy`, `matplotlib`, and `pillow`
 - virtual `/shared/` files for text artifacts that the orchestrator and subagents can read during the report workflow
@@ -44,7 +44,7 @@ only workflows that invoke `execute` require a sandbox.
 
 ## Prerequisites
 
-Install and configure AI-Q as usual, then make sure these credentials are available to the process running AI-Q:
+Install and configure Deep Researcher Agent as usual, then make sure these credentials are available to the process running Deep Researcher Agent:
 
 ```bash
 export NVIDIA_API_KEY="nvapi-..."              # pragma: allowlist secret
@@ -86,7 +86,7 @@ functions:
   deep_research_sandbox:
     _type: deep_research_sandbox
     provider: modal
-    app_name: aiq-deep-research
+    app_name: deep-researcher-deep-research
     image: python:3.13-slim
     packages:
       - matplotlib
@@ -106,12 +106,12 @@ functions:
     sandbox: deep_research_sandbox
 ```
 
-AI-Q validates the public skill collection names (`research`, `synthesis`, `visualization`) and resolves them to DeepAgents source paths internally. When skills are configured, AI-Q mounts the configured built-in skill collections into the DeepAgents virtual filesystem. When the sandbox ref is present, DeepAgents `execute` calls run in the configured provider. Modal creates a fresh sandbox named for the job.
+Deep Researcher Agent validates the public skill collection names (`research`, `synthesis`, `visualization`) and resolves them to DeepAgents source paths internally. When skills are configured, Deep Researcher Agent mounts the configured built-in skill collections into the DeepAgents virtual filesystem. When the sandbox ref is present, DeepAgents `execute` calls run in the configured provider. Modal creates a fresh sandbox named for the job.
 
 In the reference async API flow, artifact capture uses the job database configured by
 `general.front_end.db_url` (`NAT_JOB_STORE_DB_URL`) for metadata. Artifact bytes use SQL BLOB storage in the job database
-by default. For production, use S3-compatible object storage by setting `AIQ_ARTIFACT_BLOB_PROVIDER=s3`,
-`AIQ_ARTIFACT_S3_BUCKET`, and the standard AWS credentials; set `AIQ_ARTIFACT_S3_ENDPOINT_URL` for MinIO or another
+by default. For production, use S3-compatible object storage by setting `DEEP_RESEARCHER_ARTIFACT_BLOB_PROVIDER=s3`,
+`DEEP_RESEARCHER_ARTIFACT_S3_BUCKET`, and the standard AWS credentials; set `DEEP_RESEARCHER_ARTIFACT_S3_ENDPOINT_URL` for MinIO or another
 compatible service. See [Production Artifact Storage](../../deployment/production.md#artifact-storage) for all options.
 
 To evaluate OpenShell instead, use `configs/config_openshell.yml` after running
@@ -146,7 +146,7 @@ The configured `NAT_JOB_STORE_DB_URL` supplies the required job-scoped store. Th
 SQLite database; production deployments should configure PostgreSQL and appropriate artifact blob storage.
 For trusted local development, set `REQUIRE_AUTH=false` in `deploy/.env`; the commands below omit credentials on that
 basis. When `REQUIRE_AUTH=true`, these job routes require authentication, so configure authentication and add the same
-`Authorization: Bearer $AIQ_TOKEN` header to every `curl` command below.
+`Authorization: Bearer $DEEP_RESEARCHER_TOKEN` header to every `curl` command below.
 
 ```bash
 dotenv -f deploy/.env run .venv/bin/nat serve \
@@ -221,13 +221,13 @@ Expected behavior:
 Built-in deep research skills live under:
 
 ```text
-src/aiq_agent/agents/deep_researcher/skills/
+src/deep_researcher_agent/agents/deep_researcher/skills/
 ```
 
 Each skill should be a directory with a `SKILL.md` file:
 
 ```text
-src/aiq_agent/agents/deep_researcher/skills/
+src/deep_researcher_agent/agents/deep_researcher/skills/
 `-- research/
     `-- my-skill/
         `-- SKILL.md
@@ -265,9 +265,9 @@ Skill descriptions matter because DeepAgents uses the frontmatter description to
 
 ## Adding More Skills
 
-To add a built-in AI-Q deep research skill:
+To add a built-in Deep Researcher Agent deep research skill:
 
-1. Create `src/aiq_agent/agents/deep_researcher/skills/<collection>/<skill>/`.
+1. Create `src/deep_researcher_agent/agents/deep_researcher/skills/<collection>/<skill>/`.
 2. Add a `SKILL.md` file with frontmatter and workflow instructions.
 3. Put optional helper scripts, references, or templates inside the same skill directory.
 4. Reference any helper files from `SKILL.md` so the agent knows when to read or run them.
@@ -276,7 +276,7 @@ To add a built-in AI-Q deep research skill:
 
 A skill added to a collection that is already assigned to the target agent needs
 no config change. For a new collection, add the collection name to the target
-agent under `deep_research_skills.agents`. AI-Q collects the assigned skill
+agent under `deep_research_skills.agents`. Deep Researcher Agent collects the assigned skill
 directories at runtime and exposes them to DeepAgents through an internal
 `/skills/` source.
 
@@ -286,7 +286,7 @@ directories at runtime and exposes them to DeepAgents through an internal
   physical sandbox per job and requires policy attestation plus terminal deletion. Shared attachment is debug-only.
 - Text artifacts that need to survive for the report should be written through DeepAgents filesystem tools to `/shared/...`.
 - `/shared/` is a virtual DeepAgents filesystem path. Use `ls`, `read_file`, `write_file`, and `edit_file` for `/shared/`; do not inspect `/shared/` with shell commands through `execute`.
-- The sandbox is configured with `network: blocked`, so research should happen through AI-Q search tools, not from sandbox code.
+- The sandbox is configured with `network: blocked`, so research should happen through Deep Researcher Agent search tools, not from sandbox code.
 - The reference profile enables durable sandbox artifact capture for async API jobs. Successful `execute` calls
   checkpoint manifest-declared files, and success/failure terminal paths perform one final best-effort scan. A busy
   cancellation skips that scan and preserves earlier checkpoints. Adding a sandbox alone does not guarantee that every

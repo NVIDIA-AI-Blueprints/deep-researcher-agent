@@ -7,11 +7,11 @@ SPDX-License-Identifier: Apache-2.0
 High-level layout (refer to [Architecture Overview](../architecture/overview.md) for component roles):
 
 ```
-src/aiq_agent/
+src/deep_researcher_agent/
 ├── agents/              # Chat researcher, shallow/deep research, clarifier
 │   ├── chat_researcher/   # Orchestrator, orchestration node (intent + meta + depth), nodes
 │   ├── shallow_researcher/
-│   ├── deep_researcher/   # See src/aiq_agent/agents/deep_researcher/README.md
+│   ├── deep_researcher/   # See src/deep_researcher_agent/agents/deep_researcher/README.md
 │   └── clarifier/
 ├── common/              # LLM provider, callbacks, prompt utils, data_sources
 ├── knowledge/           # Schema, factory, base retriever/ingestor, summary store
@@ -20,4 +20,4 @@ src/aiq_agent/
 └── fastapi_extensions/  # API route extensions
 ```
 
-Configs live in `configs/`; refer to the [Customization guide](../customization/index.md) for configuration options. Frontends: `frontends/cli`, `frontends/aiq_api`, `frontends/debug`, `frontends/ui`. Benchmarks: `frontends/benchmarks/`. Data sources and Knowledge Layer: `sources/`.
+Configs live in `configs/`; refer to the [Customization guide](../customization/index.md) for configuration options. Frontends: `frontends/cli`, `frontends/deep_researcher_api`, `frontends/debug`, `frontends/ui`. Benchmarks: `frontends/benchmarks/`. Data sources and Knowledge Layer: `sources/`.

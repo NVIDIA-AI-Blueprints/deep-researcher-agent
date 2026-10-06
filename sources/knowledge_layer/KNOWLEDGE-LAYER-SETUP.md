@@ -44,12 +44,12 @@ A pluggable abstraction for document ingestion and retrieval. Swap backends with
 **Hosted Service Mode** - Connects to deployed services via HTTP. Requires infrastructure but scales better.
 - **`foundational_rag`** - Connects to [NVIDIA RAG Blueprint](https://github.com/NVIDIA-AI-Blueprints/rag) via HTTP.
   - [Deployment Guide](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/deploy-docker-self-hosted.md)
-- **`azure_ai_search`** - Uses one AI-Q-owned shared index in a managed Azure AI Search service. Collection and file
+- **`azure_ai_search`** - Uses one Deep Researcher Agent-owned shared index in a managed Azure AI Search service. Collection and file
   manifests isolate logical collections. Canonical UUID file IDs support status and deletion, while same-name uploads
   coexist independently. See [`src/azure_ai_search/README.md`](src/azure_ai_search/README.md).
 
-**OpenSearch Mode** - Stores AIQ collections directly in OpenSearch vector indexes.
-- **`opensearch`** - Uses one OpenSearch index per AIQ collection/session. Supports unauthenticated local clusters,
+**OpenSearch Mode** - Stores Deep Researcher Agent collections directly in OpenSearch vector indexes.
+- **`opensearch`** - Uses one OpenSearch index per Deep Researcher Agent collection/session. Supports unauthenticated local clusters,
   basic auth, and SigV4 for Amazon OpenSearch Service or Amazon OpenSearch Serverless.
 
 ---
@@ -75,7 +75,7 @@ uv pip install -e "sources/knowledge_layer[azure_ai_search]"   # Requires an Azu
 
 ```bash
 # 3. Verify
-python -c "from aiq_agent.knowledge import get_retriever; print('OK')"
+python -c "from deep_researcher_agent.knowledge import get_retriever; print('OK')"
 ```
 
 ---
@@ -139,23 +139,23 @@ By default, LlamaIndex ingests text only and uses the NVIDIA hosted embedding an
 | Variable | Default | Description |
 |----------|---------|-------------|
 | **Embedding** | | |
-| `AIQ_EMBED_MODEL` | `nvidia/nemotron-3-embed-1b` | NVIDIA embedding model |
-| `AIQ_EMBED_BASE_URL` | `https://integrate.api.nvidia.com/v1` | Embedding API base URL — override for local NIM |
+| `DEEP_RESEARCHER_EMBED_MODEL` | `nvidia/nemotron-3-embed-1b` | NVIDIA embedding model |
+| `DEEP_RESEARCHER_EMBED_BASE_URL` | `https://integrate.api.nvidia.com/v1` | Embedding API base URL — override for local NIM |
 | **Extraction Flags** | | |
-| `AIQ_EXTRACT_TABLES` | `false` | Extract tables from PDFs as markdown using pdfplumber |
-| `AIQ_EXTRACT_IMAGES` | `false` | Extract embedded images from PDFs and caption them with a VLM |
-| `AIQ_EXTRACT_CHARTS` | `false` | Classify images as charts and extract structured data (chart type, axis labels, data points) |
+| `DEEP_RESEARCHER_EXTRACT_TABLES` | `false` | Extract tables from PDFs as markdown using pdfplumber |
+| `DEEP_RESEARCHER_EXTRACT_IMAGES` | `false` | Extract embedded images from PDFs and caption them with a VLM |
+| `DEEP_RESEARCHER_EXTRACT_CHARTS` | `false` | Classify images as charts and extract structured data (chart type, axis labels, data points) |
 | **Vision Model** | | |
-| `AIQ_VLM_MODEL` | `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` | VLM for image captioning |
-| `AIQ_VLM_BASE_URL` | `https://integrate.api.nvidia.com/v1` | VLM API base URL — override for local NIM |
+| `DEEP_RESEARCHER_VLM_MODEL` | `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` | VLM for image captioning |
+| `DEEP_RESEARCHER_VLM_BASE_URL` | `https://integrate.api.nvidia.com/v1` | VLM API base URL — override for local NIM |
 
 You can also set these in `deploy/.env`:
 
 ```bash
 # In deploy/.env or export directly
-AIQ_EXTRACT_TABLES=true    # Extract tables from PDFs using pdfplumber
-AIQ_EXTRACT_IMAGES=true    # Extract images from PDFs using pypdfium2 + VLM captioning
-AIQ_EXTRACT_CHARTS=true    # Classify extracted images as charts and extract structured data
+DEEP_RESEARCHER_EXTRACT_TABLES=true    # Extract tables from PDFs using pdfplumber
+DEEP_RESEARCHER_EXTRACT_IMAGES=true    # Extract images from PDFs using pypdfium2 + VLM captioning
+DEEP_RESEARCHER_EXTRACT_CHARTS=true    # Classify extracted images as charts and extract structured data
 ```
 
 When enabled, the startup log shows the active mode:
@@ -170,7 +170,7 @@ When disabled (default):
 LlamaIndexIngestor initialized: persist_dir=/app/data/chroma_data, mode=text-only
 ```
 
-> **Note:** `AIQ_EXTRACT_IMAGES` and `AIQ_EXTRACT_CHARTS` work together. If both are enabled, each image is classified by the VLM as either a chart or a regular image. If only `AIQ_EXTRACT_IMAGES` is set, all images are captioned as regular images. Foundational RAG handles multimodal extraction server-side, so these flags only apply to the LlamaIndex backend.
+> **Note:** `DEEP_RESEARCHER_EXTRACT_IMAGES` and `DEEP_RESEARCHER_EXTRACT_CHARTS` work together. If both are enabled, each image is classified by the VLM as either a chart or a regular image. If only `DEEP_RESEARCHER_EXTRACT_IMAGES` is set, all images are captioned as regular images. Foundational RAG handles multimodal extraction server-side, so these flags only apply to the LlamaIndex backend.
 
 **Foundational RAG (Hosted Server)**
 ```yaml
@@ -185,7 +185,7 @@ functions:
     timeout: 120
 ```
 
-> **Separate Docker stacks:** When AI-Q and RAG run as separate Docker Compose stacks, connect the AI-Q backend to the RAG network: `docker network connect nvidia-rag aiq-agent`. See the [Docker Compose README](../../deploy/compose/README.md#networking-when-aiq-and-rag-run-as-separate-compose-stacks) for details.
+> **Separate Docker stacks:** When Deep Researcher Agent and RAG run as separate Docker Compose stacks, connect the Deep Researcher Agent backend to the RAG network: `docker network connect nvidia-rag deep-researcher-agent`. See the [Docker Compose README](../../deploy/compose/README.md#networking-when-deep-researcher-agent-and-rag-run-as-separate-compose-stacks) for details.
 
 **Azure AI Search (Managed Service)**
 
@@ -194,13 +194,13 @@ functions:
   knowledge_search:
     _type: knowledge_retrieval
     backend: azure_ai_search
-    collection_name: ${COLLECTION_NAME:-aiq_default}
+    collection_name: ${COLLECTION_NAME:-deep_researcher_default}
     top_k: 5
 ```
 
 Set `AZURE_SEARCH_ENDPOINT` and `NVIDIA_API_KEY`. Set `AZURE_SEARCH_API_KEY` to use key authentication; otherwise,
 Azure `DefaultAzureCredential` is used. Azure stores all logical collections, including UI session collections, in
-one AI-Q-owned physical index and applies `collection_id` filters to isolate ingestion and retrieval. See the
+one Deep Researcher Agent-owned physical index and applies `collection_id` filters to isolate ingestion and retrieval. See the
 [Azure AI Search example](../../docs/source/examples/azure-ai-search.md) for authentication, index, and embedding
 configuration.
 
@@ -215,7 +215,7 @@ functions:
     top_k: 5
     opensearch_url: http://localhost:9200
     opensearch_auth_type: none
-    opensearch_index_prefix: aiq
+    opensearch_index_prefix: deep-researcher
     opensearch_embedding_dim: 2048
     embed_model: nvidia/nemotron-3-embed-1b
     embed_base_url: https://integrate.api.nvidia.com/v1
@@ -240,8 +240,8 @@ For Amazon OpenSearch Serverless, use SigV4 with service `aoss`. For Amazon Open
 service `es`.
 
 > **Note: text-only ingestion.** The OpenSearch backend extracts plain text from PDFs, DOCX, and PPTX
-> via `pypdf`/`docx2txt`/`python-pptx`. It does **not** currently honor `AIQ_EXTRACT_TABLES`,
-> `AIQ_EXTRACT_IMAGES`, or `AIQ_EXTRACT_CHARTS` (those flags are LlamaIndex-only). For multimodal
+> via `pypdf`/`docx2txt`/`python-pptx`. It does **not** currently honor `DEEP_RESEARCHER_EXTRACT_TABLES`,
+> `DEEP_RESEARCHER_EXTRACT_IMAGES`, or `DEEP_RESEARCHER_EXTRACT_CHARTS` (those flags are LlamaIndex-only). For multimodal
 > ingestion against OpenSearch, run the LlamaIndex backend instead, or use Foundational RAG which
 > handles multimodal extraction server-side.
 
@@ -255,7 +255,7 @@ functions:
     opensearch_auth_type: sigv4
     opensearch_aws_region: us-west-2
     opensearch_aws_service: aoss
-    opensearch_index_prefix: aiq
+    opensearch_index_prefix: deep-researcher
     opensearch_ingestion_mode: auto
     opensearch_dask_file_transfer: bytes
 ```
@@ -271,15 +271,15 @@ as one OpenSearch document with a `knn_vector` field.
 
 #### Migrating an embedding model
 
-Persisted vectors are valid only for the exact embedding model that created them. AI-Q records that model identity in
+Persisted vectors are valid only for the exact embedding model that created them. Deep Researcher Agent records that model identity in
 new Chroma collections and OpenSearch indexes and rejects ingestion or retrieval when the configured model differs.
-OpenSearch also validates the configured vector dimension. Collections created by older AI-Q versions do not have the
+OpenSearch also validates the configured vector dimension. Collections created by older Deep Researcher Agent versions do not have the
 required identity marker and are rejected rather than silently mixing embedding spaces.
 
-Before changing `AIQ_EMBED_MODEL` or the corresponding YAML setting:
+Before changing `DEEP_RESEARCHER_EMBED_MODEL` or the corresponding YAML setting:
 
 1. Delete each affected logical collection through the Knowledge API or UI. For Chroma development data, selecting a
-   new `AIQ_CHROMA_DIR` is also sufficient to create an isolated store.
+   new `DEEP_RESEARCHER_CHROMA_DIR` is also sufficient to create an isolated store.
 2. Configure the new embedding model and, for OpenSearch, its matching `opensearch_embedding_dim`.
 3. Recreate the collection and re-upload its source documents so every stored vector uses the new model.
 
@@ -287,9 +287,9 @@ Azure AI Search already derives its physical index name from the embedding model
 identity marker, so a changed model resolves to an isolated index. Its documents must still be uploaded to that new
 index before retrieval can return results.
 
-For session-isolated web uploads, AI-Q uses the conversation/session collection name, such as `s_<uuid>`. The OpenSearch
+For session-isolated web uploads, Deep Researcher Agent uses the conversation/session collection name, such as `s_<uuid>`. The OpenSearch
 adapter maps that session collection to a dynamic index in the same OpenSearch endpoint, for example
-`aiq-s_<uuid>`. The TTL cleanup task removes expired OpenSearch indexes based on their collection `_meta.updated_at`
+`deep-researcher-s_<uuid>`. The TTL cleanup task removes expired OpenSearch indexes based on their collection `_meta.updated_at`
 timestamp.
 
 OpenSearch ingestion runs locally by default. Set `opensearch_ingestion_mode: auto` or `OPENSEARCH_INGESTION_MODE=auto`
@@ -310,7 +310,7 @@ local vectors, so the tests validate OpenSearch indexing/search behavior without
 For an unauthenticated local OpenSearch cluster:
 
 ```bash
-AIQ_OPENSEARCH_LIVE_TESTS=1 \
+DEEP_RESEARCHER_OPENSEARCH_LIVE_TESTS=1 \
 OPENSEARCH_URL=http://localhost:9200 \
 OPENSEARCH_AUTH_TYPE=none \
 uv run python -m pytest tests/knowledge_layer_tests/test_opensearch_live.py
@@ -319,7 +319,7 @@ uv run python -m pytest tests/knowledge_layer_tests/test_opensearch_live.py
 For a self-hosted cluster with basic auth:
 
 ```bash
-AIQ_OPENSEARCH_LIVE_TESTS=1 \
+DEEP_RESEARCHER_OPENSEARCH_LIVE_TESTS=1 \
 OPENSEARCH_URL=https://opensearch.example.com:9200 \
 OPENSEARCH_AUTH_TYPE=basic \
 OPENSEARCH_USERNAME=admin \
@@ -330,7 +330,7 @@ uv run python -m pytest tests/knowledge_layer_tests/test_opensearch_live.py
 For Amazon OpenSearch Serverless:
 
 ```bash
-AIQ_OPENSEARCH_LIVE_TESTS=1 \
+DEEP_RESEARCHER_OPENSEARCH_LIVE_TESTS=1 \
 OPENSEARCH_URL=https://abc123.us-west-2.aoss.amazonaws.com \
 OPENSEARCH_AUTH_TYPE=sigv4 \
 OPENSEARCH_AWS_SERVICE=aoss \
@@ -345,7 +345,7 @@ A dedicated Amazon OpenSearch Serverless suite is also available. It always uses
 AOSS data endpoint:
 
 ```bash
-AIQ_OPENSEARCH_SERVERLESS_LIVE_TESTS=1 \
+DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_LIVE_TESTS=1 \
 OPENSEARCH_URL=https://abc123.us-west-2.aoss.amazonaws.com \
 AWS_REGION=us-west-2 \
 uv run python -m pytest tests/knowledge_layer_tests/test_opensearch_serverless_live.py
@@ -354,7 +354,7 @@ uv run python -m pytest tests/knowledge_layer_tests/test_opensearch_serverless_l
 If you set the variables on separate lines, export them first:
 
 ```bash
-export AIQ_OPENSEARCH_SERVERLESS_LIVE_TESTS=1
+export DEEP_RESEARCHER_OPENSEARCH_SERVERLESS_LIVE_TESTS=1
 export OPENSEARCH_URL=https://abc123.us-west-2.aoss.amazonaws.com
 export AWS_REGION=us-west-2
 uv run python -m pytest tests/knowledge_layer_tests/test_opensearch_serverless_live.py
@@ -371,7 +371,7 @@ index creation/deletion and document read/write operations on the target collect
 from knowledge_layer.llamaindex import LlamaIndexRetriever, LlamaIndexIngestor
 
 # Use the factory to get instances
-from aiq_agent.knowledge import get_retriever, get_ingestor
+from deep_researcher_agent.knowledge import get_retriever, get_ingestor
 
 # Ingest documents
 ingestor = get_ingestor("llamaindex", config={"persist_dir": "/tmp/chroma"})
@@ -551,7 +551,7 @@ warning is logged; use `opensearch_ingestion_mode: local` if you require summari
 ### How It Works
 
 1. **Ingestion**: Backend extracts text from the document and generates a one-sentence summary using an LLM call
-2. **Registry**: Summary is stored in a centralized, backend-agnostic registry (`aiq_agent.knowledge.factory`)
+2. **Registry**: Summary is stored in a centralized, backend-agnostic registry (`deep_researcher_agent.knowledge.factory`)
 3. **Agent prompts**: Summaries appear in the agent's system prompt under "Uploaded Documents"
 4. **Tool calling**: Agents can make informed decisions about when to call `knowledge_search`
 
@@ -577,9 +577,9 @@ The summary system works identically across all backends:
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| `register_summary()` | `aiq_agent.knowledge.factory` | Store summary after ingestion |
-| `unregister_summary()` | `aiq_agent.knowledge.factory` | Remove summary on file deletion |
-| `get_available_documents()` | `aiq_agent.knowledge.factory` | Retrieve summaries for agents |
+| `register_summary()` | `deep_researcher_agent.knowledge.factory` | Store summary after ingestion |
+| `unregister_summary()` | `deep_researcher_agent.knowledge.factory` | Remove summary on file deletion |
+| `get_available_documents()` | `deep_researcher_agent.knowledge.factory` | Retrieve summaries for agents |
 
 All four shipped adapters call these functions, ensuring consistent behavior regardless of backend choice.
 
@@ -592,13 +592,13 @@ functions:
   knowledge_search:
     _type: knowledge_retrieval
     generate_summary: true
-    summary_db: ${AIQ_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}  # Default: SQLite
+    summary_db: ${DEEP_RESEARCHER_SUMMARY_DB:-sqlite+aiosqlite:///./summaries.db}  # Default: SQLite
 ```
 
 For production deployments, use PostgreSQL:
 
 ```bash
-export AIQ_SUMMARY_DB="postgresql+psycopg://user:pass@localhost:5432/mydb"
+export DEEP_RESEARCHER_SUMMARY_DB="postgresql+psycopg://user:pass@localhost:5432/mydb"
 ```
 
 The summary store uses SQLAlchemy and follows the same pattern as the jobs database (`db_url`), so you can point both to the same PostgreSQL instance if desired.
@@ -631,9 +631,9 @@ touch sources/knowledge_layer/src/my_backend/{__init__.py,adapter.py,README.md}
 ```python
 # sources/knowledge_layer/src/my_backend/adapter.py
 from typing import Any, Dict, List, Optional
-from aiq_agent.knowledge.base import BaseRetriever, BaseIngestor
-from aiq_agent.knowledge.factory import register_retriever, register_ingestor
-from aiq_agent.knowledge.schema import (
+from deep_researcher_agent.knowledge.base import BaseRetriever, BaseIngestor
+from deep_researcher_agent.knowledge.factory import register_retriever, register_ingestor
+from deep_researcher_agent.knowledge.schema import (
     Chunk, RetrievalResult, CollectionInfo, FileInfo,
     FileStatus, ContentType, IngestionJobStatus
 )
@@ -823,7 +823,7 @@ my_backend = [
 
 [tool.setuptools]
 packages = [
-    "aiq_sources",
+    "deep_researcher_sources",
     "knowledge_layer.knowledge",
     "knowledge_layer.llamaindex",
     "knowledge_layer.foundational_rag",
@@ -914,7 +914,7 @@ uv pip install -e "sources/knowledge_layer[my_backend]"
 # Verify registration
 python -c "
 from knowledge_layer.my_backend import MyRetriever, MyIngestor
-from aiq_agent.knowledge.factory import list_retrievers, list_ingestors
+from deep_researcher_agent.knowledge.factory import list_retrievers, list_ingestors
 print('Registered retrievers:', list_retrievers())
 print('Registered ingestors:', list_ingestors())
 "
@@ -944,7 +944,7 @@ Backends register themselves using decorators when their module is imported:
 
 ```python
 # In adapter.py
-from aiq_agent.knowledge.factory import register_retriever, register_ingestor
+from deep_researcher_agent.knowledge.factory import register_retriever, register_ingestor
 
 @register_retriever("my_backend")  # Registration name used in config
 class MyRetriever(BaseRetriever):
@@ -963,10 +963,10 @@ The registration name (e.g., `"my_backend"`) is what you use in:
 1. `__init__.py` imports the adapter classes
 2. The NAT function imports from `knowledge_layer.<backend>.adapter`
 
-### Core Library (`src/aiq_agent/knowledge/`)
+### Core Library (`src/deep_researcher_agent/knowledge/`)
 
 ```
-src/aiq_agent/knowledge/
+src/deep_researcher_agent/knowledge/
     __init__.py      # Exports: Chunk, get_retriever, get_ingestor, etc.
     base.py          # Abstract classes: BaseRetriever, BaseIngestor
     schema.py        # Data models: Chunk, RetrievalResult, FileInfo, CollectionInfo
@@ -1004,7 +1004,7 @@ The `register.py` defines `KnowledgeRetrievalConfig` which maps YAML config to b
 ## Core Data Models
 
 ```python
-from aiq_agent.knowledge.schema import (
+from deep_researcher_agent.knowledge.schema import (
     # Retrieval
     Chunk,           # Retrieved content piece (15+ fields)
     RetrievalResult, # Query result container
@@ -1067,15 +1067,15 @@ Configuration values are resolved in the following order (highest to lowest prio
 | `NVIDIA_API_KEY` | All | Required for embeddings/VLM and LLM calls |
 | `KNOWLEDGE_RETRIEVER_BACKEND` | All | Default retriever backend (fallback if not in YAML) |
 | `KNOWLEDGE_INGESTOR_BACKEND` | All | Default ingestor backend (fallback if not in YAML) |
-| `AIQ_CHROMA_DIR` | llamaindex | ChromaDB persistence path |
+| `DEEP_RESEARCHER_CHROMA_DIR` | llamaindex | ChromaDB persistence path |
 | `AZURE_SEARCH_ENDPOINT` | azure_ai_search | Azure AI Search service endpoint |
 | `AZURE_SEARCH_API_KEY` | azure_ai_search | Optional admin key; omit to use `DefaultAzureCredential` |
 | `AZURE_CLIENT_ID` | azure_ai_search | Client ID for the user-assigned managed identity used by `DefaultAzureCredential` |
-| `AIQ_AZURE_SEARCH_INDEX_PREFIX` | azure_ai_search | Deployment-unique prefix for the shared AI-Q index (default: `aiq`) |
-| `AIQ_EMBED_MODEL` | llamaindex, opensearch, azure_ai_search | Embedding model name |
-| `AIQ_EMBED_BASE_URL` | llamaindex, opensearch, azure_ai_search | Embedding API base URL |
-| `AIQ_EMBED_DIM` | azure_ai_search | Embedding dimensions (default: `2048`) |
-| `AIQ_SUMMARY_DB` | All | Summary database URL (SQLite or PostgreSQL) |
+| `DEEP_RESEARCHER_AZURE_SEARCH_INDEX_PREFIX` | azure_ai_search | Deployment-unique prefix for the shared Deep Researcher Agent index (default: `deep-researcher`) |
+| `DEEP_RESEARCHER_EMBED_MODEL` | llamaindex, opensearch, azure_ai_search | Embedding model name |
+| `DEEP_RESEARCHER_EMBED_BASE_URL` | llamaindex, opensearch, azure_ai_search | Embedding API base URL |
+| `DEEP_RESEARCHER_EMBED_DIM` | azure_ai_search | Embedding dimensions (default: `2048`) |
+| `DEEP_RESEARCHER_SUMMARY_DB` | All | Summary database URL (SQLite or PostgreSQL) |
 | `RAG_SERVER_URL` | foundational_rag | Query server URL (port 8081) |
 | `RAG_INGEST_URL` | foundational_rag | Ingestion server URL (port 8082) |
 | `OPENSEARCH_URL` | opensearch | OpenSearch endpoint URL |
@@ -1123,7 +1123,7 @@ Configuration values are resolved in the following order (highest to lowest prio
 
 ```python
 # Check what's registered
-from aiq_agent.knowledge.factory import list_retrievers, list_ingestors, get_knowledge_layer_config
+from deep_researcher_agent.knowledge.factory import list_retrievers, list_ingestors, get_knowledge_layer_config
 
 print("Retrievers:", list_retrievers())
 print("Ingestors:", list_ingestors())

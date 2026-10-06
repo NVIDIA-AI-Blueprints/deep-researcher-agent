@@ -42,7 +42,7 @@ class GSFPasswordAuthConfig(BaseModel):
 
 
 class GSFFunctionGroupConfig(FunctionGroupBaseConfig, name="gsf"):
-    """Shared configuration for AI-Q's GSF tools."""
+    """Shared configuration for Deep Researcher Agent's GSF tools."""
 
     base_url: HttpUrl
     auth: GSFPasswordAuthConfig | None = None
@@ -62,14 +62,14 @@ def _tool_error(error: GSFError) -> str:
 
 
 def _get_auth_token() -> str | None:
-    """Lazily resolve the current AI-Q token for bearer authentication."""
+    """Lazily resolve the current Deep Researcher Agent token for bearer authentication."""
 
     try:
-        from aiq_agent.auth.utils import get_auth_token
+        from deep_researcher_agent.auth.utils import get_auth_token
     except ImportError as exc:
         raise GSFError(
             GSFErrorCode.AUTHENTICATION_REQUIRED,
-            "AI-Q authentication support is unavailable.",
+            "Deep Researcher Agent authentication support is unavailable.",
         ) from exc
     return get_auth_token()
 
@@ -208,8 +208,8 @@ async def gsf_function_group(config: GSFFunctionGroupConfig, _builder: Builder):
             """Generate validated SQL and return bounded rows from authorized enterprise data.
 
             Use for an analytical question after the relevant structured-data scope is known. The result contains SQL
-            and rows, plus semantic context, warnings, and provenance when GSF provides them. AI-Q remains responsible
-            for analysis and synthesis.
+            and rows, plus semantic context, warnings, and provenance when GSF provides them. Deep Researcher Agent
+            remains responsible for analysis and synthesis.
             """
 
             try:

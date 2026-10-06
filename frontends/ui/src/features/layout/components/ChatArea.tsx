@@ -535,7 +535,7 @@ const WelcomeState: FC<WelcomeStateProps> = ({
             <Lock />
           </span>
           <Text kind="title/lg" className="text-primary">
-            Welcome to AI-Q
+            Welcome to Deep Researcher Agent
           </Text>
           <Text kind="body/regular/md" className="text-subtle">
             Sign in with your account to start your AI-powered research session.

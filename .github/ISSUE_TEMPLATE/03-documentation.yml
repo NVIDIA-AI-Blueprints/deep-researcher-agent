@@ -1,5 +1,5 @@
 name: Documentation Issue
-description: Report stale, missing, or confusing AI-Q documentation.
+description: Report stale, missing, or confusing Deep Researcher Agent documentation.
 title: "[Docs]: "
 body:
   - type: input

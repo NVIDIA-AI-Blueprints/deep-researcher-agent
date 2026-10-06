@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Get Started
 
-Set up and run the AI-Q blueprint.
+Set up and run the Deep Researcher Agent blueprint.
 
 - **[Installation](./installation.md)** — Prerequisites, Python setup, dependency installation
 - **[Quick Start](./quick-start.md)** — Run your first research query in 5 minutes

@@ -1,42 +1,42 @@
-# AI-Q MCP Server
+# Deep Researcher Agent MCP Server
 
-This independent uv project exposes the AI-Q research workflow through the Model Context Protocol (MCP).
+This independent uv project exposes the Deep Researcher Agent research workflow through the Model Context Protocol (MCP).
 
 For the canonical user and deployment guide, including exact JSON contracts, see
-[Expose AI-Q as an MCP Server](../docs/source/integration/mcp-server.md).
+[Expose Deep Researcher Agent as an MCP Server](../docs/source/integration/mcp-server.md).
 
 The component uses public FastMCP with stateless Streamable HTTP and JSON responses. An outer Starlette lifespan
 keeps the NAT workflow, MCP session manager, and background job manager alive once per Uvicorn worker so research
 continues after the request that submitted it has returned.
 
-The repository directory is named `mcp`, while the Python package is `aiq_mcp` so it does not shadow the
+The repository directory is named `mcp`, while the Python package is `deep_researcher_mcp` so it does not shadow the
 third-party `mcp` package.
 
 ## Supported distribution paths
 
 The release-supported runtime is Linux x86_64 with CPython 3.13, either through the release container built from
-the repository root or directly from an AI-Q source checkout with the frozen `mcp/uv.lock`. CI validates both the
+the repository root or directly from an Deep Researcher Agent source checkout with the frozen `mcp/uv.lock`. CI validates both the
 frozen production environment and the release container on that platform. Other 64-bit source hosts are
 development-only and do not carry the audited release guarantee. In particular, `cryptography` 50 no longer ships
 x86_64 macOS or 32-bit Windows wheels. Those platforms are unsupported by the frozen profile; run the Linux
 release container on a supported 64-bit Linux/container host.
 
 In this documentation, *standalone* describes the MCP process and transport boundary; it does not mean that
-`aiq-mcp-server` is a separately installable Python wheel.
+`deep-researcher-mcp-server` is a separately installable Python wheel.
 
-The MCP project depends on `aiq-agent`, `tavily-web-search`, and other packages supplied from this repository. That
+The MCP project depends on `deep-researcher-agent`, `tavily-web-search`, and other packages supplied from this repository. That
 complete dependency closure is not published to a Python package index. The wheel that local build tooling may
 produce is therefore an internal implementation artifact: do not publish it or install it as a generic wheel. The
 project's `Private :: Do Not Upload` classifier makes this distribution boundary explicit.
 
 ## Component layout
 
-- `src/aiq_mcp/workflow_runner.py` owns the long-lived NAT workflow.
-- `src/aiq_mcp/jobs.py` manages asynchronous research jobs and polling.
-- `src/aiq_mcp/job_store.py` persists the shared job ledger in Postgres.
-- `src/aiq_mcp/checkpoint_todos.py` reads best-effort todo progress from LangGraph checkpoints.
-- `src/aiq_mcp/db_url.py` validates and normalizes Postgres URLs.
-- `src/aiq_mcp/server.py` exposes the FastMCP transport and process lifecycle.
+- `src/deep_researcher_mcp/workflow_runner.py` owns the long-lived NAT workflow.
+- `src/deep_researcher_mcp/jobs.py` manages asynchronous research jobs and polling.
+- `src/deep_researcher_mcp/job_store.py` persists the shared job ledger in Postgres.
+- `src/deep_researcher_mcp/checkpoint_todos.py` reads best-effort todo progress from LangGraph checkpoints.
+- `src/deep_researcher_mcp/db_url.py` validates and normalizes Postgres URLs.
+- `src/deep_researcher_mcp/server.py` exposes the FastMCP transport and process lifecycle.
 - `REFERENCE_PARITY.md` freezes the reference behavior, executable evidence, and intentional public deviations.
 
 ## Runtime
@@ -66,9 +66,9 @@ interpreted as identity. The retained `principal` database column is always popu
 the reference schema without a migration.
 
 The local MCP Inspector origin `http://localhost:6274` is allowed by default for POST requests without browser
-credentials. Set `AIQ_MCP_CORS_ORIGINS` to a comma-separated allowlist, or to an empty value to disable browser
+credentials. Set `DEEP_RESEARCHER_MCP_CORS_ORIGINS` to a comma-separated allowlist, or to an empty value to disable browser
 CORS. FastMCP Host and Origin validation is always enabled; deployments using public DNS names must add them to
-`AIQ_MCP_ALLOWED_HOSTS` and `AIQ_MCP_ALLOWED_ORIGINS`.
+`DEEP_RESEARCHER_MCP_ALLOWED_HOSTS` and `DEEP_RESEARCHER_MCP_ALLOWED_ORIGINS`.
 
 These allowlists are not authentication or per-user authorization and do not change the UUID capability model.
 Host validation protects locally or internally
@@ -76,36 +76,36 @@ reachable MCP servers from DNS-rebinding attacks, while Origin validation reject
 untrusted websites. CORS separately controls which browser applications may read responses and is not a substitute
 for server-side Origin validation. Headless MCP clients normally omit `Origin`, so they only need to send an allowed
 `Host`. This protection is especially useful for an unauthenticated server because it prevents an arbitrary webpage
-from submitting AI-Q jobs through a service reachable from the user's browser.
+from submitting Deep Researcher Agent jobs through a service reachable from the user's browser.
 
 ```bash
-AIQ_CHECKPOINT_DB=postgresql://localhost/aiq_jobs \
-AIQ_MCP_CONFIG=/path/to/config.yml \
-uv run --project mcp --frozen aiq-mcp-server
+DEEP_RESEARCHER_CHECKPOINT_DB=postgresql://localhost/deep_researcher_jobs \
+DEEP_RESEARCHER_MCP_CONFIG=/path/to/config.yml \
+uv run --project mcp --frozen deep-researcher-mcp-server
 ```
 
 Runtime settings use only public component names:
 
 | Variable | Default | Purpose |
 |---|---:|---|
-| `AIQ_MCP_HOST` | `0.0.0.0` | Uvicorn bind host |
-| `AIQ_MCP_PORT` | `9001` | Uvicorn bind port |
-| `AIQ_MCP_PATH` | `/mcp` | Streamable HTTP endpoint |
-| `AIQ_MCP_WORKERS` | `1` | Independent workflow-owning workers |
-| `AIQ_MCP_LOG_LEVEL` | `INFO` | Python/Uvicorn log level |
-| `AIQ_MCP_CONFIG` | `configs/config_mcp.yml` (source checkout) | NAT workflow configuration; set explicitly by the release image |
-| `AIQ_MCP_ENV_FILE` | `deploy/.env` (source checkout) | Optional dotenv file; existing process variables take precedence |
-| `AIQ_MCP_SHALLOW_INLINE_WAIT_SECONDS` | `30` | Shallow-query inline wait window |
-| `AIQ_MCP_MAX_QUERY_CHARS` | `8000` | Maximum submitted query length in characters |
-| `AIQ_MCP_CORS_ORIGINS` | `http://localhost:6274` | Browser origin allowlist |
-| `AIQ_MCP_ALLOWED_HOSTS` | local loopback/bind hosts | Valid HTTP Host headers; configure deployment DNS names |
-| `AIQ_MCP_ALLOWED_ORIGINS` | local HTTP origins | Valid MCP Origin headers; browser CORS origins are added automatically |
-| `AIQ_CHECKPOINT_DB` | required | Shared Postgres DSN for checkpoints and jobs |
+| `DEEP_RESEARCHER_MCP_HOST` | `0.0.0.0` | Uvicorn bind host |
+| `DEEP_RESEARCHER_MCP_PORT` | `9001` | Uvicorn bind port |
+| `DEEP_RESEARCHER_MCP_PATH` | `/mcp` | Streamable HTTP endpoint |
+| `DEEP_RESEARCHER_MCP_WORKERS` | `1` | Independent workflow-owning workers |
+| `DEEP_RESEARCHER_MCP_LOG_LEVEL` | `INFO` | Python/Uvicorn log level |
+| `DEEP_RESEARCHER_MCP_CONFIG` | `configs/config_mcp.yml` (source checkout) | NAT workflow configuration; set explicitly by the release image |
+| `DEEP_RESEARCHER_MCP_ENV_FILE` | `deploy/.env` (source checkout) | Optional dotenv file; existing process variables take precedence |
+| `DEEP_RESEARCHER_MCP_SHALLOW_INLINE_WAIT_SECONDS` | `30` | Shallow-query inline wait window |
+| `DEEP_RESEARCHER_MCP_MAX_QUERY_CHARS` | `8000` | Maximum submitted query length in characters |
+| `DEEP_RESEARCHER_MCP_CORS_ORIGINS` | `http://localhost:6274` | Browser origin allowlist |
+| `DEEP_RESEARCHER_MCP_ALLOWED_HOSTS` | local loopback/bind hosts | Valid HTTP Host headers; configure deployment DNS names |
+| `DEEP_RESEARCHER_MCP_ALLOWED_ORIGINS` | local HTTP origins | Valid MCP Origin headers; browser CORS origins are added automatically |
+| `DEEP_RESEARCHER_CHECKPOINT_DB` | required | Shared Postgres DSN for checkpoints and jobs |
 
-The `AIQ_MCP_CONFIG` and `AIQ_MCP_ENV_FILE` path defaults are available only in an AI-Q source checkout. The
-supported release image sets `AIQ_MCP_CONFIG` to its bundled config and does not load a dotenv file by default.
+The `DEEP_RESEARCHER_MCP_CONFIG` and `DEEP_RESEARCHER_MCP_ENV_FILE` path defaults are available only in an Deep Researcher Agent source checkout. The
+supported release image sets `DEEP_RESEARCHER_MCP_CONFIG` to its bundled config and does not load a dotenv file by default.
 
-The default `configs/config_mcp.yml` uses only public AI-Q plugins: hosted NVIDIA NIM inference through
+The default `configs/config_mcp.yml` uses only public Deep Researcher Agent plugins: hosted NVIDIA NIM inference through
 `NVIDIA_API_KEY` and Tavily web search through `TAVILY_API_KEY`. It intentionally has no API front end,
 enterprise source, authentication provider, or second asynchronous research layer; FastMCP owns the transport and
 submit/poll lifecycle.
@@ -115,7 +115,7 @@ public design decisions are recorded in [`REFERENCE_PARITY.md`](REFERENCE_PARITY
 
 ## Development checks
 
-The root AI-Q workspace and MCP project use separate environments and lockfiles. Use uv 0.11.25 or newer; the
+The root Deep Researcher Agent workspace and MCP project use separate environments and lockfiles. Use uv 0.11.25 or newer; the
 validated CI and container toolchain pins uv 0.11.26 because the MCP lock policy uses scoped dependency overrides.
 
 ```bash
@@ -126,8 +126,8 @@ uv run ruff format --check mcp
 uv run --project mcp --extra dev pytest mcp/tests
 ```
 
-Set `AIQ_MCP_TEST_DB_URL` to a disposable Postgres database whose name ends in `_test` (for example,
-`aiq_mcp_test`) to enable the ledger and checkpoint integration tests.
+Set `DEEP_RESEARCHER_MCP_TEST_DB_URL` to a disposable Postgres database whose name ends in `_test` (for example,
+`deep_researcher_mcp_test`) to enable the ledger and checkpoint integration tests.
 
 The root `uv.lock` keeps `cryptography>=46.0.6,<47` for compatibility with NAT. The audited MCP release profile is
 resolved independently from `mcp/uv.lock` and pins `cryptography==50.0.0` to harden the bundled OpenSSL version.
@@ -152,7 +152,7 @@ docker compose -f deploy/compose/docker-compose.mcp.yaml up --detach --build --w
 The defaults publish MCP at `http://127.0.0.1:9001/mcp` and Postgres at `127.0.0.1:1234`. Both host bindings are
 loopback-only. This local stack intentionally uses a fixed development-only database password so an arbitrary raw
 password cannot be interpolated into a URL incorrectly. Production deployments should supply
-`AIQ_CHECKPOINT_DB` through their secret-management platform rather than reuse this local Compose file. Compose
+`DEEP_RESEARCHER_CHECKPOINT_DB` through their secret-management platform rather than reuse this local Compose file. Compose
 persists the database in a named volume and waits for Postgres before starting MCP. To use an env file for Compose
 interpolation, add `--env-file /path/to/file`; only the variables explicitly listed in the Compose service are
 passed into the MCP container.
@@ -174,7 +174,7 @@ Useful lifecycle commands are:
 
 ```bash
 docker compose -f deploy/compose/docker-compose.mcp.yaml ps
-docker compose -f deploy/compose/docker-compose.mcp.yaml logs --no-color aiq-mcp
+docker compose -f deploy/compose/docker-compose.mcp.yaml logs --no-color deep-researcher-mcp
 docker compose -f deploy/compose/docker-compose.mcp.yaml down
 # Also delete local job/checkpoint data when a completely fresh database is wanted:
 docker compose -f deploy/compose/docker-compose.mcp.yaml down --volumes
@@ -184,17 +184,17 @@ Deployment overrides all use public names:
 
 | Variable | Default | Purpose |
 |---|---:|---|
-| `AIQ_MCP_IMAGE` | `aiq-mcp-server:local` | Built/tagged release image |
-| `AIQ_MCP_PUBLISHED_PORT` | `9001` | Loopback host port for MCP |
-| `AIQ_MCP_POSTGRES_PORT` | `1234` | Loopback host port for Postgres |
-| `AIQ_MCP_PATH` | `/mcp` | Streamable HTTP endpoint path |
-| `AIQ_MCP_WORKERS` | `1` | Uvicorn worker count |
-| `AIQ_MCP_LOG_LEVEL` | `INFO` | Server log level |
-| `AIQ_MCP_SHALLOW_INLINE_WAIT_SECONDS` | `30` | Shallow-query inline wait window |
-| `AIQ_MCP_MAX_QUERY_CHARS` | `8000` | Maximum submitted query length in characters |
-| `AIQ_MCP_CORS_ORIGINS` | `http://localhost:6274` | Browser CORS allowlist; explicitly empty disables CORS |
-| `AIQ_MCP_ALLOWED_HOSTS` | local and Compose hostnames | DNS-rebinding Host allowlist |
-| `AIQ_MCP_ALLOWED_ORIGINS` | local HTTP origins | Browser Origin validation allowlist |
+| `DEEP_RESEARCHER_MCP_IMAGE` | `deep-researcher-mcp-server:local` | Built/tagged release image |
+| `DEEP_RESEARCHER_MCP_PUBLISHED_PORT` | `9001` | Loopback host port for MCP |
+| `DEEP_RESEARCHER_MCP_POSTGRES_PORT` | `1234` | Loopback host port for Postgres |
+| `DEEP_RESEARCHER_MCP_PATH` | `/mcp` | Streamable HTTP endpoint path |
+| `DEEP_RESEARCHER_MCP_WORKERS` | `1` | Uvicorn worker count |
+| `DEEP_RESEARCHER_MCP_LOG_LEVEL` | `INFO` | Server log level |
+| `DEEP_RESEARCHER_MCP_SHALLOW_INLINE_WAIT_SECONDS` | `30` | Shallow-query inline wait window |
+| `DEEP_RESEARCHER_MCP_MAX_QUERY_CHARS` | `8000` | Maximum submitted query length in characters |
+| `DEEP_RESEARCHER_MCP_CORS_ORIGINS` | `http://localhost:6274` | Browser CORS allowlist; explicitly empty disables CORS |
+| `DEEP_RESEARCHER_MCP_ALLOWED_HOSTS` | local and Compose hostnames | DNS-rebinding Host allowlist |
+| `DEEP_RESEARCHER_MCP_ALLOWED_ORIGINS` | local HTTP origins | Browser Origin validation allowlist |
 
 Allowed hosts and origins are request-boundary protections, not authentication and not certificate settings. They
 matter because an unauthenticated service reachable from a browser should not accept a rebinding Host or requests

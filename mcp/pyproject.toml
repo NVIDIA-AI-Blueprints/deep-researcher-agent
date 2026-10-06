@@ -6,9 +6,9 @@ build-backend = "setuptools.build_meta"
 requires = ["setuptools >= 83", "setuptools-scm>=8"]
 
 [project]
-name = "aiq-mcp-server"
+name = "deep-researcher-mcp-server"
 version = "0.1.0"
-description = "Model Context Protocol server for the NVIDIA AI-Q Blueprint"
+description = "Model Context Protocol server for the NVIDIA Deep Researcher Agent Blueprint"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 license = "Apache-2.0"
@@ -26,7 +26,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "aiq-agent>=2.0,<3",
+    "deep-researcher-agent>=2.0,<3",
     "asyncpg>=0.29.0",
     "langchain-core>=1.2.0,<2",
     "mcp==1.28.1",
@@ -39,7 +39,7 @@ dependencies = [
 ]
 
 [project.scripts]
-aiq-mcp-server = "aiq_mcp.server:main"
+deep-researcher-mcp-server = "deep_researcher_mcp.server:main"
 
 [project.optional-dependencies]
 dev = [
@@ -55,7 +55,7 @@ where = ["src"]
 
 # The MCP release is intentionally a separate uv project. Its audited container
 # uses cryptography 50 without changing the NAT-supported dependency set used by
-# the root AI-Q workspace. These overrides are release-resolution policy; they
+# the root Deep Researcher Agent workspace. These overrides are release-resolution policy; they
 # are not encoded in the locally built package metadata.
 [tool.uv]
 required-version = ">=0.11.25"
@@ -80,6 +80,6 @@ override-dependencies = [
 ]
 
 [tool.uv.sources]
-aiq-agent = { path = "..", editable = true }
+deep-researcher-agent = { path = "..", editable = true }
 knowledge-layer = { path = "../sources/knowledge_layer", editable = true }
 tavily-web-search = { path = "../sources/tavily_web_search", editable = true }

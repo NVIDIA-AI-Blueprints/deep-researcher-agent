@@ -3,9 +3,9 @@ SPDX-FileCopyrightText: Copyright (c) 2025-2026, NVIDIA CORPORATION & AFFILIATES
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# AI-Q Helm Deployment
+# Deep Researcher Agent Helm Deployment
 
-This directory contains Helm charts for deploying AI-Q to a Kubernetes cluster.
+This directory contains Helm charts for deploying Deep Researcher Agent to a Kubernetes cluster.
 
 ## Directory Structure
 
@@ -13,11 +13,11 @@ This directory contains Helm charts for deploying AI-Q to a Kubernetes cluster.
 deploy/helm/
 ├── README.md                  # This file — NGC chart install & shared configuration
 ├── deployment-k8s/            # Source chart wrapper (for repo-based deployments)
-│   ├── Chart.yaml             #   Depends on helm-charts-k8s/aiq
+│   ├── Chart.yaml             #   Depends on helm-charts-k8s/deep-researcher
 │   ├── values.yaml            #   Deployment values
 │   └── README.md              #   Source chart instructions & Kind local dev guide
 └── helm-charts-k8s/
-    └── aiq/                   # Base application Helm chart (templates, helpers)
+    └── deep-researcher/                   # Base application Helm chart (templates, helpers)
 ```
 
 ## Deployment Methods
@@ -27,10 +27,10 @@ deploy/helm/
 | [NGC Helm chart](#install-from-ngc-helm-repository) | Install a pre-built chart from the NGC Helm repository |
 | [Source chart](deployment-k8s/README.md) | You cloned the repository and want to build/deploy from source |
 
-All examples use `ns-aiq`. The repository source chart derives every namespaced
+All examples use `ns-deep-researcher`. The repository source chart derives every namespaced
 resource from Helm's `.Release.Namespace`, supplied with `-n`; use a different namespace
 consistently across Helm, Secrets, `kubectl`, and external identity bindings. The
-`aiq.namespace.create` value controls whether the source chart renders a Namespace object
+`deep-researcher.namespace.create` value controls whether the source chart renders a Namespace object
 and does not override `-n`. The NGC instructions below install published chart 2.2.0. Use
 the source chart when you need behavior from the checked-out repository.
 
@@ -44,12 +44,12 @@ the source chart when you need behavior from the checked-out repository.
 
 ## Install from NGC Helm Repository
 
-This section installs the pre-built chart **aiq2-web** version **2.2.0** from the NGC Helm repository (`https://helm.ngc.nvidia.com/nvidia/blueprint/charts/`).
+This section installs the pre-built chart **deep-researcher-web** version **2.2.0** from the NGC Helm repository (`https://helm.ngc.nvidia.com/nvidia/blueprint/charts/`).
 
 ### 1. Create the namespace
 
 ```bash
-kubectl create namespace ns-aiq --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace ns-deep-researcher --dry-run=client -o yaml | kubectl apply -f -
 ```
 
 ### 2. Create secrets
@@ -57,17 +57,17 @@ kubectl create namespace ns-aiq --dry-run=client -o yaml | kubectl apply -f -
 API credentials for the application:
 
 ```bash
-kubectl create secret generic aiq-credentials -n ns-aiq \
+kubectl create secret generic deep-researcher-credentials -n ns-deep-researcher \
   --from-literal=NVIDIA_API_KEY="$NGC_API_KEY" \
   --from-literal=TAVILY_API_KEY="$TAVILY_API_KEY" \
-  --from-literal=DB_USER_NAME="aiq" \
-  --from-literal=DB_USER_PASSWORD="aiq_dev"
+  --from-literal=DB_USER_NAME="deep_researcher" \
+  --from-literal=DB_USER_PASSWORD="deep_researcher_dev"
 ```
 
 Image pull secret for the NGC container registry:
 
 ```bash
-kubectl create secret docker-registry ngc-secret -n ns-aiq \
+kubectl create secret docker-registry ngc-secret -n ns-deep-researcher \
   --docker-server=nvcr.io \
   --docker-username='$oauthtoken' \
   --docker-password=$NGC_API_KEY
@@ -83,14 +83,14 @@ helm pull https://helm.ngc.nvidia.com/nvidia/blueprint/charts/aiq2-web-2.2.0.tgz
   --password=<YOUR_NGC_API_KEY>
 
 # Verify the chart was pulled correctly
-helm show chart aiq2-web-2.2.0.tgz
+helm show chart deep-researcher-web-2.2.0.tgz
 
 # Install from the local file
-helm upgrade --install aiq aiq2-web-2.2.0.tgz -n ns-aiq --create-namespace \
+helm upgrade --install deep-researcher deep-researcher-web-2.2.0.tgz -n ns-deep-researcher --create-namespace \
   --wait --timeout 10m \
-  --set 'aiq.apps.backend.imagePullSecrets[0].name=ngc-secret' \
-  --set 'aiq.apps.frontend.imagePullSecrets[0].name=ngc-secret' \
-  --set 'aiq.apps.postgres.imagePullSecrets[0].name=ngc-secret'
+  --set 'deep-researcher.apps.backend.imagePullSecrets[0].name=ngc-secret' \
+  --set 'deep-researcher.apps.frontend.imagePullSecrets[0].name=ngc-secret' \
+  --set 'deep-researcher.apps.postgres.imagePullSecrets[0].name=ngc-secret'
 ```
 
 - Replace `<YOUR_NGC_API_KEY>` with your NGC API key (or use `$NGC_API_KEY` if set in your environment).
@@ -99,14 +99,14 @@ helm upgrade --install aiq aiq2-web-2.2.0.tgz -n ns-aiq --create-namespace \
 **Optional — Install directly from the chart URL** (without pulling first):
 
 ```bash
-helm upgrade --install aiq https://helm.ngc.nvidia.com/nvidia/blueprint/charts/aiq2-web-2.2.0.tgz \
+helm upgrade --install deep-researcher https://helm.ngc.nvidia.com/nvidia/blueprint/charts/aiq2-web-2.2.0.tgz \
   --username='$oauthtoken' \
   --password=$NGC_API_KEY \
-  -n ns-aiq --create-namespace \
+  -n ns-deep-researcher --create-namespace \
   --wait --timeout 10m \
-  --set 'aiq.apps.backend.imagePullSecrets[0].name=ngc-secret' \
-  --set 'aiq.apps.frontend.imagePullSecrets[0].name=ngc-secret' \
-  --set 'aiq.apps.postgres.imagePullSecrets[0].name=ngc-secret'
+  --set 'deep-researcher.apps.backend.imagePullSecrets[0].name=ngc-secret' \
+  --set 'deep-researcher.apps.frontend.imagePullSecrets[0].name=ngc-secret' \
+  --set 'deep-researcher.apps.postgres.imagePullSecrets[0].name=ngc-secret'
 ```
 
 ### Override values
@@ -114,18 +114,18 @@ helm upgrade --install aiq https://helm.ngc.nvidia.com/nvidia/blueprint/charts/a
 Pass additional `--set` flags to customize the deployment:
 
 ```bash
-helm upgrade --install aiq aiq2-web-2.2.0.tgz -n ns-aiq \
+helm upgrade --install deep-researcher deep-researcher-web-2.2.0.tgz -n ns-deep-researcher \
   --wait --timeout 10m \
-  --set 'aiq.apps.backend.imagePullSecrets[0].name=ngc-secret' \
-  --set 'aiq.apps.frontend.imagePullSecrets[0].name=ngc-secret' \
-  --set 'aiq.apps.postgres.imagePullSecrets[0].name=ngc-secret' \
-  --set aiq.apps.backend.image.tag=<tag>
+  --set 'deep-researcher.apps.backend.imagePullSecrets[0].name=ngc-secret' \
+  --set 'deep-researcher.apps.frontend.imagePullSecrets[0].name=ngc-secret' \
+  --set 'deep-researcher.apps.postgres.imagePullSecrets[0].name=ngc-secret' \
+  --set deep-researcher.apps.backend.image.tag=<tag>
 ```
 
 Or supply a custom values file:
 
 ```bash
-helm upgrade --install aiq aiq2-web-2.2.0.tgz -n ns-aiq \
+helm upgrade --install deep-researcher deep-researcher-web-2.2.0.tgz -n ns-deep-researcher \
   --wait --timeout 10m \
   -f custom-values.yaml
 ```
@@ -135,7 +135,7 @@ helm upgrade --install aiq aiq2-web-2.2.0.tgz -n ns-aiq \
 To see what values the chart supports before installing:
 
 ```bash
-helm show values aiq2-web-2.2.0.tgz
+helm show values deep-researcher-web-2.2.0.tgz
 ```
 
 ### Amazon OpenSearch Serverless
@@ -143,11 +143,11 @@ helm show values aiq2-web-2.2.0.tgz
 The backend image can be overridden through values without forking the chart:
 
 ```yaml
-aiq:
+deep-researcher:
   apps:
     backend:
       image:
-        repository: <registry>/<aiq-agent-image>
+        repository: <registry>/<deep-researcher-agent-image>
         tag: <tag>
 ```
 
@@ -155,7 +155,7 @@ For Amazon OpenSearch Serverless, set the backend workflow config to `configs/co
 SigV4 through environment values:
 
 ```yaml
-aiq:
+deep-researcher:
   apps:
     backend:
       env:
@@ -163,7 +163,7 @@ aiq:
         OPENSEARCH_URL: https://abc123.us-west-2.aoss.amazonaws.com
         OPENSEARCH_AUTH_TYPE: sigv4
         OPENSEARCH_AWS_SERVICE: aoss
-        OPENSEARCH_INDEX_PREFIX: aiq
+        OPENSEARCH_INDEX_PREFIX: deep-researcher
         AWS_REGION: us-west-2
         OPENSEARCH_INGESTION_MODE: auto
         OPENSEARCH_DASK_FILE_TRANSFER: bytes
@@ -173,29 +173,29 @@ A complete example is available at
 [`deploy/helm/examples/aws-opensearch-serverless-values.yaml`](examples/aws-opensearch-serverless-values.yaml).
 
 For EKS Pod Identity, associate the IAM role with the backend service account for this release. These examples install
-into `ns-aiq`, and the backend service account is `aiq-backend`. If you change `-n`, create the association in that same
+into `ns-deep-researcher`, and the backend service account is `deep-researcher-backend`. If you change `-n`, create the association in that same
 release namespace. EKS Pod Identity associations are created through EKS, not by annotating the service account. The role
 also needs OpenSearch Serverless IAM access and a data access policy for the target collection/index pattern.
 
 ### Verify
 
 ```bash
-kubectl get pods -n ns-aiq
+kubectl get pods -n ns-deep-researcher
 ```
 
 Expected output:
 
 ```
 NAME                            READY   STATUS    RESTARTS   AGE
-aiq-backend-xxx                 1/1     Running   0          30s
-aiq-frontend-xxx                1/1     Running   0          30s
-aiq-postgres-xxx                1/1     Running   0          30s
+deep-researcher-backend-xxx                 1/1     Running   0          30s
+deep-researcher-frontend-xxx                1/1     Running   0          30s
+deep-researcher-postgres-xxx                1/1     Running   0          30s
 ```
 
 ### Health check
 
 ```bash
-kubectl port-forward -n ns-aiq svc/aiq-backend 8000:8000 &
+kubectl port-forward -n ns-deep-researcher svc/deep-researcher-backend 8000:8000 &
 curl http://localhost:8000/live
 curl http://localhost:8000/health
 ```
@@ -210,33 +210,33 @@ The backend API docs are available at `http://localhost:8000/docs` while the por
 
 ```bash
 # Frontend UI
-kubectl port-forward -n ns-aiq svc/aiq-frontend 3000:3000
+kubectl port-forward -n ns-deep-researcher svc/deep-researcher-frontend 3000:3000
 
 # Backend API
-kubectl port-forward -n ns-aiq svc/aiq-backend 8000:8000
+kubectl port-forward -n ns-deep-researcher svc/deep-researcher-backend 8000:8000
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to access the web UI.
 
 ### Upgrade
 
-To upgrade an existing release to a newer chart version, pull the new chart archive (same NGC URL pattern with the new version, e.g. `aiq2-web-<version>.tgz`) or use the new chart URL for direct install, then run:
+To upgrade an existing release to a newer chart version, pull the new chart archive (same NGC URL pattern with the new version, e.g. `deep-researcher-web-<version>.tgz`) or use the new chart URL for direct install, then run:
 
 ```bash
-helm upgrade aiq aiq2-web-2.2.0.tgz -n ns-aiq \
+helm upgrade deep-researcher deep-researcher-web-2.2.0.tgz -n ns-deep-researcher \
   --wait --timeout 10m \
-  --set 'aiq.apps.backend.imagePullSecrets[0].name=ngc-secret' \
-  --set 'aiq.apps.frontend.imagePullSecrets[0].name=ngc-secret' \
-  --set 'aiq.apps.postgres.imagePullSecrets[0].name=ngc-secret'
+  --set 'deep-researcher.apps.backend.imagePullSecrets[0].name=ngc-secret' \
+  --set 'deep-researcher.apps.frontend.imagePullSecrets[0].name=ngc-secret' \
+  --set 'deep-researcher.apps.postgres.imagePullSecrets[0].name=ngc-secret'
 ```
 
 ### Uninstall
 
 ```bash
-helm uninstall aiq -n ns-aiq
+helm uninstall deep-researcher -n ns-deep-researcher
 
 # Optionally remove namespace and secrets
-kubectl delete namespace ns-aiq
+kubectl delete namespace ns-deep-researcher
 ```
 
 ## Configuration
@@ -250,23 +250,23 @@ The backend loads a workflow config at startup. Switch configs with `--set`:
 | `configs/config_web_frag_mcp_auth.yml` | Foundational RAG with optional per-user MCP authentication |
 
 ```bash
-helm upgrade --install aiq aiq2-web-2.2.0.tgz -n ns-aiq \
+helm upgrade --install deep-researcher deep-researcher-web-2.2.0.tgz -n ns-deep-researcher \
   --wait --timeout 10m \
-  --set 'aiq.apps.backend.imagePullSecrets[0].name=ngc-secret' \
-  --set 'aiq.apps.frontend.imagePullSecrets[0].name=ngc-secret' \
-  --set 'aiq.apps.postgres.imagePullSecrets[0].name=ngc-secret' \
-  --set aiq.apps.backend.env.CONFIG_FILE=configs/config_web_frag.yml
+  --set 'deep-researcher.apps.backend.imagePullSecrets[0].name=ngc-secret' \
+  --set 'deep-researcher.apps.frontend.imagePullSecrets[0].name=ngc-secret' \
+  --set 'deep-researcher.apps.postgres.imagePullSecrets[0].name=ngc-secret' \
+  --set deep-researcher.apps.backend.env.CONFIG_FILE=configs/config_web_frag.yml
 ```
 
 ### Per-user MCP authentication with external Redis
 
 The chart does not install Redis. When selecting the per-user authentication config, provide a Redis service that the backend and its workers can both reach. The deployer owns its availability, persistence, networking, and backup.
 
-Add `REDIS_PASSWORD` to the existing `aiq-credentials` Secret when the Redis service requires authentication, then create a values file:
+Add `REDIS_PASSWORD` to the existing `deep-researcher-credentials` Secret when the Redis service requires authentication, then create a values file:
 
 ```yaml
-# aiq-per-user-auth-values.yaml
-aiq:
+# deep-researcher-per-user-auth-values.yaml
+deep-researcher:
   apps:
     backend:
       env:
@@ -281,12 +281,12 @@ aiq:
 Apply it to either the downloaded chart or a source-chart installation:
 
 ```bash
-helm upgrade --install aiq aiq2-web-2.2.0.tgz -n ns-aiq \
+helm upgrade --install deep-researcher deep-researcher-web-2.2.0.tgz -n ns-deep-researcher \
   --wait --timeout 10m \
-  -f aiq-per-user-auth-values.yaml
+  -f deep-researcher-per-user-auth-values.yaml
 ```
 
-Configure `MCP_GDRIVE_URL`, `AIQ_PUBLIC_URL`, and any OAuth client credentials required by the protected MCP source through the same `env` and `secretEnv` maps. NAT 1.8's Redis object store in this image supports host, port, database, and optional password; this example does not support TLS, ACL usernames, Sentinel, or Redis Cluster.
+Configure `MCP_GDRIVE_URL`, `DEEP_RESEARCHER_PUBLIC_URL`, and any OAuth client credentials required by the protected MCP source through the same `env` and `secretEnv` maps. NAT 1.8's Redis object store in this image supports host, port, database, and optional password; this example does not support TLS, ACL usernames, Sentinel, or Redis Cluster.
 
 ## FRAG Integration
 
@@ -297,14 +297,14 @@ To use the Foundational RAG (FRAG) config, you need a running NVIDIA RAG Bluepri
 If the RAG Blueprint is deployed in the same Kubernetes cluster, use internal service DNS:
 
 ```bash
-helm upgrade --install aiq aiq2-web-2.2.0.tgz -n ns-aiq \
+helm upgrade --install deep-researcher deep-researcher-web-2.2.0.tgz -n ns-deep-researcher \
   --wait --timeout 10m \
-  --set 'aiq.apps.backend.imagePullSecrets[0].name=ngc-secret' \
-  --set 'aiq.apps.frontend.imagePullSecrets[0].name=ngc-secret' \
-  --set 'aiq.apps.postgres.imagePullSecrets[0].name=ngc-secret' \
-  --set aiq.apps.backend.env.CONFIG_FILE=configs/config_web_frag.yml \
-  --set aiq.apps.backend.env.RAG_SERVER_URL=http://rag-server.<rag-namespace>.svc.cluster.local:8081/v1 \
-  --set aiq.apps.backend.env.RAG_INGEST_URL=http://ingestor-server.<rag-namespace>.svc.cluster.local:8082/v1
+  --set 'deep-researcher.apps.backend.imagePullSecrets[0].name=ngc-secret' \
+  --set 'deep-researcher.apps.frontend.imagePullSecrets[0].name=ngc-secret' \
+  --set 'deep-researcher.apps.postgres.imagePullSecrets[0].name=ngc-secret' \
+  --set deep-researcher.apps.backend.env.CONFIG_FILE=configs/config_web_frag.yml \
+  --set deep-researcher.apps.backend.env.RAG_SERVER_URL=http://rag-server.<rag-namespace>.svc.cluster.local:8081/v1 \
+  --set deep-researcher.apps.backend.env.RAG_INGEST_URL=http://ingestor-server.<rag-namespace>.svc.cluster.local:8082/v1
 ```
 
 Replace `<rag-namespace>` with the namespace where the RAG Blueprint is deployed.
@@ -314,14 +314,14 @@ Replace `<rag-namespace>` with the namespace where the RAG Blueprint is deployed
 If the RAG service is running outside the cluster:
 
 ```bash
-helm upgrade --install aiq aiq2-web-2.2.0.tgz -n ns-aiq \
+helm upgrade --install deep-researcher deep-researcher-web-2.2.0.tgz -n ns-deep-researcher \
   --wait --timeout 10m \
-  --set 'aiq.apps.backend.imagePullSecrets[0].name=ngc-secret' \
-  --set 'aiq.apps.frontend.imagePullSecrets[0].name=ngc-secret' \
-  --set 'aiq.apps.postgres.imagePullSecrets[0].name=ngc-secret' \
-  --set aiq.apps.backend.env.CONFIG_FILE=configs/config_web_frag.yml \
-  --set aiq.apps.backend.env.RAG_SERVER_URL=http://<rag-host>:8081/v1 \
-  --set aiq.apps.backend.env.RAG_INGEST_URL=http://<rag-ingest-host>:8082/v1
+  --set 'deep-researcher.apps.backend.imagePullSecrets[0].name=ngc-secret' \
+  --set 'deep-researcher.apps.frontend.imagePullSecrets[0].name=ngc-secret' \
+  --set 'deep-researcher.apps.postgres.imagePullSecrets[0].name=ngc-secret' \
+  --set deep-researcher.apps.backend.env.CONFIG_FILE=configs/config_web_frag.yml \
+  --set deep-researcher.apps.backend.env.RAG_SERVER_URL=http://<rag-host>:8081/v1 \
+  --set deep-researcher.apps.backend.env.RAG_INGEST_URL=http://<rag-ingest-host>:8082/v1
 ```
 
 ### Values file approach
@@ -329,8 +329,8 @@ helm upgrade --install aiq aiq2-web-2.2.0.tgz -n ns-aiq \
 For complex overrides, create a values file instead of passing many `--set` flags:
 
 ```yaml
-# aiq-frag-values.yaml
-aiq:
+# deep-researcher-frag-values.yaml
+deep-researcher:
   apps:
     backend:
       env:
@@ -340,9 +340,9 @@ aiq:
 ```
 
 ```bash
-helm upgrade --install aiq aiq2-web-2.2.0.tgz -n ns-aiq \
+helm upgrade --install deep-researcher deep-researcher-web-2.2.0.tgz -n ns-deep-researcher \
   --wait --timeout 10m \
-  -f aiq-frag-values.yaml
+  -f deep-researcher-frag-values.yaml
 ```
 
 ## Secrets
@@ -353,8 +353,8 @@ helm upgrade --install aiq aiq2-web-2.2.0.tgz -n ns-aiq \
 |-----|-------------|
 | `NVIDIA_API_KEY` | API key for NIM inference models |
 | `TAVILY_API_KEY` | Tavily API key for web search |
-| `DB_USER_NAME` | PostgreSQL username (default: `aiq`) |
-| `DB_USER_PASSWORD` | PostgreSQL password (default: `aiq_dev`) |
+| `DB_USER_NAME` | PostgreSQL username (default: `deep_researcher`) |
+| `DB_USER_PASSWORD` | PostgreSQL password (default: `deep_researcher_dev`) |
 
 ### Optional
 
@@ -365,32 +365,32 @@ helm upgrade --install aiq aiq2-web-2.2.0.tgz -n ns-aiq \
 | `WANDB_API_KEY` | Weights & Biases API key |
 | `MODAL_TOKEN_ID` | Modal sandbox token ID |
 | `MODAL_TOKEN_SECRET` | Modal sandbox token secret |
-| `AIQ_ARTIFACT_BLOB_PROVIDER` | Artifact byte storage provider; unset or `sql` keeps bytes in SQL, `s3` uses S3-compatible storage |
-| `AIQ_ARTIFACT_S3_BUCKET` | Required when `AIQ_ARTIFACT_BLOB_PROVIDER=s3` |
-| `AIQ_ARTIFACT_S3_ENDPOINT_URL` | Unset for AWS S3; set for MinIO or compatible storage |
-| `AIQ_ARTIFACT_S3_REGION` | Optional S3 region |
-| `AIQ_ARTIFACT_S3_PREFIX` | Optional object-key prefix; defaults to `artifacts/v1` |
+| `DEEP_RESEARCHER_ARTIFACT_BLOB_PROVIDER` | Artifact byte storage provider; unset or `sql` keeps bytes in SQL, `s3` uses S3-compatible storage |
+| `DEEP_RESEARCHER_ARTIFACT_S3_BUCKET` | Required when `DEEP_RESEARCHER_ARTIFACT_BLOB_PROVIDER=s3` |
+| `DEEP_RESEARCHER_ARTIFACT_S3_ENDPOINT_URL` | Unset for AWS S3; set for MinIO or compatible storage |
+| `DEEP_RESEARCHER_ARTIFACT_S3_REGION` | Optional S3 region |
+| `DEEP_RESEARCHER_ARTIFACT_S3_PREFIX` | Optional object-key prefix; defaults to `artifacts/v1` |
 | `AWS_ACCESS_KEY_ID` | Development-only S3-compatible access key; use workload identity in production |
 | `AWS_SECRET_ACCESS_KEY` | Development-only S3-compatible secret key; use workload identity in production |
 
 Production artifact storage is operator-managed infrastructure. Configure the
 service account or workload with a short-lived role, restrict object operations to
-the AI-Q worker identity and configured bucket prefix, enable Block Public Access
-and TLS-only access, and enable storage-layer encryption such as SSE-KMS. AI-Q API
-ownership checks do not protect direct bucket access, and AI-Q does not
+the Deep Researcher Agent worker identity and configured bucket prefix, enable Block Public Access
+and TLS-only access, and enable storage-layer encryption such as SSE-KMS. Deep Researcher Agent API
+ownership checks do not protect direct bucket access, and Deep Researcher Agent does not
 application-encrypt artifact blob bytes.
 
 ### Updating secrets
 
 ```bash
-kubectl delete secret aiq-credentials -n ns-aiq
-kubectl create secret generic aiq-credentials -n ns-aiq \
+kubectl delete secret deep-researcher-credentials -n ns-deep-researcher
+kubectl create secret generic deep-researcher-credentials -n ns-deep-researcher \
   --from-literal=NVIDIA_API_KEY="new-key" \  # pragma: allowlist secret
   --from-literal=TAVILY_API_KEY="new-key" \  # pragma: allowlist secret
-  --from-literal=DB_USER_NAME="aiq" \
-  --from-literal=DB_USER_PASSWORD="aiq_dev"
+  --from-literal=DB_USER_NAME="deep_researcher" \
+  --from-literal=DB_USER_PASSWORD="deep_researcher_dev"
 
-kubectl rollout restart deployment -n ns-aiq aiq-backend aiq-frontend
+kubectl rollout restart deployment -n ns-deep-researcher deep-researcher-backend deep-researcher-frontend
 ```
 
 ## Troubleshooting
@@ -398,22 +398,22 @@ kubectl rollout restart deployment -n ns-aiq aiq-backend aiq-frontend
 ### Pod status
 
 ```bash
-kubectl get pods -n ns-aiq
-kubectl describe pod <pod-name> -n ns-aiq
-kubectl get events -n ns-aiq --sort-by='.lastTimestamp'
+kubectl get pods -n ns-deep-researcher
+kubectl describe pod <pod-name> -n ns-deep-researcher
+kubectl get events -n ns-deep-researcher --sort-by='.lastTimestamp'
 ```
 
 ### Logs
 
 ```bash
 # Backend logs
-kubectl logs -n ns-aiq -l component=backend -f
+kubectl logs -n ns-deep-researcher -l component=backend -f
 
 # Frontend logs
-kubectl logs -n ns-aiq -l component=frontend -f
+kubectl logs -n ns-deep-researcher -l component=frontend -f
 
 # Database init container logs
-kubectl logs -n ns-aiq <backend-pod> -c db-init
+kubectl logs -n ns-deep-researcher <backend-pod> -c db-init
 ```
 
 ### Common issues
@@ -421,10 +421,10 @@ kubectl logs -n ns-aiq <backend-pod> -c db-init
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | `ImagePullBackOff` | Missing or incorrect image pull secret | Verify `ngc-secret` exists and credentials are valid. Check `kubectl describe pod <pod>`. |
-| `CrashLoopBackOff` | Missing credentials or bad config | Check `kubectl logs <pod> -n ns-aiq`. Verify `aiq-credentials` secret has all required keys. |
-| Pod stuck in `Pending` | Insufficient cluster resources or PVC not bound | Check `kubectl describe pod <pod>` for scheduling errors. Verify PVC status with `kubectl get pvc -n ns-aiq`. |
+| `CrashLoopBackOff` | Missing credentials or bad config | Check `kubectl logs <pod> -n ns-deep-researcher`. Verify `deep-researcher-credentials` secret has all required keys. |
+| Pod stuck in `Pending` | Insufficient cluster resources or PVC not bound | Check `kubectl describe pod <pod>` for scheduling errors. Verify PVC status with `kubectl get pvc -n ns-deep-researcher`. |
 | FRAG mode: RAG connection refused | RAG service not reachable | Verify RAG pods are running and service DNS resolves. Test with `kubectl exec` into the backend pod and `curl` the RAG URL. |
-| Health check fails | Backend not fully started | Wait for init containers to complete. Check `kubectl logs <pod> -c db-init -n ns-aiq` for database init issues. |
+| Health check fails | Backend not fully started | Wait for init containers to complete. Check `kubectl logs <pod> -c db-init -n ns-deep-researcher` for database init issues. |
 
 ## Source Chart Deployment
 

@@ -4,7 +4,7 @@ SPDX-License-Identifier: Apache-2.0
 -->
 # Tools and Sources
 
-AI-Q ships provider integrations for Tavily, Google Scholar search providers, Exa, DuckDuckGo News, Polymarket, and
+Deep Researcher Agent ships provider integrations for Tavily, Google Scholar search providers, Exa, DuckDuckGo News, Polymarket, and
 the [You.com API Suite](./you-com.md). Knowledge retrieval is configured separately through the
 [Knowledge Layer](./knowledge-layer.md).
 
@@ -115,7 +115,7 @@ domains:
 
 For each domain, the runtime also computes `unavailable_source_ids` from configured preferred and fallback IDs that do
 not exist in the active mapped source set. The router cannot recommend those sources; it uses an available domain
-fallback instead. If `domain_catalog_path` is omitted, AI-Q creates a `general_research` route whose preferred sources
+fallback instead. If `domain_catalog_path` is omitted, Deep Researcher Agent creates a `general_research` route whose preferred sources
 are all active mapped sources. Its fallback is `web_search` when available, otherwise the first active mapped source.
 An explicitly configured empty catalog remains empty: the router may return `unconfigured` and use that same runtime
 fallback order. A nonempty configured catalog also uses the runtime fallback when no domain fits.

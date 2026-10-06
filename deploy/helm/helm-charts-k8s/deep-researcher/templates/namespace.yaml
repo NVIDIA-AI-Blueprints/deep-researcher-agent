@@ -1,0 +1,21 @@
+{{- if .Values.namespace.create -}}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "deep-researcher.namespace" . }}
+  labels:
+    {{- if and .Values.project.dl (ne (.Values.project.orientation | default "internal") "external") }}
+    sysdev.nvidia.com/dl: {{ .Values.project.dl | quote }}
+    {{- end }}
+    {{- if .Values.project.name }}
+    app.kubernetes.io/name: {{ .Values.project.name }}
+    {{- end }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- with .Values.namespace.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.namespace.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

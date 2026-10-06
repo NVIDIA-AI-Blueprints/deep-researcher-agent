@@ -26,7 +26,7 @@ _BEARER_PATTERN = re.compile(r"(?i)bearer\s+[^\s,;]+")
 
 
 class NemoRetrieverError(RuntimeError):
-    """Base error raised by the AIQ NeMo Retriever adapter."""
+    """Base error raised by the Deep Researcher Agent NeMo Retriever adapter."""
 
 
 class NemoRetrieverTransportError(NemoRetrieverError):
@@ -78,7 +78,7 @@ class _NRLTransport:
     """Own an event-loop-independent connection pool for an NRL deployment.
 
     Async callers delegate to the pooled, thread-safe ``httpx.Client`` so the
-    adapter remains safe when AIQ invokes it from more than one event loop.
+    adapter remains safe when Deep Researcher Agent invokes it from more than one event loop.
     """
 
     def __init__(
@@ -131,7 +131,8 @@ class _NRLTransport:
         if compatibility_route and status in {404, 410}:
             return NemoRetrieverCompatibilityError(
                 "NeMo Retriever rejected a job-scoped API route with "
-                f"HTTP {status}. Confirm AIQ and the NRL service use compatible collection-management API versions.",
+                f"HTTP {status}. "
+                f"Confirm Deep Researcher Agent and the NRL service use compatible collection-management API versions.",
                 status_code=status,
             )
         reason = {

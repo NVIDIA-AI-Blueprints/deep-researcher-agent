@@ -30,11 +30,11 @@ from knowledge_layer.opensearch import adapter as opensearch_adapter
 from knowledge_layer.opensearch.adapter import OpenSearchIngestor
 from knowledge_layer.opensearch.adapter import OpenSearchRetriever
 
-from aiq_agent.knowledge.schema import Chunk
-from aiq_agent.knowledge.schema import ContentType
-from aiq_agent.knowledge.schema import FileInfo
-from aiq_agent.knowledge.schema import FileStatus
-from aiq_agent.knowledge.schema import JobState
+from deep_researcher_agent.knowledge.schema import Chunk
+from deep_researcher_agent.knowledge.schema import ContentType
+from deep_researcher_agent.knowledge.schema import FileInfo
+from deep_researcher_agent.knowledge.schema import FileStatus
+from deep_researcher_agent.knowledge.schema import JobState
 
 
 class FakeOpenSearchIndices:
@@ -300,7 +300,7 @@ class FakeDaskClient:
                     for payload in payloads
                 ],
                 "total_chunks": len(payloads),
-                "index_name": "aiq-dask-docs",
+                "index_name": "deep-researcher-dask-docs",
                 "embedding_model": "nvidia/test-embed",
             }
         )
@@ -308,9 +308,9 @@ class FakeDaskClient:
 
 def test_opensearch_backend_registers_with_factory():
     """Test that opensearch backend registers with factory."""
-    from aiq_agent.knowledge import factory
-    from aiq_agent.knowledge.factory import get_ingestor
-    from aiq_agent.knowledge.factory import get_retriever
+    from deep_researcher_agent.knowledge import factory
+    from deep_researcher_agent.knowledge.factory import get_ingestor
+    from deep_researcher_agent.knowledge.factory import get_retriever
 
     factory._INGESTOR_INSTANCES.pop("opensearch", None)
     factory._RETRIEVER_INSTANCES.pop("opensearch", None)
@@ -341,7 +341,7 @@ def test_aoss_bulk_index_omits_document_ids_and_explicit_refresh():
     ingestor._client = fake_client
 
     ingestor._bulk_index_documents(
-        "aiq-aoss-test",
+        "deep-researcher-aoss-test",
         [
             {
                 "chunk_id": "chunk-1",
@@ -354,7 +354,7 @@ def test_aoss_bulk_index_omits_document_ids_and_explicit_refresh():
     )
 
     assert fake_client.bulk_body is not None
-    assert fake_client.bulk_body[0] == {"index": {"_index": "aiq-aoss-test"}}
+    assert fake_client.bulk_body[0] == {"index": {"_index": "deep-researcher-aoss-test"}}
     assert fake_client.bulk_refresh is False
 
 
@@ -366,7 +366,7 @@ def test_bulk_index_rejects_mismatched_embedding_dimension_before_request():
 
     with pytest.raises(RuntimeError, match="ingestion embedding 0 has dimension 3"):
         ingestor._bulk_index_documents(
-            "aiq-aoss-test",
+            "deep-researcher-aoss-test",
             [{"chunk_id": "chunk-1", "embedding": [0.1, 0.2, 0.3]}],
         )
 
@@ -381,7 +381,7 @@ def test_aoss_delete_searches_then_bulk_deletes_generated_ids():
     ingestor._client = fake_client
 
     deleted = ingestor._delete_file_documents_for_aoss(
-        "aiq-aoss-test",
+        "deep-researcher-aoss-test",
         {
             "query": {
                 "bool": {
@@ -394,8 +394,8 @@ def test_aoss_delete_searches_then_bulk_deletes_generated_ids():
 
     assert deleted == 2
     assert fake_client.bulk_body == [
-        {"delete": {"_index": "aiq-aoss-test", "_id": "generated-1"}},
-        {"delete": {"_index": "aiq-aoss-test", "_id": "generated-2"}},
+        {"delete": {"_index": "deep-researcher-aoss-test", "_id": "generated-1"}},
+        {"delete": {"_index": "deep-researcher-aoss-test", "_id": "generated-2"}},
     ]
     assert fake_client.bulk_refresh is False
 
@@ -419,7 +419,7 @@ def test_aoss_delete_enumerates_all_pages_before_deleting():
     ingestor._client = fake_client
 
     deleted = ingestor._delete_file_documents_for_aoss(
-        "aiq-aoss-test",
+        "deep-researcher-aoss-test",
         {"query": {"bool": {"should": [{"term": {"file_id": "file-1"}}], "minimum_should_match": 1}}},
     )
 
@@ -449,7 +449,7 @@ def test_aoss_delete_fails_rather_than_reporting_partial_success_when_enumeratio
 
     with pytest.raises(RuntimeError):
         ingestor._delete_file_documents_for_aoss(
-            "aiq-aoss-test",
+            "deep-researcher-aoss-test",
             {"query": {"bool": {"should": [{"term": {"file_id": "file-1"}}], "minimum_should_match": 1}}},
         )
 
@@ -629,13 +629,13 @@ def test_retrieval_rejects_mismatched_collection_owner_before_embedding_or_searc
 
 def test_session_collection_names_are_safe_dynamic_indexes():
     """Test that session collection names are safe dynamic indexes."""
-    ingestor = OpenSearchIngestor({"index_prefix": "aiq-prod", "start_ttl_cleanup": False})
+    ingestor = OpenSearchIngestor({"index_prefix": "deep-researcher-prod", "start_ttl_cleanup": False})
     collection_name = "s_123E4567-E89B-12D3-A456-426614174000"
 
     index_name = ingestor._index_name_for_collection(collection_name)
 
     # Readable sanitized prefix is preserved; a stable disambiguator suffix keeps the mapping injective.
-    assert index_name.startswith("aiq-prod-s_123e4567-e89b-12d3-a456-426614174000-")
+    assert index_name.startswith("deep-researcher-prod-s_123e4567-e89b-12d3-a456-426614174000-")
     assert index_name == ingestor._index_name_for_collection(collection_name)
 
 
@@ -715,7 +715,7 @@ def test_normalize_maps_opensearch_hit_to_chunk():
     chunk = retriever.normalize(
         {
             "_id": "doc-1",
-            "_index": "aiq-default",
+            "_index": "deep-researcher-default",
             "_score": 0.91,
             "_source": {
                 "body": "OpenSearch content",
@@ -734,7 +734,7 @@ def test_normalize_maps_opensearch_hit_to_chunk():
     assert chunk.content_type == ContentType.TEXT
     assert chunk.display_citation == "report.pdf, p.2"
     assert chunk.metadata["section"] == "intro"
-    assert chunk.metadata["index"] == "aiq-default"
+    assert chunk.metadata["index"] == "deep-researcher-default"
 
 
 def test_ingestion_and_retrieval_with_fake_client(tmp_path):
@@ -742,7 +742,7 @@ def test_ingestion_and_retrieval_with_fake_client(tmp_path):
     fake_client = FakeOpenSearchClient()
     test_file = tmp_path / "doc.txt"
     test_file.write_text(
-        "OpenSearch stores document chunks as vectors for AIQ retrieval. "
+        "OpenSearch stores document chunks as vectors for Deep Researcher Agent retrieval. "
         "The adapter creates one index per collection and preserves citations.",
         encoding="utf-8",
     )
@@ -753,7 +753,7 @@ def test_ingestion_and_retrieval_with_fake_client(tmp_path):
             "embedding_dim": 4,
             "chunk_size": 6,
             "chunk_overlap": 1,
-            "index_prefix": "aiq-test",
+            "index_prefix": "deep-researcher-test",
         }
     )
     ingestor._client = fake_client
@@ -783,7 +783,7 @@ def test_ingestion_and_retrieval_with_fake_client(tmp_path):
         {
             "endpoint": "localhost:9200",
             "embedding_dim": 4,
-            "index_prefix": "aiq-test",
+            "index_prefix": "deep-researcher-test",
         }
     )
     retriever._client = fake_client
@@ -820,7 +820,7 @@ def test_indexed_documents_omit_internal_source_path(tmp_path):
             "embedding_dim": 4,
             "chunk_size": 8,
             "chunk_overlap": 1,
-            "index_prefix": "aiq-leak",
+            "index_prefix": "deep-researcher-leak",
         }
     )
     ingestor._client = fake_client
@@ -845,7 +845,7 @@ def test_indexed_documents_omit_internal_source_path(tmp_path):
 def test_ttl_cleanup_deletes_only_expired_opensearch_session_indexes():
     """Test that ttl cleanup deletes only expired opensearch session indexes."""
     fake_client = FakeOpenSearchClient()
-    ingestor = OpenSearchIngestor({"index_prefix": "aiq-ttl", "start_ttl_cleanup": False})
+    ingestor = OpenSearchIngestor({"index_prefix": "deep-researcher-ttl", "start_ttl_cleanup": False})
     ingestor._client = fake_client
     ingestor._ttl_hours = 24
     ingestor._cleanup_interval_seconds = 3600
@@ -860,7 +860,7 @@ def test_ttl_cleanup_deletes_only_expired_opensearch_session_indexes():
     old_meta["updated_at"] = (datetime.now(UTC) - timedelta(hours=25)).isoformat()
     new_meta = fake_client.indexes[new_index]["mappings"]["_meta"]
     new_meta["updated_at"] = datetime.now(UTC).isoformat()
-    fake_client.indexes["aiq-ttl-unrelated"] = {
+    fake_client.indexes["deep-researcher-ttl-unrelated"] = {
         "mappings": {
             "_meta": {
                 "backend": "other",
@@ -874,7 +874,7 @@ def test_ttl_cleanup_deletes_only_expired_opensearch_session_indexes():
 
     assert old_index not in fake_client.indexes
     assert new_index in fake_client.indexes
-    assert "aiq-ttl-unrelated" in fake_client.indexes
+    assert "deep-researcher-ttl-unrelated" in fake_client.indexes
 
 
 def test_dask_ingestion_submits_bytes_payload_and_updates_job(tmp_path):
@@ -979,13 +979,13 @@ def test_delete_file_preserves_inflight_tracking_when_nothing_deleted():
         {
             "endpoint": "localhost:9200",
             "embedding_dim": 4,
-            "index_prefix": "aiq-test",
+            "index_prefix": "deep-researcher-test",
         }
     )
     ingestor._client = fake_client
 
     # Create an empty index — exists() returns True but delete_by_query finds nothing.
-    fake_client.indices.create(index="aiq-test-c", body={})
+    fake_client.indices.create(index="deep-researcher-test-c", body={})
 
     # Mark a file as INGESTING in-memory; not yet in the index (job still running).
     file_id = "inflight-1"
@@ -1072,7 +1072,7 @@ def test_dask_worker_task_constructs_backend_in_worker(monkeypatch):
         def _ensure_index(self, collection_name: str) -> str:
             """Stub that records the collection name passed to _ensure_index."""
             captured["collection_name"] = collection_name
-            return "aiq-docs"
+            return "deep-researcher-docs"
 
         def _documents_for_file(
             self,
@@ -1230,7 +1230,7 @@ def test_setup_backend_uses_opensearch_environment_defaults(monkeypatch):
     monkeypatch.setenv("OPENSEARCH_AUTH_TYPE", "sigv4")
     monkeypatch.setenv("AWS_REGION", "us-east-1")
     monkeypatch.setenv("OPENSEARCH_AWS_SERVICE", "aoss")
-    monkeypatch.setenv("OPENSEARCH_INDEX_PREFIX", "aiq-env")
+    monkeypatch.setenv("OPENSEARCH_INDEX_PREFIX", "deep-researcher-env")
     monkeypatch.setenv("OPENSEARCH_INGESTION_MODE", "auto")
     monkeypatch.setenv("NAT_DASK_SCHEDULER_ADDRESS", "tcp://scheduler:8786")
     monkeypatch.setenv("OPENSEARCH_DASK_FILE_TRANSFER", "paths")
@@ -1243,7 +1243,7 @@ def test_setup_backend_uses_opensearch_environment_defaults(monkeypatch):
     assert backend_config["auth_type"] == "sigv4"
     assert backend_config["aws_region"] == "us-east-1"
     assert backend_config["aws_service"] == "aoss"
-    assert backend_config["index_prefix"] == "aiq-env"
+    assert backend_config["index_prefix"] == "deep-researcher-env"
     assert backend_config["ingestion_mode"] == "auto"
     assert backend_config["dask_scheduler_address"] == "tcp://scheduler:8786"
     assert backend_config["dask_file_transfer"] == "paths"
@@ -1344,7 +1344,7 @@ def test_ensure_index_recovers_when_concurrent_create_races(monkeypatch):
 
     # Must not raise — race recovery should swallow the exists exception.
     result = ingestor._ensure_index("smoke")
-    assert result.startswith("aiq-smoke")
+    assert result.startswith("deep-researcher-smoke")
     assert len(exists_calls) == 2, "expected pre-create check + post-failure recovery check"
 
 

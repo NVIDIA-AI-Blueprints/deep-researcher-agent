@@ -126,7 +126,7 @@ A carousel holds 2 to 12 line charts and pages between them.
 
 ## Portability
 
-The module is self-contained apart from two aiq integration points: the five
+The module is self-contained apart from two deep-researcher integration points: the five
 toolbar/carousel icons from `@/adapters/ui/icons`, and the `.result-chart*` CSS
 rules in `src/app/globals.css`. To reuse it elsewhere, inline those two and the
 module renders standalone.

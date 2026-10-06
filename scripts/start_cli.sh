@@ -65,10 +65,10 @@ else
     echo "No .env file found. Copy deploy/.env.example to .env"
 fi
 
-export AIQ_DEV_ENV=cli
+export DEEP_RESEARCHER_DEV_ENV=cli
 
 echo "============================================"
-echo "  AI-Q Blueprint - CLI Mode"
+echo "  Deep Researcher Agent Blueprint - CLI Mode"
 echo "============================================"
 echo ""
 echo "Config: $(basename "$CONFIG_FILE")"
@@ -81,7 +81,7 @@ echo ""
 cd "$REPO_ROOT"
 source "$VENV_DIR/bin/activate"
 if [ "$CLI_VERBOSE" = "true" ]; then
-    "$VENV_DIR/bin/aiq-research" --config_file "$CONFIG_FILE" --verbose
+    "$VENV_DIR/bin/deep-researcher-research" --config_file "$CONFIG_FILE" --verbose
 else
-    "$VENV_DIR/bin/aiq-research" --config_file "$CONFIG_FILE"
+    "$VENV_DIR/bin/deep-researcher-research" --config_file "$CONFIG_FILE"
 fi

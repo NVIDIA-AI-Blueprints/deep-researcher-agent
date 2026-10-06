@@ -1,6 +1,6 @@
 # Contributing Guidelines
 
-We welcome contributions to the NVIDIA AI-Q blueprint. This repository uses a maintainer-reviewed pull request workflow with DCO sign-off, code-owner review, copy-pr-bot mirroring, and GitHub Actions validation.
+We welcome contributions to the NVIDIA Deep Researcher Agent blueprint. This repository uses a maintainer-reviewed pull request workflow with DCO sign-off, code-owner review, copy-pr-bot mirroring, and GitHub Actions validation.
 
 ## Before You Start
 
@@ -55,7 +55,7 @@ For deployment changes, run the relevant Helm or compose validation and describe
 
 ## CI and Bot Workflow
 
-AI-Q uses push-triggered GitHub Actions. Pull requests are mirrored by copy-pr-bot to `pull-request/<PR number>` branches after a maintainer or configured vetter comments `/ok to test`, and CI runs on those mirrored branches.
+Deep Researcher Agent uses push-triggered GitHub Actions. Pull requests are mirrored by copy-pr-bot to `pull-request/<PR number>` branches after a maintainer or configured vetter comments `/ok to test`, and CI runs on those mirrored branches.
 
 Repository owners, organization members, and collaborators can request NVSkills validation by commenting:
 

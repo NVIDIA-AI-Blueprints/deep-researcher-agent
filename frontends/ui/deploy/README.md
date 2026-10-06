@@ -1,6 +1,6 @@
-# AI-Q Blueprint UI - Docker Deployment
+# Deep Researcher Agent Blueprint UI - Docker Deployment
 
-This directory contains the Dockerfile to build and deploy the AI-Q Blueprint UI as a Docker container.
+This directory contains the Dockerfile to build and deploy the Deep Researcher Agent Blueprint UI as a Docker container.
 
 ## Architecture
 
@@ -26,7 +26,7 @@ Browser  -->  UI Container (HTTP + WebSocket Proxy)  -->  Backend
 From the **`frontends/ui/`** directory:
 
 ```bash
-docker build -f deploy/Dockerfile -t aiq-blueprint-ui:latest .
+docker build -f deploy/Dockerfile -t deep-researcher-blueprint-ui:latest .
 ```
 
 ### 2. Run the Container
@@ -37,7 +37,7 @@ docker build -f deploy/Dockerfile -t aiq-blueprint-ui:latest .
 docker run -p 3000:3000 \
   -e BACKEND_URL=http://backend:8000 \
   -e REQUIRE_AUTH=false \
-  aiq-blueprint-ui:latest
+  deep-researcher-blueprint-ui:latest
 ```
 
 **With authentication:**
@@ -51,7 +51,7 @@ docker run -p 3000:3000 \
   -e OAUTH_CLIENT_ID=your-client-id \
   -e OAUTH_CLIENT_SECRET=your-client-secret \
   -e OAUTH_ISSUER=https://your-oidc-provider.com \
-  aiq-blueprint-ui:latest
+  deep-researcher-blueprint-ui:latest
 ```
 
 ## Environment Variables
@@ -92,7 +92,7 @@ All environment variables are **runtime configurable** - no rebuild needed when 
 ```yaml
 services:
   frontend:
-    image: aiq-blueprint-ui:latest
+    image: deep-researcher-blueprint-ui:latest
     environment:
       - BACKEND_URL=http://backend:8000
       - REQUIRE_AUTH=${REQUIRE_AUTH:-false}
@@ -120,7 +120,7 @@ When running in Docker and connecting to services on the host machine:
 docker run -p 3000:3000 \
   -e BACKEND_URL=http://host.docker.internal:8000 \
   -e REQUIRE_AUTH=false \
-  aiq-blueprint-ui:latest
+  deep-researcher-blueprint-ui:latest
 ```
 
 ## Troubleshooting

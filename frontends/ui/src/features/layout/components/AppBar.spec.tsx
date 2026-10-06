@@ -42,7 +42,7 @@ describe('AppBar', () => {
   test('renders logo and title', () => {
     render(<AppBar />)
 
-    expect(screen.getByText('AI-Q')).toBeInTheDocument()
+    expect(screen.getByText('Deep Researcher Agent')).toBeInTheDocument()
   })
 
   test('shows Sign In button when not authenticated', () => {

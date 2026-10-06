@@ -5,13 +5,13 @@ SPDX-License-Identifier: Apache-2.0
 
 # REST API
 
-The AI-Q blueprint exposes a REST API built on top of NeMo Agent Toolkit's built-in [FastAPI](https://fastapi.tiangolo.com/) infrastructure. The **AI-Q API** is an extension layer that adds agent-agnostic async job management with SSE streaming, knowledge management endpoints, and event replay capabilities.
+The Deep Researcher Agent blueprint exposes a REST API built on top of NeMo Agent Toolkit's built-in [FastAPI](https://fastapi.tiangolo.com/) infrastructure. The **Deep Researcher Agent API** is an extension layer that adds agent-agnostic async job management with SSE streaming, knowledge management endpoints, and event replay capabilities.
 
 The API is served when running in **web mode** (`nat serve`). CLI mode (`nat run`) uses WebSocket communication instead and does not expose these endpoints.
 
 ## Architecture
 
-NeMo Agent Toolkit provides the core infrastructure: job tracking, [Dask](https://www.dask.org/) scheduling, and SQLite/PostgreSQL persistence. The AI-Q API plugin (`aiq_api`) extends this with:
+NeMo Agent Toolkit provides the core infrastructure: job tracking, [Dask](https://www.dask.org/) scheduling, and SQLite/PostgreSQL persistence. The Deep Researcher Agent API plugin (`deep_researcher_api`) extends this with:
 
 - **Async Jobs API** -- submit research queries to any registered agent, track progress through SSE
 - **Durable Artifact API** -- list metadata and stream generated files captured from configured sandboxes
@@ -107,7 +107,7 @@ curl -X POST http://localhost:8000/v1/jobs/async/submit \
 | Status | Reason |
 |--------|--------|
 | `400` | Unknown, **internal-only**, or registered-but-unconfigured agent type, or invalid request |
-| `413` | Deep-research `input` exceeds `AIQ_MAX_DEEP_RESEARCH_INPUT_CHARS` |
+| `413` | Deep-research `input` exceeds `DEEP_RESEARCHER_MAX_DEEP_RESEARCH_INPUT_CHARS` |
 | `409` | A custom `job_id` collides with an existing job, or a selected protected source requires per-user authentication |
 | `429` | The caller reached the active deep-research job limit or rolling per-minute submission limit. The response includes `Retry-After` |
 | `422` | Validation error: blank/whitespace-only `input`, invalid request fields, unknown data source IDs, or sources unavailable to the selected agent. Data source errors include `message`, `invalid_ids`, `unavailable_for_agent`, and `known_ids` |
@@ -470,7 +470,7 @@ the authenticated `content_url`.
 Agents are registered by type so the async job runner can load them dynamically. Registration happens at import time (typically in a NeMo Agent Toolkit plugin module):
 
 ```python
-from aiq_api.registry import register_agent
+from deep_researcher_api.registry import register_agent
 
 register_agent(
     agent_type="my_agent",
@@ -489,7 +489,7 @@ register_agent(
 | `config_name` | Must match a function name in the NeMo Agent Toolkit YAML config (for example, `deep_research_agent`) |
 | `description` | Human-readable description shown in the agent list |
 
-The default agents (`deep_researcher` and `shallow_researcher`) are registered automatically when the `aiq_api` plugin loads. Registration adds them to the catalog; each agent must also have its `config_name` defined in the active workflow to appear in `GET /v1/jobs/async/agents` or be accepted by `POST /v1/jobs/async/submit`.
+The default agents (`deep_researcher` and `shallow_researcher`) are registered automatically when the `deep_researcher_api` plugin loads. Registration adds them to the catalog; each agent must also have its `config_name` defined in the active workflow to appear in `GET /v1/jobs/async/agents` or be accepted by `POST /v1/jobs/async/submit`.
 
 ## Knowledge API
 
@@ -665,8 +665,8 @@ The API is configured through the NeMo Agent Toolkit config file under `general.
 ```yaml
 general:
   front_end:
-    _type: aiq_api
-    runner_class: aiq_api.plugin.AIQAPIWorker
+    _type: deep_researcher_api
+    runner_class: deep_researcher_api.plugin.DeepResearcherAPIWorker
     db_url: ${NAT_JOB_STORE_DB_URL:-sqlite+aiosqlite:///./jobs.db}
     expiry_seconds: 86400  # 24 hours
     cors:
@@ -694,13 +694,13 @@ general:
 For production deployments, use PostgreSQL for both the job store and LISTEN/NOTIFY-based real-time SSE:
 
 ```bash
-export NAT_JOB_STORE_DB_URL="postgresql+asyncpg://user:pass@host:5432/aiq_jobs"  # pragma: allowlist secret
+export NAT_JOB_STORE_DB_URL="postgresql+asyncpg://user:pass@host:5432/deep_researcher_jobs"  # pragma: allowlist secret
 export NAT_DASK_SCHEDULER_ADDRESS="tcp://scheduler:8786"
 ```
 
 ## Debug Console
 
-When the `aiq_debug` package is installed, a debug console is available at `http://localhost:8000/debug` with:
+When the `deep_researcher_debug` package is installed, a debug console is available at `http://localhost:8000/debug` with:
 
 - Real-time SSE streaming visualization
 - Job submission and tracking

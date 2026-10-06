@@ -188,18 +188,18 @@ def run_check(config: ReadinessConfig) -> tuple[str, str]:
     except ImportError as exc:
         raise ReadinessError("sdk_unavailable") from exc
 
-    from aiq_agent.agents.deep_researcher.sandbox.providers.openshell import _accepts_keyword
-    from aiq_agent.agents.deep_researcher.sandbox.providers.openshell import _build_sandbox_spec
-    from aiq_agent.agents.deep_researcher.sandbox.providers.openshell import _parse_policy_proto
-    from aiq_agent.agents.deep_researcher.sandbox.providers.openshell import _read_policy_data
+    from deep_researcher_agent.agents.deep_researcher.sandbox.providers.openshell import _accepts_keyword
+    from deep_researcher_agent.agents.deep_researcher.sandbox.providers.openshell import _build_sandbox_spec
+    from deep_researcher_agent.agents.deep_researcher.sandbox.providers.openshell import _parse_policy_proto
+    from deep_researcher_agent.agents.deep_researcher.sandbox.providers.openshell import _read_policy_data
 
     try:
         sdk_version = importlib.metadata.version("openshell")
     except importlib.metadata.PackageNotFoundError as exc:
         raise ReadinessError("sdk_unavailable") from exc
     cli_version = _version_from_cli(config.openshell_bin)
-    labels = {"aiq": "readiness-probe"}
-    selector = "aiq=readiness-probe"
+    labels = {"deep-researcher": "readiness-probe"}
+    selector = "deep-researcher=readiness-probe"
     policy_data = _read_policy_data(str(config.policy), require_hard_landlock=False)
     expected_policy = _parse_policy_proto(policy_data, policy_path=str(config.policy))
     spec = _build_sandbox_spec(
@@ -233,7 +233,7 @@ def run_check(config: ReadinessConfig) -> tuple[str, str]:
         ):
             raise ReadinessError("request_labels_unsupported")
 
-        sandbox_name = f"aiqr-{uuid4().hex[:12]}"
+        sandbox_name = f"drr-{uuid4().hex[:12]}"
         cleanup_name = sandbox_name
         primary_error: ReadinessError | None = None
         try:
@@ -257,8 +257,11 @@ def run_check(config: ReadinessConfig) -> tuple[str, str]:
                 openshell_pb2=openshell_pb2,
                 sandbox_pb2=sandbox_pb2,
             )
-            result = client.exec(sandbox.id or sandbox.name, ["sh", "-c", "printf %s aiq-openshell-ready"])
-            if getattr(result, "exit_code", 1) != 0 or getattr(result, "stdout", "") != "aiq-openshell-ready":
+            result = client.exec(sandbox.id or sandbox.name, ["sh", "-c", "printf %s deep-researcher-openshell-ready"])
+            if (
+                getattr(result, "exit_code", 1) != 0
+                or getattr(result, "stdout", "") != "deep-researcher-openshell-ready"
+            ):
                 raise ReadinessError("execution_failed")
         except ReadinessError as exc:
             primary_error = exc
@@ -287,8 +290,8 @@ def run_check(config: ReadinessConfig) -> tuple[str, str]:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--gateway-name", default=None)
-    parser.add_argument("--workspace", default=os.getenv("AIQ_OPENSHELL_WORKSPACE") or "default")
-    parser.add_argument("--image-name", default="aiq-openshell-demo:latest")
+    parser.add_argument("--workspace", default=os.getenv("DEEP_RESEARCHER_OPENSHELL_WORKSPACE") or "default")
+    parser.add_argument("--image-name", default="deep-researcher-openshell-demo:latest")
     parser.add_argument("--policy-file", type=Path, required=True)
     parser.add_argument("--openshell-bin", type=Path, required=True)
     parser.add_argument("--ready-timeout-seconds", type=float, default=120.0)

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 # =============================================================================
-# AIQ Blueprint UI - Production Dockerfile
+# Deep Researcher Agent Blueprint UI - Production Dockerfile
 # =============================================================================
 #
 # Multi-stage build for the Next.js frontend application.
@@ -24,7 +24,7 @@
 # BUILD
 # -----------------------------------------------------------------------------
 #
-#   docker build -f deploy/Dockerfile -t aiq-blueprint-ui:latest .
+#   docker build -f deploy/Dockerfile -t deep-researcher-blueprint-ui:latest .
 #
 # -----------------------------------------------------------------------------
 # RUN
@@ -39,14 +39,14 @@
 #     -e OAUTH_CLIENT_ID=your-client-id \
 #     -e OAUTH_CLIENT_SECRET=your-client-secret \
 #     -e OAUTH_ISSUER=https://your-oidc-provider.com \
-#     aiq-blueprint-ui:latest
+#     deep-researcher-blueprint-ui:latest
 #
 # Without authentication (development/testing):
 #
 #   docker run -p 3000:3000 \
 #     -e BACKEND_URL=http://backend:8000 \
 #     -e REQUIRE_AUTH=false \
-#     aiq-blueprint-ui:latest
+#     deep-researcher-blueprint-ui:latest
 #
 # -----------------------------------------------------------------------------
 # ENVIRONMENT VARIABLES (all runtime - no rebuild needed)

@@ -19,10 +19,10 @@ def test_start_cli_forwards_verbose_flag(tmp_path: Path) -> None:
     shutil.copy2(Path("scripts/start_cli.sh"), launcher)
     (bin_dir / "activate").write_text("", encoding="utf-8")
     arguments_path = tmp_path / "arguments.txt"
-    fake_cli = bin_dir / "aiq-research"
-    fake_cli.write_text('#!/bin/bash\nprintf "%s\\n" "$@" > "$AIQ_TEST_ARGUMENTS_PATH"\n', encoding="utf-8")
+    fake_cli = bin_dir / "deep-researcher-research"
+    fake_cli.write_text('#!/bin/bash\nprintf "%s\\n" "$@" > "$DEEP_RESEARCHER_TEST_ARGUMENTS_PATH"\n', encoding="utf-8")
     fake_cli.chmod(0o755)
-    env = {**os.environ, "AIQ_TEST_ARGUMENTS_PATH": str(arguments_path)}
+    env = {**os.environ, "DEEP_RESEARCHER_TEST_ARGUMENTS_PATH": str(arguments_path)}
 
     subprocess.run([launcher, "--verbose"], cwd=tmp_path, env=env, check=True, capture_output=True, text=True)
 

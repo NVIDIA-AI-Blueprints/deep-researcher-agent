@@ -1,6 +1,0 @@
-apiVersion: v2
-appVersion: 2.2.0
-description: AI-Q Helm Chart
-name: aiq
-type: application
-version: "0.0.5"

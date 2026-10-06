@@ -19,11 +19,11 @@ from urllib.parse import urlunsplit
 import asyncpg
 import pytest
 
-from aiq_agent.agents.chat_researcher.models import WorkflowSuccess
-from aiq_mcp.db_url import normalize_postgres_url
-from aiq_mcp.db_url import require_test_database_url
-from aiq_mcp.job_store import JobStore
-from aiq_mcp.jobs import JobManager
+from deep_researcher_agent.agents.chat_researcher.models import WorkflowSuccess
+from deep_researcher_mcp.db_url import normalize_postgres_url
+from deep_researcher_mcp.db_url import require_test_database_url
+from deep_researcher_mcp.job_store import JobStore
+from deep_researcher_mcp.jobs import JobManager
 
 _DB_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
@@ -57,9 +57,9 @@ class _Runner:
 
 @pytest.fixture()
 async def postgres_url() -> str:
-    db_url = os.getenv("AIQ_MCP_TEST_DB_URL")
+    db_url = os.getenv("DEEP_RESEARCHER_MCP_TEST_DB_URL")
     if not db_url:
-        pytest.skip("set AIQ_MCP_TEST_DB_URL to run Postgres MCP job store tests")
+        pytest.skip("set DEEP_RESEARCHER_MCP_TEST_DB_URL to run Postgres MCP job store tests")
     try:
         await _ensure_database(db_url)
         await _reset_schema(db_url)
@@ -730,7 +730,7 @@ async def test_periodic_reconciler_reaps_stale_running_job(postgres_url: str) ->
 
 
 async def _ensure_database(db_url: str) -> None:
-    db_url = require_test_database_url(db_url, label="AIQ_MCP_TEST_DB_URL")
+    db_url = require_test_database_url(db_url, label="DEEP_RESEARCHER_MCP_TEST_DB_URL")
     maintenance_url, db_name = _maintenance_url(db_url)
     conn = await asyncpg.connect(maintenance_url)
     try:
@@ -742,7 +742,7 @@ async def _ensure_database(db_url: str) -> None:
 
 
 async def _reset_schema(db_url: str) -> None:
-    db_url = require_test_database_url(db_url, label="AIQ_MCP_TEST_DB_URL")
+    db_url = require_test_database_url(db_url, label="DEEP_RESEARCHER_MCP_TEST_DB_URL")
     conn = await asyncpg.connect(db_url)
     try:
         await conn.execute("DROP TABLE IF EXISTS public.mcp_jobs")
@@ -853,7 +853,7 @@ async def _checkpoint_row_counts(db_url: str, thread_id: str) -> tuple[int, int,
 
 
 def _maintenance_url(db_url: str) -> tuple[str, str]:
-    parts = urlsplit(normalize_postgres_url(db_url, label="AIQ_MCP_TEST_DB_URL"))
+    parts = urlsplit(normalize_postgres_url(db_url, label="DEEP_RESEARCHER_MCP_TEST_DB_URL"))
     db_name = parts.path.lstrip("/") or "postgres"
     maintenance = urlunsplit((parts.scheme, parts.netloc, "/postgres", parts.query, parts.fragment))
     return maintenance, db_name

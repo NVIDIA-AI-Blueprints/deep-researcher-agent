@@ -135,7 +135,7 @@ def test_multiple_local_installations_fail_as_ambiguous(inspector: ModuleType, m
     monkeypatch.setattr(
         inspector,
         "_homebrew_components",
-        lambda: (["nvidia/openshell/openshell", "aiq/local-openshell/openshell"], None, None, None),
+        lambda: (["nvidia/openshell/openshell", "deep-researcher/local-openshell/openshell"], None, None, None),
     )
 
     report = inspector.inspect_components(gateway_name="openshell", system="Darwin")
@@ -184,7 +184,7 @@ def test_remote_mismatch_never_recommends_local_install(inspector: ModuleType, m
     assert "enterprise" in str(report.remediation)
 
 
-def test_sdk_mismatch_recommends_aiq_environment_repair(
+def test_sdk_mismatch_recommends_deep_researcher_environment_repair(
     inspector: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

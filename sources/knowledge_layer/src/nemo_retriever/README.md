@@ -1,9 +1,9 @@
 # NeMo Retriever Knowledge Layer Backends
 
-AI-Q supports [NVIDIA NeMo Retriever](https://github.com/NVIDIA/NeMo-Retriever)
+Deep Researcher Agent supports [NVIDIA NeMo Retriever](https://github.com/NVIDIA/NeMo-Retriever)
 through two separately registered backends. `nemo_retriever` calls a deployed
 Retriever REST API. The experimental `nemo_retriever_local` runs the pinned
-Retriever library and LanceDB inside the AI-Q Python process. See the canonical
+Retriever library and LanceDB inside the Deep Researcher Agent Python process. See the canonical
 [knowledge-layer guide](../../../../docs/source/customization/knowledge-layer.md)
 for shared Knowledge API behavior.
 
@@ -20,22 +20,22 @@ for shared Knowledge API behavior.
   - [Service compatibility](#service-compatibility)
   - [Service configuration](#service-configuration)
   - [Connect to the service](#connect-to-the-service)
-  - [Start AI-Q](#start-ai-q-with-the-service-backend)
+  - [Start Deep Researcher Agent](#start-deep-researcher-agent-with-the-service-backend)
   - [Service validation](#service-validation)
   - [Service troubleshooting](#service-troubleshooting)
 
 ## Choose a backend
 
-Both backends implement the same AI-Q Knowledge API. Choose based on the
+Both backends implement the same Deep Researcher Agent Knowledge API. Choose based on the
 deployment and operational model; this is not a runtime mode switch.
 
 | Consideration | Embedded library: `nemo_retriever_local` | Deployed service: `nemo_retriever` |
 |---|---|---|
-| Topology | AI-Q, Retriever, and LanceDB share one Python 3.12 process | AI-Q calls a separately operated Retriever gateway |
+| Topology | Deep Researcher Agent, Retriever, and LanceDB share one Python 3.12 process | Deep Researcher Agent calls a separately operated Retriever gateway |
 | Infrastructure | No Retriever or vector-database service | Retriever service deployed with Docker Compose or Helm/Kubernetes |
 | Storage | Embedded LanceDB in `NRL_LOCAL_DATA_DIR` | Storage and durability are owned by the Retriever deployment |
 | Inference | Extraction and embedding can call remote endpoints | Inference is configured and operated by the Retriever service |
-| Concurrency | One AI-Q process per data directory | Supports shared service deployments and multiple AI-Q clients |
+| Concurrency | One Deep Researcher Agent process per data directory | Supports shared service deployments and multiple Deep Researcher Agent clients |
 | Best fit | Laptop evaluation, local development, and zero-deployment workflows | Shared, scaled, or centrally operated environments |
 | Support level | Experimental; Apple Silicon macOS, Windows x64, and Linux x64 targets | Existing deployed-service integration |
 | Retriever version | Pinned to [`c80f4a5189ee10b98cbdb93e2f853ceb7b699c3b`](https://github.com/NVIDIA/NeMo-Retriever/commit/c80f4a5189ee10b98cbdb93e2f853ceb7b699c3b) | No Python dependency; requires the compatible service contract described below |
@@ -45,11 +45,11 @@ deployment and operational model; this is not a runtime mode switch.
 `nemo_retriever_local` delegates extraction, schemas, collection lifecycle,
 storage, and retrieval to the unmodified Retriever library pinned in
 [`environments/nemo_retriever_local/pyproject.toml`](../../../../environments/nemo_retriever_local/pyproject.toml).
-AI-Q does not start a Retriever HTTP service, a vector-database server, Ray, or
+Deep Researcher Agent does not start a Retriever HTTP service, a vector-database server, Ray, or
 containers for this path.
 
 ```text
-AI-Q process -> NeMo Retriever operators -> embedded LanceDB
+Deep Researcher Agent process -> NeMo Retriever operators -> embedded LanceDB
                        |
                        +-> configured extraction and embedding endpoints
 ```
@@ -61,11 +61,11 @@ LLM.
 The embedded adapter is orchestration over Retriever's public library
 contracts, not a parallel VectorDB implementation:
 
-| AI-Q owns | NeMo Retriever owns |
+| Deep Researcher Agent owns | NeMo Retriever owns |
 |---|---|
-| Temporary staging, AI-Q job/status models, bounded work admission, adapter lifecycle, and universal-schema normalization | Extraction planning and graph construction, inference helpers, canonical schemas, `CollectionWriteContext`, collection catalog, chunk identity, recovery, deletion, physical table selection, VDB writes, retrieval, ranking, and distance |
+| Temporary staging, Deep Researcher Agent job/status models, bounded work admission, adapter lifecycle, and universal-schema normalization | Extraction planning and graph construction, inference helpers, canonical schemas, `CollectionWriteContext`, collection catalog, chunk identity, recovery, deletion, physical table selection, VDB writes, retrieval, ranking, and distance |
 
-AI-Q constructs LanceDB with the same non-overwriting, service-collection
+Deep Researcher Agent constructs LanceDB with the same non-overwriting, service-collection
 configuration used by Retriever's VectorDB service, then calls
 `IngestVdbOperator`, `RetrieveVdbOperator`, and Retriever collection APIs. It
 does not issue direct LanceDB searches, reproduce Retriever schemas, or expose
@@ -75,7 +75,7 @@ required for this pinned experimental integration.
 
 ### Choose an extraction profile
 
-AI-Q exposes the two extraction profiles supported by the pinned Retriever
+Deep Researcher Agent exposes the two extraction profiles supported by the pinned Retriever
 revision: `fast-text` and `auto`. Neither profile is universally preferred.
 Select a profile based on corpus characteristics, retrieval requirements,
 ingestion latency objectives, and inference usage.
@@ -101,7 +101,7 @@ uv sync --project environments/nemo_retriever_local --frozen
 
 Retriever's default hosted extraction and embedding endpoints accept an NVIDIA
 Build `nvapi-...` key. `NRL_INFERENCE_API_KEY` may use the same value as
-`NVIDIA_API_KEY`; set a distinct value only when Retriever and the AI-Q agent
+`NVIDIA_API_KEY`; set a distinct value only when Retriever and the Deep Researcher Agent
 LLM need different credentials. When unset, Retriever reuses `NVIDIA_API_KEY`
 and then `NGC_API_KEY`.
 
@@ -126,12 +126,12 @@ Start from
 Retriever supplies its default hosted endpoint URLs, so configure individual
 invoke URLs only for compatible external or self-hosted NIM overrides. The
 table below lists every NeMo Retriever environment variable exposed by the
-embedded AI-Q backend.
+embedded Deep Researcher Agent backend.
 
 | YAML field | Environment variable | Default | Purpose |
 |---|---|---:|---|
 | `backend_config.scope` | `NRL_SCOPE` | `local` | Logical collection scope |
-| `backend_config.data_dir` | `NRL_LOCAL_DATA_DIR` | `.aiq-data/nemo_retriever` | LanceDB, catalog, recovery, and staging root |
+| `backend_config.data_dir` | `NRL_LOCAL_DATA_DIR` | `.deep-researcher-data/nemo_retriever` | LanceDB, catalog, recovery, and staging root |
 | `backend_config.profile` | `NRL_LOCAL_PROFILE` | `auto` | `auto` or `fast-text` extraction profile |
 | `backend_config.inference_api_key` | `NRL_INFERENCE_API_KEY` | `NVIDIA_API_KEY`, then `NGC_API_KEY` | Optional explicit NVIDIA Build credential for extraction plus document/query embedding; it may match `NVIDIA_API_KEY` |
 | `backend_config.page_elements_invoke_url` | `NRL_PAGE_ELEMENTS_INVOKE_URL` | Retriever default | Optional Page Elements endpoint override |
@@ -144,14 +144,14 @@ embedded AI-Q backend.
 
 If `NRL_INFERENCE_API_KEY` is unset, the pinned Retriever revision falls back
 to `NVIDIA_API_KEY` and then `NGC_API_KEY`. All configured Retriever inference
-endpoints use the resolved Retriever credential; AI-Q does not define a
+endpoints use the resolved Retriever credential; Deep Researcher Agent does not define a
 separate key for each endpoint.
 
 ### Local operating model
 
 - Collections, committed documents, chunks, and recovery markers survive an
-  AI-Q restart; v1 job history is process-local.
-- A process-lifetime file lock permits one AI-Q process per canonical data
+  Deep Researcher Agent restart; v1 job history is process-local.
+- A process-lifetime file lock permits one Deep Researcher Agent process per canonical data
   directory. Use separate directories for parallel processes.
 - Document ingestion remains asynchronous, while the shipped profile runs full
   deep research inline on threaded Dask workers so the active Retriever runtime
@@ -168,7 +168,7 @@ separate key for each endpoint.
 
 ## Upload format and batch contract
 
-AI-Q keeps its global upload allowlist at the common backend subset. To enable
+Deep Researcher Agent keeps its global upload allowlist at the common backend subset. To enable
 PowerPoint for either NeMo Retriever backend, set this value in the shared
 application environment—normally the ignored `deploy/.env`—so the UI and
 backend apply the same policy:
@@ -182,26 +182,26 @@ document/PDF extraction branch for both `auto` and `fast-text`. DOCX and PPTX
 conversion requires `libreoffice` on `PATH`; deployed-service support also
 depends on the dependencies installed in the service image.
 
-AI-Q validates each upload request atomically before creating a job. One
+Deep Researcher Agent validates each upload request atomically before creating a job. One
 disallowed or malformed file rejects the entire request with HTTP 415 and no
 files are submitted. After a job is accepted, upload or extraction failures
 remain visible per file and the job can complete with partial success.
 
 ## Deployed REST backend
 
-The `nemo_retriever` backend connects AIQ to an independently deployed NeMo
-Retriever service through its public REST API. AIQ never imports the
+The `nemo_retriever` backend connects Deep Researcher Agent to an independently deployed NeMo
+Retriever service through its public REST API. Deep Researcher Agent never imports the
 `nemo-retriever` Python package, opens LanceDB, selects physical tables, or
 configures extraction workers.
 
 ```text
-AIQ -> knowledge_layer.nemo_retriever -> NRL public gateway REST API
+Deep Researcher Agent -> knowledge_layer.nemo_retriever -> NRL public gateway REST API
 ```
 
 NeMo Retriever owns authentication, extraction, OCR, tokenization, embedding,
-indexing, durable collections, and document lifecycle. AIQ owns only logical
+indexing, durable collections, and document lifecycle. Deep Researcher Agent owns only logical
 collection/document input, job polling, retrieval queries, and conversion to
-the AIQ universal schemas.
+the Deep Researcher Agent universal schemas.
 
 ### Service compatibility
 
@@ -216,7 +216,7 @@ API-version mismatch. The same status from job polling remains an ordinary
 missing or expired resource response.
 
 TXT, HTML, PDF, Office, image, audio, and video support is determined by the
-deployed NRL service and its configured dependencies. AIQ does not override
+deployed NRL service and its configured dependencies. Deep Researcher Agent does not override
 NRL extraction, OCR, tokenization, embedding, or indexing settings. Use a
 service image containing the tokenizer fix before validating TXT or HTML.
 
@@ -247,7 +247,7 @@ export NRL_API_TOKEN='replace-with-a-secret'  # omit only for an auth-disabled d
 | `backend_config.ca_bundle` | `NRL_CA_BUNDLE` | unset | Optional enterprise CA bundle |
 | `backend_config.collection_ttl_hours` | `NRL_COLLECTION_TTL_HOURS` | `24` | Expiration applied to new NRL collections |
 
-One token and scope are used per AIQ deployment. Per-user NRL credential
+One token and scope are used per Deep Researcher Agent deployment. Per-user NRL credential
 forwarding is not supported. Tokens are never logged and physical NRL storage
 identifiers are removed from mapped metadata.
 
@@ -278,36 +278,36 @@ export NRL_BASE_URL=http://127.0.0.1:7670
 ```
 
 For an NRL deployment on a remote development host, create a tunnel from the
-AIQ workstation:
+Deep Researcher Agent workstation:
 
 ```bash
 ssh -N -L 7670:127.0.0.1:7670 user@nrl-host
 export NRL_BASE_URL=http://127.0.0.1:7670
 ```
 
-For Kubernetes, route AIQ to the NRL gateway Service or an enterprise ingress.
-Do not route AIQ directly to realtime, batch, or VectorDB pods:
+For Kubernetes, route Deep Researcher Agent to the NRL gateway Service or an enterprise ingress.
+Do not route Deep Researcher Agent directly to realtime, batch, or VectorDB pods:
 
 ```bash
 export NRL_BASE_URL=https://nrl-gateway.example.com
 export NRL_CA_BUNDLE=/etc/ssl/certs/enterprise-ca.pem
 ```
 
-### Start AI-Q with the service backend
+### Start Deep Researcher Agent with the service backend
 
 ```bash
 ./scripts/setup.sh
 source .venv/bin/activate
 
-uv run python .agents/skills/aiq-configure-workflow/scripts/validate_config.py \
+uv run python .agents/skills/deep-researcher-configure-workflow/scripts/validate_config.py \
   configs/config_web_nemo_retriever.yml
 
 ./scripts/start_e2e.sh \
   --config_file configs/config_web_nemo_retriever.yml \
-  2>&1 | tee aiq-nrl-e2e.log
+  2>&1 | tee deep-researcher-nrl-e2e.log
 ```
 
-The existing AIQ collection APIs create scoped NRL collections, upload files,
+The existing Deep Researcher Agent collection APIs create scoped NRL collections, upload files,
 return the real NRL job ID immediately after job creation, poll aggregate
 status, list stable document IDs, and delete documents or collections.
 Multipart uploads continue on a bounded background worker; upload failures are
@@ -315,7 +315,7 @@ reported through the same job-status API. Upload retries reuse deterministic
 job and manifest identifiers, preventing duplicate processing after a lost
 response. `attempt_id` is retained only in diagnostic job/file metadata;
 pending status entries use manifest IDs, and `document_id` becomes the stable
-AIQ file identity after NRL accepts a file.
+Deep Researcher Agent file identity after NRL accepts a file.
 
 The adapter admits at most `max_concurrency + max_queued_uploads` files at a
 time. It reserves complete batches before NRL job creation: an individually
@@ -323,20 +323,20 @@ oversized batch returns HTTP 413, while temporary saturation returns HTTP 503
 without `Retry-After`. Accepted requests retain the same REST calls, ordering,
 retry behavior, and multipart concurrency.
 
-AI-Q forwards caller-supplied file metadata in the upload request, but the pinned
+Deep Researcher Agent forwards caller-supplied file metadata in the upload request, but the pinned
 service baseline does not propagate that field into persisted chunk metadata.
 Do not rely on service-mode file metadata for retrieval until NRL exposes that
 capability; metadata filters remain unsupported by both adapters.
 
 Query results preserve the order returned by NeMo Retriever and expose its native
-vector distance as `Chunk.distance`. Lower values are closer; AIQ does not
+vector distance as `Chunk.distance`. Lower values are closer; Deep Researcher Agent does not
 normalize or re-rank these backend-specific values.
 
 ### Summary reconciliation
 
-Document summaries live in AIQ's summary store, but NeMo Retriever owns document
+Document summaries live in Deep Researcher Agent's summary store, but NeMo Retriever owns document
 lifetime, including server-side collection expiration. Collections therefore
-disappear without AIQ observing a delete. On startup the ingestor reconciles the
+disappear without Deep Researcher Agent observing a delete. On startup the ingestor reconciles the
 two on a background thread: documents NRL serves gain a summary row, rows NRL no
 longer backs are removed, and a collection's summaries are cleared once NRL
 positively reports the collection as absent.
@@ -349,15 +349,15 @@ process did not create.
 
 ## Collection expiration
 
-`nrl_collection_ttl_hours` is sent as an absolute expiration when AIQ creates a
+`nrl_collection_ttl_hours` is sent as an absolute expiration when Deep Researcher Agent creates a
 collection, and NRL deletes the collection itself once that expiration passes.
-A background thread retires only what AIQ keeps alongside it — the collection's
+A background thread retires only what Deep Researcher Agent keeps alongside it — the collection's
 summaries and the adapter's cached document state — so agents stop being offered
 documents that can no longer be retrieved. It runs every
-`AIQ_TTL_CLEANUP_INTERVAL_SECONDS` (3600 by default), the shared knowledge-layer
+`DEEP_RESEARCHER_TTL_CLEANUP_INTERVAL_SECONDS` (3600 by default), the shared knowledge-layer
 setting; unlike the other backends, expiration comes from NRL rather than from
 how long a collection sat idle. The deadline used is the one NRL last reported,
-recorded when AIQ creates or updates a collection and refreshed by startup
+recorded when Deep Researcher Agent creates or updates a collection and refreshed by startup
 reconciliation.
 
 ### Service validation
@@ -372,11 +372,11 @@ uv run pytest tests/knowledge_layer_tests/test_nemo_retriever_adapter.py
 
 | Symptom | Meaning and action |
 |---|---|
-| Health or connection failure | Confirm `NRL_BASE_URL` reaches the public gateway from the AIQ process or pod. |
+| Health or connection failure | Confirm `NRL_BASE_URL` reaches the public gateway from the Deep Researcher Agent process or pod. |
 | HTTP 401 | Configure a valid `NRL_API_TOKEN`, or confirm the dev deployment explicitly allows unauthenticated access. |
 | HTTP 403 | The token is not authorized for `NRL_SCOPE`; use the deployment's assigned workspace credential. |
 | Collection/document 404 | Confirm the collection, stable document ID, and scope. Cross-scope resources intentionally return 404. |
-| Job creation/upload 404/410 | AIQ and the NRL service expose incompatible collection-management API versions; upgrade the NRL chart/image. A polling 404/410 instead means that job is missing or expired. |
+| Job creation/upload 404/410 | Deep Researcher Agent and the NRL service expose incompatible collection-management API versions; upgrade the NRL chart/image. A polling 404/410 instead means that job is missing or expired. |
 | HTTP 409 | An idempotency key or manifest entry was reused with different content, or the resource already exists. |
 | Empty retrieval | Confirm ingestion completed, the configured collection matches the upload collection, and NRL returned indexed documents. |
 | TXT/HTML ingestion failure | Deploy the documented compatible NRL revision or a released successor containing its service-mode tokenizer support. |

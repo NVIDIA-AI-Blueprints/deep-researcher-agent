@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Experimental in-process NeMo Retriever backend for the AI-Q Knowledge Layer."""
+"""Experimental in-process NeMo Retriever backend for the Deep Researcher Agent Knowledge Layer."""
 
 from __future__ import annotations
 
@@ -9,15 +9,15 @@ import asyncio
 import logging
 from typing import Any
 
-from aiq_agent.knowledge import BaseIngestor
-from aiq_agent.knowledge import BaseRetriever
-from aiq_agent.knowledge import Chunk
-from aiq_agent.knowledge import IngestionJobStatus
-from aiq_agent.knowledge import RetrievalResult
-from aiq_agent.knowledge import register_ingestor
-from aiq_agent.knowledge import register_retriever
-from aiq_agent.knowledge.schema import CollectionInfo
-from aiq_agent.knowledge.schema import FileInfo
+from deep_researcher_agent.knowledge import BaseIngestor
+from deep_researcher_agent.knowledge import BaseRetriever
+from deep_researcher_agent.knowledge import Chunk
+from deep_researcher_agent.knowledge import IngestionJobStatus
+from deep_researcher_agent.knowledge import RetrievalResult
+from deep_researcher_agent.knowledge import register_ingestor
+from deep_researcher_agent.knowledge import register_retriever
+from deep_researcher_agent.knowledge.schema import CollectionInfo
+from deep_researcher_agent.knowledge.schema import FileInfo
 
 from ._local_client import LocalRuntimeHandle
 from ._local_client import NemoRetrieverLocalError

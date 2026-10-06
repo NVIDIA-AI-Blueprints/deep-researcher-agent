@@ -25,24 +25,24 @@ from langgraph.graph import END
 from langgraph.graph import START
 from langgraph.graph import StateGraph
 
-from aiq_agent.common.logging_utils import log_identifier_ref
-from aiq_mcp import checkpoint_todos as checkpoint_todos_module
-from aiq_mcp.checkpoint_todos import CheckpointTodoReader
-from aiq_mcp.checkpoint_todos import TodoItem
-from aiq_mcp.checkpoint_todos import _decode_todo_blob
-from aiq_mcp.checkpoint_todos import decode_todos_value
-from aiq_mcp.checkpoint_todos import normalize_todos
-from aiq_mcp.db_url import normalize_postgres_url
-from aiq_mcp.db_url import require_test_database_url
+from deep_researcher_agent.common.logging_utils import log_identifier_ref
+from deep_researcher_mcp import checkpoint_todos as checkpoint_todos_module
+from deep_researcher_mcp.checkpoint_todos import CheckpointTodoReader
+from deep_researcher_mcp.checkpoint_todos import TodoItem
+from deep_researcher_mcp.checkpoint_todos import _decode_todo_blob
+from deep_researcher_mcp.checkpoint_todos import decode_todos_value
+from deep_researcher_mcp.checkpoint_todos import normalize_todos
+from deep_researcher_mcp.db_url import normalize_postgres_url
+from deep_researcher_mcp.db_url import require_test_database_url
 
 _DB_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 @pytest.fixture()
 async def postgres_url() -> str:
-    db_url = os.getenv("AIQ_MCP_TEST_DB_URL")
+    db_url = os.getenv("DEEP_RESEARCHER_MCP_TEST_DB_URL")
     if not db_url:
-        pytest.skip("set AIQ_MCP_TEST_DB_URL to run Postgres checkpoint todo tests")
+        pytest.skip("set DEEP_RESEARCHER_MCP_TEST_DB_URL to run Postgres checkpoint todo tests")
     try:
         await _ensure_database(db_url)
         await _reset_checkpoint_tables(db_url)
@@ -181,7 +181,7 @@ def test_checkpoint_warning_is_rate_limited_per_error_class(
     reader = CheckpointTodoReader("postgresql://localhost/db")
     times = iter((100.0, 101.0, 102.0, 131.0))
     monkeypatch.setattr(checkpoint_todos_module.time, "monotonic", lambda: next(times))
-    caplog.set_level("WARNING", logger="aiq_mcp.checkpoint_todos")
+    caplog.set_level("WARNING", logger="deep_researcher_mcp.checkpoint_todos")
 
     reader._warn_rate_limited("timeout", "first")
     reader._warn_rate_limited("timeout", "suppressed")
@@ -281,7 +281,7 @@ async def test_checkpoint_reader_timeout_returns_empty(caplog) -> None:
         raise TimeoutError
 
     reader._get_todos = MethodType(timing_out_get_todos, reader)  # type: ignore[method-assign]
-    caplog.set_level("WARNING", logger="aiq_mcp.checkpoint_todos")
+    caplog.set_level("WARNING", logger="deep_researcher_mcp.checkpoint_todos")
 
     assert await reader.get_todos("job-1") == []
     assert "Checkpoint todo read failed (timeout)" in caplog.text
@@ -297,7 +297,7 @@ async def test_checkpoint_reader_error_does_not_log_thread_capability(caplog) ->
         raise RuntimeError(f"database rejected thread {thread_id}")
 
     reader._get_todos = MethodType(failing_get_todos, reader)  # type: ignore[method-assign]
-    caplog.set_level("WARNING", logger="aiq_mcp.checkpoint_todos")
+    caplog.set_level("WARNING", logger="deep_researcher_mcp.checkpoint_todos")
 
     assert await reader.get_todos(capability_id) == []
     assert capability_id not in caplog.text
@@ -327,7 +327,7 @@ async def test_get_todos_applies_per_query_timeout() -> None:
 
 
 def test_is_sortable_checkpoint_id_accepts_uuid_rejects_other() -> None:
-    from aiq_mcp.checkpoint_todos import _is_sortable_checkpoint_id
+    from deep_researcher_mcp.checkpoint_todos import _is_sortable_checkpoint_id
 
     assert _is_sortable_checkpoint_id("1ef9c8e0-1234-6abc-9def-0123456789ab")
     assert _is_sortable_checkpoint_id("00000000-0000-0000-0000-000000000001")
@@ -409,7 +409,7 @@ async def test_checkpoint_reader_fails_soft_on_non_sortable_checkpoint_id(postgr
             thread_id,
             msgpack.packb(todos, use_bin_type=True),
         )
-        caplog.set_level("WARNING", logger="aiq_mcp.checkpoint_todos")
+        caplog.set_level("WARNING", logger="deep_researcher_mcp.checkpoint_todos")
 
         assert await reader.get_todos(thread_id) == []
         assert "unexpected checkpoint_id" in caplog.text
@@ -419,7 +419,7 @@ async def test_checkpoint_reader_fails_soft_on_non_sortable_checkpoint_id(postgr
 
 
 async def _ensure_database(db_url: str) -> None:
-    db_url = require_test_database_url(db_url, label="AIQ_MCP_TEST_DB_URL")
+    db_url = require_test_database_url(db_url, label="DEEP_RESEARCHER_MCP_TEST_DB_URL")
     maintenance_url, db_name = _maintenance_url(db_url)
     conn = await asyncpg.connect(maintenance_url)
     try:
@@ -431,7 +431,7 @@ async def _ensure_database(db_url: str) -> None:
 
 
 async def _reset_checkpoint_tables(db_url: str) -> None:
-    db_url = require_test_database_url(db_url, label="AIQ_MCP_TEST_DB_URL")
+    db_url = require_test_database_url(db_url, label="DEEP_RESEARCHER_MCP_TEST_DB_URL")
     conn = await asyncpg.connect(db_url)
     try:
         await conn.execute("DROP TABLE IF EXISTS public.checkpoint_blobs")
@@ -468,7 +468,7 @@ async def _reset_checkpoint_tables(db_url: str) -> None:
 
 
 def _maintenance_url(db_url: str) -> tuple[str, str]:
-    parts = urlsplit(normalize_postgres_url(db_url, label="AIQ_MCP_TEST_DB_URL"))
+    parts = urlsplit(normalize_postgres_url(db_url, label="DEEP_RESEARCHER_MCP_TEST_DB_URL"))
     db_name = parts.path.lstrip("/") or "postgres"
     maintenance = urlunsplit((parts.scheme, parts.netloc, "/postgres", parts.query, parts.fragment))
     return maintenance, db_name
