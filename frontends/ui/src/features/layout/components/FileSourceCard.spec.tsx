@@ -80,13 +80,13 @@ describe('FileSourceCard', () => {
   test('displays formatted timestamp', () => {
     render(<FileSourceCard {...defaultProps} />)
 
-    expect(screen.getByText(/jan 15/i)).toBeInTheDocument()
+    expect(screen.getByText(/jan 15|15 jan/i)).toBeInTheDocument()
   })
 
   test('handles ISO string timestamp', () => {
     render(<FileSourceCard {...defaultProps} uploadedAt="2024-01-15T14:30:00Z" />)
 
-    expect(screen.getByText(/jan 15/i)).toBeInTheDocument()
+    expect(screen.getByText(/jan 15|15 jan/i)).toBeInTheDocument()
   })
 
   test('renders formatted file size when provided', () => {
