@@ -49,6 +49,7 @@ The builder stage handles all compilation and package installation:
    - `sources/tavily_web_search` -- Tavily web search
    - `sources/exa_web_search` -- Exa web search
    - `sources/nimble_web_search` -- Nimble web search
+   - `sources/firecrawl_web_search` -- Firecrawl web search
    - `sources/knowledge_layer[all]` -- Knowledge layer with all extras
    - `frontends/deep_researcher_api` -- [FastAPI](https://fastapi.tiangolo.com/) frontend
    - `psycopg[binary]>=3.0.0` -- PostgreSQL driver (psycopg v3, installed non-editable)

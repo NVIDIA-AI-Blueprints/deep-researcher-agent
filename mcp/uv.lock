@@ -1092,6 +1092,7 @@ dev = [
     { name = "deep-researcher-research-cli", editable = "../frontends/cli" },
     { name = "duckduckgo-news-search", editable = "../sources/duckduckgo_news_search" },
     { name = "exa-web-search", editable = "../sources/exa_web_search" },
+    { name = "firecrawl-web-search", editable = "../sources/firecrawl_web_search" },
     { name = "google-scholar-paper-search", editable = "../sources/google_scholar_paper_search" },
     { name = "knowledge-layer", extras = ["all"], editable = "../sources/knowledge_layer" },
     { name = "mypy", specifier = ">=1.5.0" },
