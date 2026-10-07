@@ -250,6 +250,40 @@ functions:
 
 `focus` is a workflow-config setting, not an agent-chosen parameter -- the model only passes a query, so general research queries cannot silently switch to `news`. Answer generation (`include_answer`) is **not exposed** in this initial integration.
 
+### `firecrawl_web_search`
+
+Web search powered by the [Firecrawl Search API](https://www.firecrawl.dev/search?utm_source=aiq&utm_medium=integration). Each result can include the page content as Markdown, so the agent reads the source instead of a snippet.
+
+```yaml
+functions:
+  web_search_tool:
+    _type: firecrawl_web_search
+    max_results: 5
+    max_content_length: 10000
+
+  recent_web_search_tool:
+    _type: firecrawl_web_search
+    max_results: 5
+    scrape_results: false
+    tbs: qdr:w
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `max_results` | `int` | `5` | Maximum number of search results to return (1-100). |
+| `api_key` | `str` | `None` | Firecrawl API key. Optional: without one, requests run under daily per-IP request and credit limits (HTTP 429 when exceeded), which is enough to try it out but not for regular use. Falls back to `FIRECRAWL_API_KEY` environment variable. |
+| `api_url` | `str` | `None` | Firecrawl API base URL. Falls back to `FIRECRAWL_API_URL`, then `https://api.firecrawl.dev`. Set this to use a self-hosted Firecrawl instance. |
+| `max_retries` | `int` | `3` | Maximum number of attempts (1-10). Rate limits, timeouts, and server errors are retried with backoff. |
+| `scrape_results` | `bool` | `true` | Return each result's page content as Markdown. When `false`, results use the search description only. |
+| `max_content_length` | `int \| None` | `10000` | Max characters per result's text (minimum 1). Total output is about `max_results` x this value. Set to `null` to disable truncation. |
+| `tbs` | `str` | `None` | Time-based filter, for example `qdr:d` (past day), `qdr:w` (past week), or `qdr:m` (past month). |
+| `country` | `str` | `None` | ISO 3166-1 alpha-2 country code used to localize results, for example `US` or `GB`. |
+| `timeout_ms` | `int` | `45000` | Search timeout in milliseconds (1000-300000). |
+
+Queries (up to 400 characters) are sent to `api.firecrawl.dev` unless `api_url` points at a self-hosted instance. Without an API key they are unauthenticated and rate-limited per IP.
+
+Search costs 2 credits per 10 results, and each scraped result adds 1 credit, so the default of 5 results with scraping on uses about 7 credits per search. PDF pages are billed per page. Setting `scrape_results: false` keeps only the search cost. See the [Search API reference](https://docs.firecrawl.dev/api-reference/endpoint/search) for the full list of `tbs` values.
+
 ### `paper_search`
 
 Academic paper search through Google Scholar using [Serper](https://serper.dev/),
