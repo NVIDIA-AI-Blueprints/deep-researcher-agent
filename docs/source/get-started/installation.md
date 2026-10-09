@@ -14,7 +14,23 @@ This guide walks through setting up the Deep Researcher Agent blueprint for loca
 | Python | 3.11 -- 3.13 | 3.13 recommended |
 | [uv](https://github.com/astral-sh/uv) | 0.11.25+ | Python package manager (installed automatically by the setup script if missing; CI uses 0.11.26) |
 | Git | 2.x+ | |
+| C++ compiler and build tools | | Required to build native Python dependencies such as `annoy` |
 | Node.js | 22+ | Optional -- only needed for the web UI |
+
+On Debian or Ubuntu, including a minimal Brev development image, install the
+build tools before running the setup script or installing Python dependencies:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential
+```
+
+If installation fails while building `annoy` with `command 'c++' failed` or a
+missing-compiler error, install these tools and rerun the command that failed
+(`./scripts/setup.sh` for automated setup, or the dependency-install command for
+manual setup).
+The setup script installs Python and JavaScript dependencies; it does not install
+system build tools.
 
 You also need at least one LLM API key. Refer to [API key setup](#api-key-setup) below.
 
