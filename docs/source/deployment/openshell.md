@@ -426,7 +426,7 @@ bytes use the configured SQL or S3-compatible artifact blob provider. Clients
 receive `artifact.update` metadata with a `content_url`, never raw bytes in SSE.
 
 For validation, storage configuration, event payloads, and report rendering, see
-the developer [artifact runtime](https://github.com/NVIDIA-AI-Blueprints/aiq/blob/develop/src/aiq_agent/agents/deep_researcher/sandbox/README.md#artifact-runtime)
+the developer [artifact runtime](https://github.com/NVIDIA-AI-Blueprints/deep-researcher-agent/blob/release/2.2/src/aiq_agent/agents/deep_researcher/sandbox/README.md#artifact-runtime)
 and [production artifact storage](./production.md#artifact-storage) guides.
 
 ## Acceptance Tests
