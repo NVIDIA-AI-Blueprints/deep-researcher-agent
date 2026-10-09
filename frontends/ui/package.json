@@ -30,7 +30,7 @@
     "marked": "^16.4.2",
     "mermaid": "^11.16.1",
     "motion": "^12.42.2",
-    "next": "^16.2.12",
+    "next": "^16.3.8",
     "next-auth": "^4.24.15",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -59,7 +59,7 @@
     "autoprefixer": "^10.4.14",
     "concurrently": "^9.2.4",
     "eslint": "^9.0.0",
-    "eslint-config-next": "16.2.12",
+    "eslint-config-next": "16.3.8",
     "happy-dom": "^20.3.4",
     "husky": "^9.1.7",
     "msw": "^2.12.7",
@@ -76,6 +76,6 @@
   },
   "overrides": {
     "postcss": "^8.5.23",
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.5"
   }
 }
