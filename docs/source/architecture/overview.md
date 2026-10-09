@@ -17,7 +17,7 @@ final response. Every query enters through the Intent Classifier, which
 decides whether to respond directly (meta), perform a quick tool-augmented
 lookup (shallow), or initiate a comprehensive multi-agent investigation (deep).
 
-```{image} /_static/AIQ-arch-light.png
+```{image} /_static/DeepResearcher-arch-light.png
 :alt: AI-Q Architecture
 :align: center
 ```

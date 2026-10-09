@@ -13,7 +13,7 @@ from aiq_agent.common import LLMProvider
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SHARED_SHALLOW_PROMPT = REPO_ROOT / "src/aiq_agent/agents/shallow_researcher/prompts/researcher.j2"
-BREV_GETTING_STARTED_NOTEBOOK = REPO_ROOT / "docs/notebooks/0_Getting_Started_with_AIQ.ipynb"
+BREV_GETTING_STARTED_NOTEBOOK = REPO_ROOT / "docs/notebooks/0_Getting_Started_with_Deep_Researcher_Agent.ipynb"
 
 ULTRA_MODEL = "nvidia/nemotron-3-ultra-550b-a55b"
 LIGHTNING_MODEL = "nvidia/nemotron-3.5-lightning-30b-a3b"
