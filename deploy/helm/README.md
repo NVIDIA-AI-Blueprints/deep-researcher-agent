@@ -246,6 +246,7 @@ The backend loads a workflow config at startup. Switch configs with `--set`:
 | Config file | Description |
 |-------------|-------------|
 | `configs/config_web_default_llamaindex.yml` | Default — LlamaIndex backend (no external RAG required) |
+| `configs/config_web_nemo_retriever.yml` | External NeMo Retriever REST service deployed and operated separately |
 | `configs/config_web_frag.yml` | Foundational RAG mode (requires a running RAG service) |
 | `configs/config_web_frag_mcp_auth.yml` | Foundational RAG with optional per-user MCP authentication |
 
@@ -287,6 +288,49 @@ helm upgrade --install deep-researcher deep-researcher-web-2.2.0.tgz -n ns-deep-
 ```
 
 Configure `MCP_GDRIVE_URL`, `DEEP_RESEARCHER_PUBLIC_URL`, and any OAuth client credentials required by the protected MCP source through the same `env` and `secretEnv` maps. NAT 1.8's Redis object store in this image supports host, port, database, and optional password; this example does not support TLS, ACL usernames, Sentinel, or Redis Cluster.
+
+## NeMo Retriever Integration
+
+AI-Q and NeMo Retriever are separate Helm releases. The AI-Q chart does not
+install, configure, or own the Retriever service or its NIM workloads. Deploy
+Retriever by following the NeMo Retriever repository's
+[nemo_retriever/helm/README.md deployment instructions at AI-Q's tested service baseline](https://github.com/NVIDIA/NeMo-Retriever/blob/f3a0b418b7250fa8823ec44dea569b07e2b008cb/nemo_retriever/helm/README.md),
+then point the AI-Q backend at the public Retriever gateway Service. Do not use
+a realtime, batch, or VectorDB Service address.
+
+Confirm that the selected AI-Q backend image contains
+`configs/config_web_nemo_retriever.yml`; `CONFIG_FILE` selects an in-image
+profile and does not mount one into an older image. Configure the existing
+backend environment and optional Secret mapping—no chart-template changes are
+required:
+
+```yaml
+# aiq-nemo-retriever-values.yaml
+aiq:
+  apps:
+    backend:
+      env:
+        CONFIG_FILE: configs/config_web_nemo_retriever.yml
+        # Use the ClusterIP DNS name reported by the Retriever Helm release.
+        # Do not append /v1; the AI-Q adapter adds API paths.
+        # Use <release>-nemo-retriever in standalone mode (default), or <release>-nemo-retriever-gateway in split mode.
+        # This HTTP example is only for trusted, authentication-disabled in-cluster traffic.
+        NRL_BASE_URL: http://<retriever-service>.<retriever-namespace>.svc.cluster.local:7670
+        NRL_SCOPE: <workspace-scope>
+        # For authenticated connections, use an HTTPS Service or ingress URL.
+        # Keep TLS verification enabled and configure a mounted enterprise CA when required.
+        # NRL_VERIFY_SSL: "true"
+        # NRL_CA_BUNDLE: /etc/ssl/certs/enterprise-ca.pem
+      # Enable only when the HTTPS Retriever endpoint requires a bearer token.
+      # The aiq-credentials Secret must contain the referenced key.
+      # secretEnv:
+      #   NRL_API_TOKEN: NRL_API_TOKEN
+```
+
+Apply this values file through the NGC or source-chart flow above. The AI-Q
+backend namespace must be able to resolve and reach the configured gateway.
+See the [Knowledge Layer guide](../../docs/source/customization/knowledge-layer.md#nemo-retriever-external-rest-service)
+for the complete adapter configuration and TLS options.
 
 ## FRAG Integration
 
@@ -363,6 +407,7 @@ helm upgrade --install deep-researcher deep-researcher-web-2.2.0.tgz -n ns-deep-
 | `SERPER_API_KEY` | Serper API key for Google search |
 | `JINA_API_KEY` | Jina API key |
 | `WANDB_API_KEY` | Weights & Biases API key |
+| `NRL_API_TOKEN` | Optional bearer token for an authenticated external NeMo Retriever gateway |
 | `MODAL_TOKEN_ID` | Modal sandbox token ID |
 | `MODAL_TOKEN_SECRET` | Modal sandbox token secret |
 | `DEEP_RESEARCHER_ARTIFACT_BLOB_PROVIDER` | Artifact byte storage provider; unset or `sql` keeps bytes in SQL, `s3` uses S3-compatible storage |

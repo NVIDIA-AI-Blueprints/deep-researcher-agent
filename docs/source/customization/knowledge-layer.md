@@ -328,10 +328,16 @@ functions:
 
 Use [`configs/config_web_nemo_retriever.yml`](../../../configs/config_web_nemo_retriever.yml)
 for the complete web workflow. The URL must identify the public NRL gateway,
-not a realtime, batch, or VectorDB pod. One deployment token and explicit
-workspace scope are sent on every scoped request. For a remote development
+not a realtime, batch, or VectorDB pod. An optional deployment token and an
+explicit workspace scope are used for the deployment; the token is sent only
+when configured. For a remote development
 deployment, forward the gateway port with SSH; for Kubernetes, use the gateway
 Service or an enterprise ingress and configure `NRL_CA_BUNDLE` when required.
+Follow the
+[NeMo Retriever nemo_retriever/helm/README.md deployment instructions at the tested service baseline](https://github.com/NVIDIA/NeMo-Retriever/blob/f3a0b418b7250fa8823ec44dea569b07e2b008cb/nemo_retriever/helm/README.md)
+for the upstream deployment, then set the AI-Q workflow, gateway URL, scope,
+and optional token as shown in the
+[AI-Q Helm integration guide](https://github.com/NVIDIA-AI-Blueprints/aiq/blob/develop/deploy/helm/README.md#nemo-retriever-integration).
 
 The adapter returns NRL's job ID immediately after job creation and performs
 bounded multipart uploads in the background. Upload and ingestion failures are
