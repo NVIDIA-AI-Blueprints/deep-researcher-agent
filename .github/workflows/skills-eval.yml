@@ -5,7 +5,9 @@
 #   - generate-datasets: spec validation, no credentials.
 #   - harbor-eval:       full Harbor trial; auto on push, or dispatch w/ run_harbor.
 # Push-triggered on develop/release/pull-request/<N> (copy-pr-bot mirror after a
-# vetter's `/ok to test`); workflow_dispatch for manual full sweeps.
+# vetter's `/ok to test`); workflow_dispatch for manual full sweeps; schedule for
+# a nightly full sweep (mirrors the RAG/VSS nightly convention so eval results
+# flow to the skills dashboard automatically).
 # Credentials and runtime knobs live in a runner-side .env;
 # see README-deep-researcher-runner-bootstrap.md.
 
@@ -27,6 +29,12 @@ on:
       - develop
       - "release/**"
       - "pull-request/[0-9]+"
+  # Nightly full sweep of every skill. A scheduled run carries no diff, so the
+  # detect-changes gate and the SCOPE selectors below treat `schedule` like a
+  # manual dispatch: bypass path gating and run `--all` (never path-gated to
+  # zero). 2am UTC matches the RAG nightly (rag skills-eval.yml).
+  schedule:
+    - cron: "0 2 * * *" # 2am UTC nightly — full sweep of all skills
   workflow_dispatch:
     inputs:
       run_harbor:
@@ -87,8 +95,9 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
           BEFORE_SHA: ${{ github.event.before }}
         run: |
-          # Manual dispatch always runs (full-sweep intent).
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+          # Manual dispatch and the nightly schedule always run (full-sweep
+          # intent; a scheduled run carries no diff to gate on).
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] || [ "$EVENT_NAME" = "schedule" ]; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
           # pull-request/<N> mirror: compare against develop. Direct
@@ -137,7 +146,8 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
         run: |
           # pull-request/<N> mirror branch: only skills changed vs develop.
-          # Direct develop/release push or manual dispatch: full sweep.
+          # Direct develop/release push, manual dispatch, or nightly schedule:
+          # full sweep (ref_name is develop, so the default case -> --all).
           case "$REF_NAME" in
             pull-request/*) SCOPE="--base origin/develop" ;;
             *)              SCOPE="--all" ;;
@@ -160,10 +170,13 @@ jobs:
   # ---------------------------------------------------------------------------
   harbor-eval:
     name: Run Harbor skill eval
-    # Push events (vetted pull-request/<N> mirrors, develop/release) run harbor
-    # automatically; manual dispatch runs it only when run_harbor=true.
+    # Push events (vetted pull-request/<N> mirrors, develop/release) and the
+    # nightly schedule run harbor automatically; manual dispatch runs it only
+    # when run_harbor=true. The scheduled run is a full sweep (SCOPE --all below,
+    # since github.ref_name is develop, not pull-request/<N>).
     if: >
       github.event_name == 'push' ||
+      github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && inputs.run_harbor)
     runs-on: [self-hosted, deep-researcher-eval]
     timeout-minutes: 60
@@ -261,7 +274,8 @@ jobs:
           fi
           export DEEP_RESEARCHER_SKILL_EVAL_AGENT="$AGENT"
           # pull-request/<N> mirror branch: only skills changed vs develop.
-          # Direct develop/release push or manual dispatch: full sweep.
+          # Direct develop/release push, manual dispatch, or nightly schedule:
+          # full sweep (ref_name is develop, so the default case -> --all).
           case "$REF_NAME" in
             pull-request/*) SCOPE="--base origin/develop" ;;
             *)              SCOPE="--all" ;;
