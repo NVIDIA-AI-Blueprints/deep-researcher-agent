@@ -195,6 +195,29 @@ describe('AgentResponse', () => {
     expect(mockOpenRightPanel).not.toHaveBeenCalled()
   })
 
+  test('clicking "View Progress" for an active job opens the Thinking panel, not the report placeholder', async () => {
+    const user = userEvent.setup()
+
+    render(<AgentResponse content="Working on it" jobId="job-active" isDeepResearchActive={true} />)
+
+    await user.click(screen.getByRole('button', { name: 'View Progress' }))
+
+    expect(mockOpenRightPanel).toHaveBeenCalledWith('thinking')
+    expect(mockOpenRightPanel).not.toHaveBeenCalledWith('research')
+    expect(mockSetResearchPanelTab).not.toHaveBeenCalled()
+  })
+
+  test('clicking "View Report" for a completed job loads the research report, not Thinking', async () => {
+    const user = userEvent.setup()
+
+    render(<AgentResponse content="Done" jobId="job-done" deepResearchJobStatus="success" />)
+
+    await user.click(screen.getByRole('button', { name: 'View Report' }))
+
+    expect(mockLoadResearchPanelTab).toHaveBeenCalledWith('job-done', 'report')
+    expect(mockOpenRightPanel).not.toHaveBeenCalledWith('thinking')
+  })
+
   test('strips a baked references block from the rendered body and lists sources', () => {
     const content =
       'NVIDIA shipped record volume [1].\n\n**References:**\n- [1] NVIDIA Q4 results - https://www.nvidia.com/news'

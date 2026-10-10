@@ -25,6 +25,7 @@ import { ChatArea } from './ChatArea'
 import { InputArea } from './InputArea'
 import { ResearchPanel } from './ResearchPanel'
 import { DataSourcesPanel } from './DataSourcesPanel'
+import { DeepResearchRail } from './DeepResearchRail'
 import { useChatStore, useDeepResearch, NoSourcesBanner } from '@/features/chat'
 import {
   hasActiveDeepResearchJob,
@@ -178,7 +179,10 @@ export const MainLayout: FC<MainLayoutProps> = ({
       />
 
       {/* Main content area: in-flow panels reflow the center column (push, not overlay) */}
-      <div className="relative flex flex-1 overflow-hidden">
+      <div
+        data-testid="main-content-row"
+        className="relative flex flex-1 overflow-x-auto overflow-y-hidden"
+      >
         {/* Sessions Panel (Left) - collapsible push rail, only when authenticated */}
         {isAuthenticated && (
           <SessionsPanel
@@ -193,7 +197,7 @@ export const MainLayout: FC<MainLayoutProps> = ({
         )}
 
         {/* Center Content: Chat + Input */}
-        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="flex min-w-[360px] flex-1 flex-col overflow-hidden">
           {/* Chat Area - Scrollable */}
           <ChatArea isAuthenticated={isAuthenticated} isLoading={isLoading} onSignIn={onSignIn} />
 
@@ -208,8 +212,11 @@ export const MainLayout: FC<MainLayoutProps> = ({
         {/* Data Sources Panel (Right) - push panel */}
         {isAuthenticated && <DataSourcesPanel />}
 
-        {/* Research Panel (Right) - pushes content */}
+        {/* Deep Research content panel (Right) - pushes content, opens left of the rail */}
         <ResearchPanel isAuthenticated={isAuthenticated} />
+
+        {/* Deep Research rail (far Right) - persistent navigation */}
+        <DeepResearchRail isAuthenticated={isAuthenticated} />
       </div>
     </Flex>
   )

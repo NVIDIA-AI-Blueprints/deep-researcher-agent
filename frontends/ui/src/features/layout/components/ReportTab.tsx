@@ -37,15 +37,25 @@ interface ReportTabProps {
  * Renders research notes with a subtle preview treatment and the final report at full prominence.
  */
 export const ReportTab: FC<ReportTabProps> = ({ children }) => {
-  const { reportContent, reportContentCategory, isStreaming, currentStatus, deepResearchCitations, deepResearchFiles } =
-    useChatStore(useShallow((s) => ({
+  const {
+    reportContent,
+    reportContentCategory,
+    isStreaming,
+    currentStatus,
+    isDeepResearchStreaming,
+    deepResearchCitations,
+    deepResearchFiles,
+  } = useChatStore(
+    useShallow((s) => ({
       reportContent: s.reportContent,
       reportContentCategory: s.reportContentCategory,
       isStreaming: s.isStreaming,
       currentStatus: s.currentStatus,
+      isDeepResearchStreaming: s.isDeepResearchStreaming,
       deepResearchCitations: s.deepResearchCitations,
       deepResearchFiles: s.deepResearchFiles,
-    })))
+    }))
+  )
   // Resolve the owning job id (active or latest finished) so artifact:// images render.
   const deepResearchJobId = useChatStore(selectResolvedDeepResearchJobId)
 
@@ -76,12 +86,31 @@ export const ReportTab: FC<ReportTabProps> = ({ children }) => {
         {children ? (
           children
         ) : isEmpty ? (
-          <Flex direction="col" align="center" justify="center" className="flex-1 py-8 text-center">
-            <Document className="text-subtle mb-3 h-8 w-8" />
-            <Text kind="body/regular/md" className="text-subtle">
-              Report content will appear here when available.
-            </Text>
-          </Flex>
+          isDeepResearchStreaming ? (
+            <Flex
+              direction="col"
+              align="center"
+              justify="center"
+              gap="3"
+              className="flex-1 py-8 text-center"
+            >
+              <span
+                role="status"
+                aria-label="Deep research in progress"
+                className="h-2.5 w-2.5 animate-pulse rounded-full bg-[color:var(--color-brand)] motion-reduce:animate-none"
+              />
+              <Text kind="body/regular/md" className="text-secondary">
+                Deep research in progress...
+              </Text>
+            </Flex>
+          ) : (
+            <Flex direction="col" align="center" justify="center" className="flex-1 py-8 text-center">
+              <Document className="text-subtle mb-3 h-8 w-8" />
+              <Text kind="body/regular/md" className="text-subtle">
+                Report content will appear here when available.
+              </Text>
+            </Flex>
+          )
         ) : isResearchNotes ? (
           /* Research notes: preview treatment */
           <Flex direction="col" gap="3" className="flex-1">
@@ -92,7 +121,7 @@ export const ReportTab: FC<ReportTabProps> = ({ children }) => {
             >
               <div className="h-2 w-2 animate-pulse rounded-full bg-yellow-500" />
               <Text kind="body/regular/sm" className="text-yellow-700 dark:text-yellow-300">
-                Research notes from agents — final report is still being generated.
+                Research notes from agents. Final report is still being generated.
               </Text>
             </Flex>
             <div className="flex-1 opacity-80">

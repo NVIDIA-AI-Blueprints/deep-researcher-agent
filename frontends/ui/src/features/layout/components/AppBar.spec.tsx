@@ -72,7 +72,6 @@ describe('AppBar', () => {
     render(<AppBar isAuthenticated={false} />)
 
     expect(screen.getByRole('button', { name: /create new session/i })).toBeDisabled()
-    expect(screen.getByRole('button', { name: /add data sources/i })).toBeDisabled()
     expect(screen.queryByRole('button', { name: /open documentation/i })).not.toBeInTheDocument()
   })
 
@@ -80,7 +79,6 @@ describe('AppBar', () => {
     render(<AppBar isAuthenticated={true} />)
 
     expect(screen.getByRole('button', { name: /create new session/i })).not.toBeDisabled()
-    expect(screen.getByRole('button', { name: /add data sources/i })).not.toBeDisabled()
     expect(screen.queryByRole('button', { name: /open documentation/i })).not.toBeInTheDocument()
   })
 
@@ -99,17 +97,14 @@ describe('AppBar', () => {
     render(<AppBar isAuthenticated={true} isNewSessionDisabled={true} />)
 
     expect(screen.getByRole('button', { name: /create new session/i })).toBeDisabled()
-    expect(screen.getByRole('button', { name: /add data sources/i })).not.toBeDisabled()
   })
 
-  test('opens data-sources panel when Add Sources clicked', async () => {
-    const user = userEvent.setup()
-
+  test('does not render a Data Sources button (now lives in the Deep Research rail)', () => {
     render(<AppBar isAuthenticated={true} />)
 
-    await user.click(screen.getByRole('button', { name: /add data sources/i }))
-
-    expect(mockOpenRightPanel).toHaveBeenCalledWith('data-sources')
+    expect(screen.queryByRole('button', { name: /add data sources/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /data sources/i })).not.toBeInTheDocument()
+    expect(mockOpenRightPanel).not.toHaveBeenCalled()
   })
 
   test('toggles theme to dark from the app-bar toggle when in light/system mode', async () => {
@@ -233,7 +228,6 @@ describe('AppBar', () => {
       render(<AppBar isAuthenticated={true} authRequired={false} />)
 
       expect(screen.getByRole('button', { name: /create new session/i })).not.toBeDisabled()
-      expect(screen.getByRole('button', { name: /add data sources/i })).not.toBeDisabled()
       expect(screen.queryByRole('button', { name: /open documentation/i })).not.toBeInTheDocument()
     })
 

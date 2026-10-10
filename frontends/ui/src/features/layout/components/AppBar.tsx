@@ -17,9 +17,8 @@
 
 import { type FC, memo, useCallback, useEffect, useState } from 'react'
 import { Flex, Text, Button, Logo, Avatar, Popover, Divider } from '@/adapters/ui'
-import { Globe, Book, Lock, Logout, OpenExternal, Info, Moon, Sun } from '@/adapters/ui/icons'
+import { Book, Lock, Logout, OpenExternal, Info, Moon, Sun } from '@/adapters/ui/icons'
 import { useLayoutStore } from '../store'
-import { cn } from '@/shared/lib/cn'
 import type { ThemeMode } from '../types'
 
 interface AppBarProps {
@@ -59,8 +58,6 @@ export const AppBar: FC<AppBarProps> = memo(function AppBar({
   onSignIn,
   onSignOut,
 }) {
-  const rightPanel = useLayoutStore((s) => s.rightPanel)
-  const isDataSourcesOpen = rightPanel === 'data-sources'
   const theme = useLayoutStore((s) => s.theme)
   const setTheme = useLayoutStore((s) => s.setTheme)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
@@ -79,16 +76,6 @@ export const AppBar: FC<AppBarProps> = memo(function AppBar({
   const toggleTheme = useCallback(() => {
     setTheme(isDarkMode ? 'light' : 'dark')
   }, [isDarkMode, setTheme])
-
-  const handleAddSourcesClick = useCallback(() => {
-    if (!isAuthenticated) return
-    const { rightPanel, closeRightPanel, openRightPanel } = useLayoutStore.getState()
-    if (rightPanel === 'data-sources') {
-      closeRightPanel()
-    } else {
-      openRightPanel('data-sources')
-    }
-  }, [isAuthenticated])
 
   const handleNewSessionClick = useCallback(() => {
     if (!isAuthenticated || isNewSessionDisabled) return
@@ -144,22 +131,6 @@ export const AppBar: FC<AppBarProps> = memo(function AppBar({
 
         {/* Right section: Actions + User */}
         <Flex align="center" gap="2" className="shrink-0">
-          <Button
-            kind="tertiary"
-            size="small"
-            onClick={handleAddSourcesClick}
-            disabled={!isAuthenticated}
-            aria-label="Add data sources"
-            aria-pressed={isDataSourcesOpen}
-            title="Add data sources"
-            className={cn(isDataSourcesOpen && 'brand-tint')}
-          >
-            <Flex align="center" gap="1">
-              <Globe className="h-4 w-4" />
-              <Text kind="label/regular/md">Data Sources</Text>
-            </Flex>
-          </Button>
-
           {/* Theme toggle: quick dark/light switch */}
           <Button
             kind="tertiary"

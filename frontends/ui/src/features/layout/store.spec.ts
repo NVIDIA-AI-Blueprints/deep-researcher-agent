@@ -109,6 +109,15 @@ describe('useLayoutStore', () => {
       expect(useLayoutStore.getState().rightPanel).toBe('settings')
     })
 
+    test.each(['citations', 'thinking'] as const)(
+      'opens the %s rail panel',
+      (panel) => {
+        useLayoutStore.getState().openRightPanel(panel)
+
+        expect(useLayoutStore.getState().rightPanel).toBe(panel)
+      }
+    )
+
     test('replaces existing panel', () => {
       useLayoutStore.setState({ rightPanel: 'research' })
 
@@ -163,6 +172,27 @@ describe('useLayoutStore', () => {
       expect(useLayoutStore.getState().rightPanel).toBe('research')
       expect(useLayoutStore.getState().sessionsCollapsed).toBe(true)
       expect(useLayoutStore.getState().sessionsAutoCollapsed).toBe(true)
+    })
+
+    test.each(['data-sources', 'citations', 'research', 'thinking'] as const)(
+      'opening the %s rail panel auto-collapses the sidebar',
+      (panel) => {
+        useLayoutStore.setState({ sessionsCollapsed: false, rightPanel: null })
+
+        useLayoutStore.getState().openRightPanel(panel)
+
+        expect(useLayoutStore.getState().sessionsCollapsed).toBe(true)
+        expect(useLayoutStore.getState().sessionsAutoCollapsed).toBe(true)
+      }
+    )
+
+    test('opening the settings overlay does not collapse the sidebar', () => {
+      useLayoutStore.setState({ sessionsCollapsed: false, rightPanel: null })
+
+      useLayoutStore.getState().openRightPanel('settings')
+
+      expect(useLayoutStore.getState().sessionsCollapsed).toBe(false)
+      expect(useLayoutStore.getState().sessionsAutoCollapsed).toBe(false)
     })
 
     test('closing after an auto-collapse restores the sidebar', () => {

@@ -98,17 +98,20 @@ const NavRow: FC<{
     aria-label={ariaLabel ?? label}
     title={title ?? label}
     className={cn(
-      'flex h-10 w-full items-center rounded-lg transition-colors',
-      collapsed ? 'justify-center px-0' : 'gap-3 px-3',
+      'flex h-10 w-full items-center gap-3 rounded-lg px-2.5 transition-colors',
       disabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-surface-raised-50 cursor-pointer'
     )}
   >
     <span className="text-secondary grid h-5 w-5 shrink-0 place-items-center">{icon}</span>
-    {!collapsed && (
-      <Text kind="label/regular/sm" className="text-primary truncate">
-        {label}
-      </Text>
-    )}
+    <Text
+      kind="label/regular/sm"
+      className={cn(
+        'text-primary min-w-0 truncate text-left transition-opacity duration-300 motion-reduce:transition-none',
+        collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
+      )}
+    >
+      {label}
+    </Text>
   </button>
 )
 
@@ -244,35 +247,27 @@ export const SessionsPanel: FC<SessionsPanelProps> = memo(function SessionsPanel
       aria-label="Sessions"
     >
       <Flex direction="col" className="h-full gap-1 p-2">
-        {/* Header row: title + collapse toggle (or a single expand button when collapsed) */}
-        {collapsed ? (
-          <Flex align="center" justify="center" className="h-10">
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              aria-label="Expand sessions sidebar"
-              title="Expand sessions"
-              className="hover:bg-surface-raised-50 grid h-10 w-10 cursor-pointer place-items-center rounded-lg"
-            >
-              <Menu className="text-secondary h-5 w-5" />
-            </button>
-          </Flex>
-        ) : (
-          <Flex align="center" gap="3" className="h-10 px-3">
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              aria-label="Collapse sessions sidebar"
-              title="Collapse sessions"
-              className="hover:bg-surface-raised-50 grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-md"
-            >
-              <Menu className="text-secondary h-5 w-5" />
-            </button>
-            <Text kind="label/semibold/md" className="text-primary flex-1 truncate">
-              Sessions
-            </Text>
-          </Flex>
-        )}
+        {/* Header row: collapse toggle whose icon stays anchored while the title fades */}
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          aria-label={collapsed ? 'Expand sessions sidebar' : 'Collapse sessions sidebar'}
+          title={collapsed ? 'Expand sessions' : 'Collapse sessions'}
+          className="hover:bg-surface-raised-50 flex h-10 w-full cursor-pointer items-center gap-3 rounded-lg px-2.5 transition-colors"
+        >
+          <span className="text-secondary grid h-5 w-5 shrink-0 place-items-center">
+            <Menu className="h-5 w-5" />
+          </span>
+          <Text
+            kind="label/semibold/md"
+            className={cn(
+              'text-primary min-w-0 flex-1 truncate text-left transition-opacity duration-300 motion-reduce:transition-none',
+              collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
+            )}
+          >
+            Sessions
+          </Text>
+        </button>
 
         <NavRow
           icon={<Plus className="h-5 w-5" />}
@@ -294,7 +289,7 @@ export const SessionsPanel: FC<SessionsPanelProps> = memo(function SessionsPanel
 
         {hasSessions &&
           (!collapsed && searchOpen ? (
-            <Flex align="center" gap="3" className="h-10 px-3">
+            <Flex align="center" gap="3" className="h-10 px-2.5">
               <span className="text-secondary grid h-5 w-5 shrink-0 place-items-center">
                 <Search className="h-5 w-5" />
               </span>

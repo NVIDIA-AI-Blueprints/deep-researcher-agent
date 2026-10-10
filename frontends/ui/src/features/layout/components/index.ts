@@ -8,6 +8,7 @@
 // Main layout components
 export { MainLayout } from './MainLayout'
 export { AppBar } from './AppBar'
+export { DeepResearchRail } from './DeepResearchRail'
 export { SessionsPanel } from './SessionsPanel'
 export { ChatArea } from './ChatArea'
 export { InputArea } from './InputArea'

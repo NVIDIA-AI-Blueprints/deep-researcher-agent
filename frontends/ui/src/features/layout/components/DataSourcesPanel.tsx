@@ -265,7 +265,7 @@ export const DataSourcesPanel: FC<DataSourcesPanelProps> = memo(function DataSou
         <Flex
           align="center"
           justify="between"
-          className="border-base shrink-0 border-b py-4 pl-6 pr-4"
+          className="border-base h-[var(--header-height)] shrink-0 border-b pl-6 pr-4"
         >
           <Flex align="center" gap="2">
             <Globe className="h-5 w-5" />

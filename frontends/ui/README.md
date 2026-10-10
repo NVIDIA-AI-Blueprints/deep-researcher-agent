@@ -105,7 +105,7 @@ src/
 ├── features/           # Business logic modules
 │   ├── chat/           # Chat functionality (components, hooks, store, types)
 │   ├── documents/      # File upload, validation, and persistence
-│   └── layout/         # App layout components (panels, tabs, navigation)
+│   └── layout/         # App layout components (panels, Deep Research rail, navigation)
 ├── hooks/              # Shared React hooks (PDF download, session URL)
 ├── lib/                # Utilities (PDF generation)
 ├── mocks/              # MSW mock handlers and database for testing
@@ -180,18 +180,29 @@ When you reopen a session after a page refresh:
 
 1. **ChatArea** - Displays immediately (messages, thinking steps loaded from localStorage)
 2. **PlanTab** - Displays immediately (plan messages loaded from localStorage)
-3. **Tasks/Thinking/Report tabs** - Shows loading state, then fetches data from the backend
+3. **Deep Research panels** - Show a loading state, then fetch their data from the backend
 
 The lazy loading is automatic and seamless - you don't need to do anything special.
 
-### Deep Research Progress
+### Deep Research Workspace
 
-The Tasks tab presents an append-only timeline of workflow phases that actually started.
-Repeated phase attempts share one row, concurrent researchers are aggregated with a
-completed/observed count, and missing phases are never inferred from later activity. The
-Thinking tab retains the detailed execution traces. For inactive legacy jobs without a
-recognized workflow trace, Tasks falls back to the root todo artifact. This projection is
-frontend-only and does not add model calls or change the backend event contract.
+Deep Research is driven by a persistent right-hand navigation rail. Each rail item opens a
+single panel to its left, and only one panel is open at a time:
+
+- **Data Sources** - Manage the connections and files the agent may read.
+- **Citations** - Every source the agent touched, consolidated behind an All / Cited
+  filter. Cited sources and the other sources found are listed together here; there is no
+  separate sources tab.
+- **Research** - The finished report, with the Markdown / PDF export footer.
+- **Thinking** - The reasoning and step trace. The workflow Task progress is folded in
+  here as a collapsible disclosure above the trace; there is no standalone Tasks tab and no
+  Artifacts panel.
+
+Task progress is an append-only timeline of workflow phases that actually started: repeated
+phase attempts share one row, concurrent researchers are aggregated with a
+completed/observed count, and missing phases are never inferred from later activity. This
+projection is frontend-only and does not add model calls or change the backend event
+contract.
 
 ## Docker Deployment
 

@@ -12,8 +12,18 @@ import type { DataSourceFromAPI } from '@/adapters/api'
 /** Theme mode options */
 export type ThemeMode = 'light' | 'dark' | 'system'
 
-/** Panels that can be opened on the right side */
-export type RightPanelType = 'research' | 'data-sources' | 'settings' | null
+/**
+ * Panels that can be opened on the right side. The first four map one-to-one to
+ * the Deep Research rail items; `settings` remains for the standalone
+ * SettingsPanel and is not surfaced in the rail.
+ */
+export type RightPanelType =
+  | 'data-sources'
+  | 'citations'
+  | 'research'
+  | 'thinking'
+  | 'settings'
+  | null
 
 /** Tabs within the Research panel */
 export type ResearchPanelTab = 'tasks' | 'thinking' | 'report'

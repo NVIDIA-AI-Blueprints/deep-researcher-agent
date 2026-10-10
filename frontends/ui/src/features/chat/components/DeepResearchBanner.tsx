@@ -126,7 +126,6 @@ export const DeepResearchBanner: FC<DeepResearchBannerProps> = ({
   timestamp,
 }) => {
   const openRightPanel = useLayoutStore((s) => s.openRightPanel)
-  const setResearchPanelTab = useLayoutStore((s) => s.setResearchPanelTab)
   const { loadResearchPanelTab } = useLoadJobData()
   const config = getBannerConfig(bannerType, jobId, { totalTokens, toolCallCount })
 
@@ -141,16 +140,8 @@ export const DeepResearchBanner: FC<DeepResearchBannerProps> = ({
       return
     }
 
-    setResearchPanelTab(buttonTab)
-    openRightPanel('research')
-  }, [
-    config.buttonTab,
-    openRightPanel,
-    setResearchPanelTab,
-    jobId,
-    loadResearchPanelTab,
-    isJobComplete,
-  ])
+    openRightPanel('thinking')
+  }, [config.buttonTab, openRightPanel, jobId, loadResearchPanelTab, isJobComplete])
 
   const actions =
     bannerType === 'success' && config.buttonText ? (

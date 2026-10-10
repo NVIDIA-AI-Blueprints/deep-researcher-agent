@@ -96,8 +96,7 @@ export const AgentResponse: FC<AgentResponseProps> = ({
       if (!isDeepResearchStreaming || deepResearchJobId !== jobId) {
         await reconnectToActiveJob()
       }
-      setResearchPanelTab('tasks')
-      openRightPanel('research')
+      openRightPanel('thinking')
       return
     }
 

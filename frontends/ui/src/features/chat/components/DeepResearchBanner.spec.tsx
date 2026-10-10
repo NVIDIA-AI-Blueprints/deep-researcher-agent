@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { render, screen } from '@/test-utils'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
 import { DeepResearchBanner } from './DeepResearchBanner'
 
@@ -37,6 +38,16 @@ describe('DeepResearchBanner', () => {
     render(<DeepResearchBanner bannerType="success" jobId="job-1" />)
 
     expect(screen.getByRole('button', { name: 'View Report' })).toBeInTheDocument()
+  })
+
+  test('clicking the completed banner action loads the research report and does not open Thinking', async () => {
+    const user = userEvent.setup()
+    render(<DeepResearchBanner bannerType="success" jobId="job-1" />)
+
+    await user.click(screen.getByRole('button', { name: 'View Report' }))
+
+    expect(mockLoadResearchPanelTab).toHaveBeenCalledWith('job-1', 'report')
+    expect(mockOpenRightPanel).not.toHaveBeenCalledWith('thinking')
   })
 
   test.each([

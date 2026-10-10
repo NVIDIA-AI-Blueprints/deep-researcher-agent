@@ -237,7 +237,7 @@ export const ChatArea: FC<ChatAreaProps> = memo(function ChatArea({
           gap="8"
           className="mx-auto w-full max-w-4xl px-6 pb-28 pt-6"
         >
-          {turns.map((turn) => {
+          {turns.map((turn, index) => {
             const userMessage = turn.user
             const messageSteps = userMessage ? getStepsForUserMessage(userMessage.id) : []
             const hasThinkingSteps = messageSteps.length > 0
@@ -274,7 +274,7 @@ export const ChatArea: FC<ChatAreaProps> = memo(function ChatArea({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                className="flex flex-col gap-3"
+                className={cn('flex flex-col gap-3', index > 0 && 'border-base border-t pt-8')}
               >
                 {userMessage && (
                   <MessageRenderer

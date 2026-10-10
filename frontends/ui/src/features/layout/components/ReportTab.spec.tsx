@@ -70,6 +70,40 @@ describe('ReportTab', () => {
     expect(document.querySelector('svg')).toBeInTheDocument()
   })
 
+  test('shows an in-progress state when empty while deep research is streaming', () => {
+    vi.mocked(useChatStore).mockImplementation((selector?: (s: any) => any) => {
+      const state = {
+        reportContent: '',
+        isStreaming: true,
+        currentStatus: 'researching',
+        isDeepResearchStreaming: true,
+      }
+      return selector ? selector(state) : state
+    })
+
+    render(<ReportTab />)
+
+    expect(screen.getByText(/deep research in progress/i)).toBeInTheDocument()
+    expect(screen.queryByText(/report content will appear here/i)).not.toBeInTheDocument()
+  })
+
+  test('shows the static empty state when empty and not streaming', () => {
+    vi.mocked(useChatStore).mockImplementation((selector?: (s: any) => any) => {
+      const state = {
+        reportContent: '',
+        isStreaming: false,
+        currentStatus: null,
+        isDeepResearchStreaming: false,
+      }
+      return selector ? selector(state) : state
+    })
+
+    render(<ReportTab />)
+
+    expect(screen.getByText(/report content will appear here/i)).toBeInTheDocument()
+    expect(screen.queryByText(/deep research in progress/i)).not.toBeInTheDocument()
+  })
+
   test('renders report content via MarkdownRenderer', () => {
     vi.mocked(useChatStore).mockImplementation((selector?: (s: any) => any) => {
       const state = {

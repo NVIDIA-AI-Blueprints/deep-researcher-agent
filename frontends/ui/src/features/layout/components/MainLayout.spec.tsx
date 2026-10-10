@@ -97,7 +97,17 @@ vi.mock('./ResearchPanel', () => ({
 }))
 
 vi.mock('./DataSourcesPanel', () => ({
-  DataSourcesPanel: () => <div data-testid="data-sources-panel">Data Sources Panel</div>,
+  DataSourcesPanel: () => (
+    <div data-testid="data-sources-panel">
+      <button type="button" aria-label="Close data sources panel">
+        Close
+      </button>
+    </div>
+  ),
+}))
+
+vi.mock('./DeepResearchRail', () => ({
+  DeepResearchRail: () => <div data-testid="deep-research-rail">Deep Research Rail</div>,
 }))
 
 import { useChatStore } from '@/features/chat'
@@ -116,6 +126,7 @@ describe('MainLayout', () => {
     expect(screen.getByTestId('input-area')).toBeInTheDocument()
     expect(screen.getByTestId('research-panel')).toBeInTheDocument()
     expect(screen.getByTestId('data-sources-panel')).toBeInTheDocument()
+    expect(screen.getByTestId('deep-research-rail')).toBeInTheDocument()
   })
 
   test('hides the sessions sidebar and data sources panel when unauthenticated', () => {
@@ -127,6 +138,7 @@ describe('MainLayout', () => {
     expect(screen.getByTestId('input-area')).toBeInTheDocument()
     expect(screen.getByTestId('research-panel')).toBeInTheDocument()
     expect(screen.queryByTestId('data-sources-panel')).not.toBeInTheDocument()
+    expect(screen.getByTestId('deep-research-rail')).toBeInTheDocument()
   })
 
   test('passes session title to AppBar', () => {
@@ -224,5 +236,35 @@ describe('MainLayout', () => {
 
     const centerColumn = screen.getByTestId('chat-area').parentElement
     expect(centerColumn).toHaveClass('flex-1')
+  })
+
+  test('keeps the Deep Research rail and Data Sources close control reachable at 1024px instead of clipping them off-screen', () => {
+    const originalInnerWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 })
+    try {
+      render(<MainLayout isAuthenticated={true} />)
+
+      const contentRow = screen.getByTestId('main-content-row')
+      const rail = screen.getByTestId('deep-research-rail')
+      const closeControl = screen.getByRole('button', { name: 'Close data sources panel' })
+
+      expect(contentRow).toContainElement(rail)
+      expect(contentRow).toContainElement(closeControl)
+
+      expect(contentRow.className).toMatch(/overflow-x-auto/)
+      expect(contentRow.className).not.toMatch(/overflow-hidden/)
+
+      Object.defineProperty(contentRow, 'clientWidth', { configurable: true, value: 1024 })
+      Object.defineProperty(contentRow, 'scrollWidth', { configurable: true, value: 1240 })
+      expect(contentRow.scrollWidth).toBeGreaterThan(contentRow.clientWidth)
+
+      contentRow.scrollLeft = contentRow.scrollWidth - contentRow.clientWidth
+      expect(contentRow.scrollLeft).toBeGreaterThan(0)
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: originalInnerWidth,
+      })
+    }
   })
 })

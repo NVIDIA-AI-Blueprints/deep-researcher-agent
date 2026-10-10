@@ -11,6 +11,7 @@
 export {
   MainLayout,
   AppBar,
+  DeepResearchRail,
   SessionsPanel,
   ChatArea,
   InputArea,

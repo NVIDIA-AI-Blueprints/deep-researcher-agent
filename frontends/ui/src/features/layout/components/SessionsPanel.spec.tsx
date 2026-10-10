@@ -288,7 +288,7 @@ describe('SessionsPanel', () => {
     render(<SessionsPanel sessions={mockSessions} />)
 
     expect(screen.getByRole('button', { name: /expand sessions sidebar/i })).toBeInTheDocument()
-    expect(screen.queryByText('Sessions')).not.toBeInTheDocument()
+    expect(screen.getByText('Sessions')).toHaveClass('opacity-0')
     expect(screen.queryByText('First Session')).not.toBeInTheDocument()
   })
 

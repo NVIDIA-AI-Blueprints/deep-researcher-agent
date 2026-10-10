@@ -75,7 +75,7 @@ export const useLayoutStore = create<LayoutStore>()(
       openRightPanel: (panel: RightPanelType) =>
         set(
           (state) => {
-            const collapsesSidebar = panel === 'research' || panel === 'data-sources'
+            const collapsesSidebar = panel !== null && panel !== 'settings'
             if (collapsesSidebar && !state.sessionsCollapsed) {
               return { rightPanel: panel, sessionsCollapsed: true, sessionsAutoCollapsed: true }
             }

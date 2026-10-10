@@ -129,6 +129,14 @@ describe('DataSourcesPanel', () => {
     expect(screen.getByText('Data Sources')).toBeInTheDocument()
   })
 
+  test('header uses the shared header-height for rail alignment', () => {
+    const { container } = render(<DataSourcesPanel />)
+
+    const header = container.querySelector('.h-\\[var\\(--header-height\\)\\]')
+    expect(header).not.toBeNull()
+    expect(header).toHaveClass('h-[var(--header-height)]', 'shrink-0')
+  })
+
   test('renders connections tab by default', () => {
     render(<DataSourcesPanel />)
 
