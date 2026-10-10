@@ -1,0 +1,88 @@
+specVersion: v2
+specMinorVersion: 2
+meta:
+    name: aiq
+    image: project-aiq
+    description: NVIDIA AI Blueprint, Agent Intelligence toolkit
+    labels: []
+    createdOn: "2026-09-11T23:59:40Z"
+    defaultBranch: develop
+layout: []
+environment:
+    base:
+        registry: nvcr.io
+        image: nvidia/rapidsai/notebooks:26.08-cuda13-py3.12
+        build_timestamp: ""
+        name: RAPIDS with CUDA 13.3.0
+        supported_architectures: []
+        cuda_version: 13.3.0
+        description: RAPIDS with CUDA 13.3.0
+        entrypoint_script: /home/rapids/entrypoint.sh
+        labels:
+            - cuda13.3.0
+        apps:
+            - name: jupyterlab
+              type: jupyterlab
+              class: webapp
+              start_command: jupyter lab --allow-root --port 8888 --ip 0.0.0.0 --no-browser --NotebookApp.base_url=\$PROXY_PREFIX --NotebookApp.default_url=/lab --NotebookApp.allow_origin='*'
+              health_check_command: '[ \$(echo url=\$(jupyter lab list | head -n 2 | tail -n 1 | cut -f1 -d'' '' | grep -v ''Currently'' | sed "s@/?@/lab?@g") | curl -o /dev/null -s -w ''%{http_code}'' --config -) == ''200'' ]'
+              stop_command: jupyter lab stop 8888
+              user_msg: ""
+              logfile_path: ""
+              timeout_seconds: 60
+              icon_url: ""
+              webapp_options:
+                autolaunch: true
+                port: "8888"
+                proxy:
+                    trim_prefix: false
+                url_command: jupyter lab list | head -n 2 | tail -n 1 | cut -f1 -d' ' | grep -v 'Currently'
+        programming_languages:
+            - python3
+        icon_url: ""
+        image_version: 26.08.00
+        os: linux
+        os_distro: ubuntu
+        os_distro_release: "24.04"
+        schema_version: v2
+        user_info:
+            uid: "1001"
+            gid: "1000"
+            username: rapids
+        package_managers:
+            - name: apt
+              binary_path: /usr/bin/apt
+              installed_packages:
+                - ""
+            - name: conda3
+              binary_path: /opt/conda/bin/conda
+              installed_packages:
+                - rapids
+                - cudf
+                - cuml
+                - cugraph
+                - rmm
+                - pylibraft
+                - cucim
+                - xgboost
+                - jupyterlab
+            - name: pip
+              binary_path: /opt/conda/bin/pip
+              installed_packages:
+                - jupyterlab-nvdashboard
+        package_manager_environment:
+            name: conda
+            target: /opt/conda
+    compose_file_path: ""
+execution:
+    apps: []
+    resources:
+        gpu:
+            requested: 1
+        sharedMemoryMB: 1024
+    secrets: []
+    mounts:
+        - type: project
+          target: /project/
+          description: Project directory
+          options: rw
