@@ -1,0 +1,64 @@
+# Deep-research profile for DeepResearch Bench II Harbor evaluations.
+
+general:
+  use_uvloop: true
+  telemetry:
+    logging:
+      console:
+        _type: console
+        level: WARNING
+
+llms:
+  nemotron_ultra:
+    _type: nim
+    model_name: nvidia/nemotron-3-ultra-550b-a55b
+    base_url: "https://integrate.api.nvidia.com/v1"
+    api_key: ${NVIDIA_API_KEY}
+    temperature: 0.2
+    top_p: 0.95
+    max_tokens: 16384
+    num_retries: 2
+    parallel_tool_calls: false
+    chat_template_kwargs:
+      enable_thinking: false
+
+  nemotron_ultra_thinking:
+    _type: nim
+    model_name: nvidia/nemotron-3-ultra-550b-a55b
+    base_url: "https://integrate.api.nvidia.com/v1"
+    api_key: ${NVIDIA_API_KEY}
+    temperature: 0.2
+    top_p: 0.95
+    max_tokens: 32768
+    num_retries: 2
+    parallel_tool_calls: false
+    chat_template_kwargs:
+      enable_thinking: true
+
+functions:
+  web_search_tool:
+    _type: tavily_web_search
+    include_answer: advanced
+    advanced_search: true
+    max_results: 2
+    max_content_length: 10000
+
+  paper_search_tool:
+    _type: paper_search
+    max_results: 5
+    serper_api_key: ${SERPER_API_KEY}
+
+  deep_research_agent:
+    _type: deep_research_agent
+    orchestrator_llm: nemotron_ultra_thinking
+    source_router_llm: nemotron_ultra
+    planner_llm: nemotron_ultra_thinking
+    researcher_llm: nemotron_ultra
+    writer_llm: nemotron_ultra_thinking
+    tools:
+      - web_search_tool
+      - paper_search_tool
+    enable_citation_verification: true
+
+workflow:
+  _type: deep_research_workflow

@@ -270,7 +270,7 @@ members = [
     "frontends/benchmarks/freshqa",
     "frontends/benchmarks/deepsearch_qa",
 ]
-exclude = ["mcp"]
+exclude = ["mcp", "frontends/evaluation"]
 
 [tool.uv.sources]
 deep-researcher-agent = { workspace = true }

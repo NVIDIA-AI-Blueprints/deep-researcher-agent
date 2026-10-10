@@ -149,6 +149,12 @@ jobs:
             --cov-report=term \
             --cov-fail-under=65
 
+      - name: Run evaluation tests
+        working-directory: frontends/evaluation
+        run: |
+          uv lock --check
+          uv run --frozen --all-packages --group dev pytest -q
+
       - name: Upload coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4

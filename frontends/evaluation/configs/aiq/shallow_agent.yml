@@ -1,0 +1,42 @@
+# Shallow-research profile for DeepSearchQA Harbor evaluations.
+
+general:
+  telemetry:
+    logging:
+      console:
+        _type: console
+        level: WARNING
+
+llms:
+  research_llm:
+    _type: nim
+    model_name: nvidia/nemotron-3.5-lightning-30b-a3b
+    base_url: "https://integrate.api.nvidia.com/v1"
+    api_key: ${NVIDIA_API_KEY}
+    temperature: 1.0
+    top_p: 0.95
+    max_tokens: 32768
+    num_retries: 2
+    parallel_tool_calls: false
+    chat_template_kwargs:
+      enable_thinking: false
+
+functions:
+  web_search_tool:
+    _type: tavily_web_search
+    include_answer: advanced
+    advanced_search: true
+    max_results: 5
+    max_content_length: 10000
+
+  shallow_research_agent:
+    _type: shallow_research_agent
+    llm: research_llm
+    tools:
+      - web_search_tool
+    max_llm_turns: 50
+    max_tool_iterations: 25
+    verbose: false
+
+workflow:
+  _type: shallow_research_workflow

@@ -1,0 +1,56 @@
+# DeepResearch Bench II task template. adapter.py replaces the marked values
+# before writing a generated task.
+schema_version = "1.4"
+
+[task]
+name = @{TASK_NAME}
+description = @{DESCRIPTION}
+authors = [
+    { name = "Ruizhe Li" },
+    { name = "Mingxuan Du" },
+    { name = "Benfeng Xu" },
+    { name = "Chiwei Zhu" },
+    { name = "Xiaorui Wang" },
+    { name = "Zhendong Mao" },
+]
+keywords = [
+    "deepresearch-bench-ii",
+    "deep-research",
+    "long-form-report",
+    "rubric-evaluation",
+    "blocked-source-awareness",
+    @{LANGUAGE_KEYWORD},
+    @{THEME_KEYWORD},
+]
+
+[metadata]
+category = "Deep Research"
+source_dataset = @{SOURCE_DATASET}
+source_id = @{SOURCE_ID}
+source_index = @{SOURCE_INDEX}
+language = @{LANGUAGE}
+theme = @{THEME}
+license = @{LICENSE}
+
+[verifier]
+timeout_sec = 1200.0
+@{VERIFIER_USER}
+
+[verifier.env]
+GEMINI_API_URL = "${GEMINI_API_URL:-}"
+GEMINI_API_KEY = "${GEMINI_API_KEY:-}"
+GEMINI_MODEL = "${DRB2_GRADER_MODEL:-gemini-2.5-pro}"
+CHUNK_SIZE = "${DRB2_GRADER_CHUNK_SIZE:-50}"
+MAX_RETRIES = "${DRB2_GRADER_MAX_RETRIES:-10}"
+MAX_PAPER_CHARS = "${DRB2_GRADER_MAX_PAPER_CHARS:-150000}"
+
+[agent]
+timeout_sec = 5400.0
+@{AGENT_USER}
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 1
+memory_mb = 4096
+storage_mb = 10240
+network_mode = "public"

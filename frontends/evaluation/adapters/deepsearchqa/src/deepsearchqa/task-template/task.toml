@@ -1,0 +1,55 @@
+# DeepSearchQA task template. adapter.py replaces the marked values before
+# writing a generated task.
+schema_version = "1.4"
+
+[task]
+name = @{TASK_NAME}
+description = @{DESCRIPTION}
+authors = [
+    { name = "Nikita Gupta" },
+    { name = "Riju Chatterjee" },
+    { name = "Lukas Haas" },
+    { name = "Connie Tao" },
+    { name = "Andrew Wang" },
+    { name = "Chang Liu" },
+    { name = "Hidekazu Oiwa" },
+    { name = "Elena Gribovskaya" },
+    { name = "Jan Ackermann" },
+    { name = "John Blitzer" },
+    { name = "Sasha Goldshtein" },
+    { name = "Dipanjan Das" },
+]
+keywords = [
+    "deepsearchqa",
+    "deep-research",
+    "web-research",
+    "question-answering",
+    @{CATEGORY_KEYWORD},
+]
+
+[metadata]
+category = @{CATEGORY}
+source_dataset = @{SOURCE_DATASET}
+source_id = @{SOURCE_ID}
+source_index = @{SOURCE_INDEX}
+
+[verifier]
+timeout_sec = 300.0
+@{VERIFIER_USER}
+
+[verifier.env]
+GEMINI_API_URL = "${GEMINI_API_URL:-}"
+GEMINI_API_KEY = "${GEMINI_API_KEY:-}"
+DSQA_GRADER_MODEL = "${DSQA_GRADER_MODEL:-gemini-2.5-flash}"
+DSQA_GRADER_MAX_RETRIES = "${DSQA_GRADER_MAX_RETRIES:-5}"
+
+[agent]
+timeout_sec = 1800.0
+@{AGENT_USER}
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 1
+memory_mb = 4096
+storage_mb = 10240
+network_mode = "public"

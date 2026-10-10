@@ -100,6 +100,10 @@ frontends/benchmarks/*/analysis/freshqa_output_*.csv
 frontends/benchmarks/*/analysis/freshqa_scored_*.csv
 frontends/benchmarks/*/analysis/*.csv
 
+# Harbor generated datasets and jobs
+frontends/evaluation/datasets/
+frontends/evaluation/jobs/
+
 # Configs created in notebooks
 docs/notebooks/config_*.yml
 # Local images (not committed) for notebooks

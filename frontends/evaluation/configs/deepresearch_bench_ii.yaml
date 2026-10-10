@@ -1,0 +1,28 @@
+jobs_dir: jobs
+n_attempts: 1
+timeout_multiplier: 1.0
+n_concurrent_trials: 10
+quiet: false
+
+environment:
+  type: docker
+  force_build: false
+  delete: true
+
+agents:
+  - import_path: aiq_harbor.agent:AiqHarborAgent
+    kwargs:
+      config_file: configs/aiq/deep_agent.yml
+      output_file: /workspace/report.md
+    env:
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY}
+      TAVILY_API_KEY: ${TAVILY_API_KEY}
+      SERPER_API_KEY: ${SERPER_API_KEY}
+      NVIDIA_NAT_LOG_LEVEL: ${NVIDIA_NAT_LOG_LEVEL:-WARNING}
+
+datasets:
+  - path: datasets/deepresearch-bench-ii
+
+artifacts:
+  - source: /workspace/report.md
+    destination: report.md
