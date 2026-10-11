@@ -52,6 +52,17 @@ def searchapi_tool():
 
 
 @pytest.fixture
+def serply_tool():
+    """Create a PaperSearchTool instance configured for Serply."""
+    return PaperSearchTool(
+        provider="serply",
+        serply_api_key="test-serply-key",  # pragma: allowlist secret
+        timeout=30,
+        max_results=10,
+    )
+
+
+@pytest.fixture
 def sample_serper_response():
     """Sample Serper API response for testing."""
     return {
@@ -172,3 +183,39 @@ def sample_papers():
             "citedBy": 50,
         },
     ]
+
+
+@pytest.fixture
+def sample_serply_response():
+    """Sample Serply response (shape matches api.serply.io/v1/scholar)."""
+    return {
+        "articles": [
+            {
+                "title": "Attention Is All You Need",
+                "link": "https://arxiv.org/abs/1706.03762",
+                "id": "abc123",
+                "author": {
+                    "names": (
+                        "A Vaswani, N Shazeer, N Parmar\u2026\u00a0- Advances in neural\u00a0\u2026, 2017 - arxiv.org"
+                    ),
+                    "authors": [{"name": "A Vaswani"}],
+                },
+                "description": (
+                    "A Vaswani, N Shazeer, N Parmar\u2026\u00a0- Advances in neural\u00a0\u2026, 2017 - arxiv.org"
+                ),
+                "extras": {
+                    "citations": {
+                        "count": "Cited by 50000",
+                        "link": "https://scholar.google.com/scholar?cites=123",
+                    },
+                },
+            },
+            {
+                "title": "BERT: Pre-training of Deep Bidirectional Transformers",
+                "link": "https://arxiv.org/abs/1810.04805",
+                "author": {"names": "J Devlin, MW Chang, K Lee, K Toutanova - arXiv preprint, 2018 - arxiv.org"},
+                "description": "We introduce a new language model...",
+                "extras": {"citations": {"count": "Cited by 40,000"}},
+            },
+        ],
+    }

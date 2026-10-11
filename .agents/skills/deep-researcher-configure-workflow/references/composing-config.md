@@ -125,7 +125,7 @@ shipped configs under `configs/`.
 |---------|---------|---------------------|---------------|
 | `tavily_web_search` | Web search | `max_results`, `advanced_search`, `max_content_length`, `api_base_url` | `TAVILY_API_KEY`; all web profiles |
 | `exa_web_search` | Web search (Exa) | `max_results`, `search_type` (`auto`/`fast`/`deep`), `full_text`, `highlights` | `EXA_API_KEY` |
-| `paper_search` | Academic papers | `provider` (`serper`/`serpapi`/`searchapi`), `max_results` | `SERPER_API_KEY`, etc.; commented in most profiles |
+| `paper_search` | Academic papers | `provider` (`serper`/`serpapi`/`searchapi`/`serply`), `max_results` | `SERPER_API_KEY`, etc.; commented in most profiles |
 | `knowledge_retrieval` | Document RAG | `backend` (`llamaindex`/`foundational_rag`/`opensearch`), `top_k`, `collection_name`, backend-specific URLs/auth | `config_web_default_llamaindex.yml`, `config_web_frag.yml`, `config_web_opensearch.yml` |
 
 Enable/disable for agents: register in `data_source_registry`, then inherit or

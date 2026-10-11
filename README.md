@@ -120,7 +120,7 @@ The checked-in default CLI and web profiles use these core components:
 - [NVIDIA Nemotron 3 Embed 1B](https://build.nvidia.com/nvidia/nemotron-3-embed-1b) (embedding model for the knowledge layer, if used)
 - [NVIDIA Nemotron 3 Nano Omni 30B A3B Reasoning](https://build.nvidia.com/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning) (vision-language model for the LlamaIndex knowledge layer, if used)
 - [Tavily Search API](https://tavily.com/) for web search
-- Serper, SerpAPI, or SearchAPI for Google Scholar paper search
+- Serper, SerpAPI, SearchAPI, or Serply for Google Scholar paper search
 
 > **Known hosted-serving limitation:** Nemotron 3.5 Lightning can intermittently produce citation-incomplete or
 > malformed shallow drafts when served through NVIDIA API Catalog. Deep Researcher Agent fails closed instead of publishing those
@@ -153,7 +153,7 @@ This project is for:
 
 **Optional requirements:**
 - A web-search API key for the configured provider: Tavily, Exa, Nimble, or You.com
-- A paper search API key for one of the supported providers: Serper (`SERPER_API_KEY`), SerpAPI (`SERPAPI_API_KEY`), or SearchAPI (`SEARCHAPI_API_KEY`)
+- A paper search API key for one of the supported providers: Serper (`SERPER_API_KEY`), SerpAPI (`SERPAPI_API_KEY`), SearchAPI (`SEARCHAPI_API_KEY`), or Serply (`SERPLY_API_KEY`)
 
 > **Note:** Configure at least one data source (web search, paper search, or knowledge layer) to enable research functionality.
 
@@ -244,7 +244,7 @@ uv pip install -e "./sources/knowledge_layer[llamaindex,foundational_rag]"
 | Exa        | `EXA_API_KEY`        | Web search                | No (required only when Exa search is configured)            |
 | Nimble     | `NIMBLE_API_KEY`     | Configurable web search   | No (required only when Nimble search is configured)         |
 | You.com    | `YDC_API_KEY`        | Web, contents, and research APIs | No (required only when You.com tools are configured)   |
-| Paper search | `SERPER_API_KEY`, `SERPAPI_API_KEY`, or `SEARCHAPI_API_KEY` | Academic paper search | No (choose one matching the configured provider) |
+| Paper search | `SERPER_API_KEY`, `SERPAPI_API_KEY`, `SEARCHAPI_API_KEY`, or `SERPLY_API_KEY` | Academic paper search | No (choose one matching the configured provider) |
 
 
 #### Obtain an NVIDIA API Key
@@ -274,13 +274,14 @@ Follow the [You.com quickstart](https://you.com/docs/quickstart) to create an AP
 
 #### Obtain a Paper Search API Key
 
-Paper search supports three interchangeable providers. Set the `provider` field on the `paper_search` function in your workflow config (defaults to `serper`):
+Paper search supports four interchangeable providers. Set the `provider` field on the `paper_search` function in your workflow config (defaults to `serper`):
 
 | Provider | Environment Variable | Sign-up |
 |----------|----------------------|---------|
 | Serper (default) | `SERPER_API_KEY` | [serper.dev](https://serper.dev/) |
 | SerpAPI | `SERPAPI_API_KEY` | [serpapi.com](https://serpapi.com/) |
 | SearchAPI | `SEARCHAPI_API_KEY` | [searchapi.io](https://www.searchapi.io/) |
+| Serply | `SERPLY_API_KEY` | [serply.io](https://serply.io/) |
 
 Refer to [sources/google_scholar_paper_search/README.md](sources/google_scholar_paper_search/README.md) for configuration details.
 
