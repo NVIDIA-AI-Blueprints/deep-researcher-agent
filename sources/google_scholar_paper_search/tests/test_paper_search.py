@@ -637,6 +637,13 @@ class TestNormalizeSerply:
         """Test normalizing an empty list."""
         assert PaperSearchTool._normalize_serply([]) == []  # noqa: SLF001
 
+    def test_normalize_preserves_year_without_host_suffix(self):
+        """A byline with no trailing host still yields its year."""
+        raw = [{"author": {"names": "Author One, Author Two - Journal Name, 2014"}}]
+        normalized = PaperSearchTool._normalize_serply(raw)  # noqa: SLF001
+
+        assert normalized[0]["year"] == "2014"
+
 
 class TestSearchSerpapi:
     """Tests for _search_serpapi internal method."""

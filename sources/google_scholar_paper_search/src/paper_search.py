@@ -252,8 +252,13 @@ class PaperSearchTool:
             return "Unknown Year"
         # Drop the trailing source/host suffix (" - cabdirect.org") so its
         # tokens (e.g. arXiv identifiers) can't be mistaken for a year, then
-        # take the final year-shaped token in the remaining summary.
-        summary = publication_info.rsplit(" - ", 1)[0]
+        # take the final year-shaped token in the remaining summary. A summary
+        # that already ends in a year has no host suffix to drop
+        # ("Author One - Journal Name, 2014").
+        if re.search(r"\b(?:1[5-9]\d{2}|20\d{2})\s*$", publication_info):
+            summary = publication_info
+        else:
+            summary = publication_info.rsplit(" - ", 1)[0]
         matches = _YEAR_RE.findall(summary)
         return matches[-1] if matches else "Unknown Year"
 
