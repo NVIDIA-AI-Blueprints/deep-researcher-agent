@@ -28,6 +28,8 @@ Common issues and solutions for the Deep Researcher Agent blueprint.
 | Exa search returns empty or 401 | Invalid or missing `EXA_API_KEY` | Verify key at [exa.ai](https://exa.ai) |
 | Nimble search returns empty or 401 | Invalid or missing `NIMBLE_API_KEY` | Verify the key through [Nimble](https://nimbleway.com/) |
 | Nimble search returns 403 with "enterprise" | `search_depth: fast` requires an Enterprise plan | Switch to `search_depth: lite` (default) or `deep`, or upgrade your Nimble plan |
+| Firecrawl search returns empty, 401, or 429 | Invalid `FIRECRAWL_API_KEY`, or the daily keyless limit was hit | Verify the key at [firecrawl.dev](https://www.firecrawl.dev/app/api-keys?utm_source=aiq&utm_medium=integration) |
+| Firecrawl search returns 402 | The Firecrawl account is out of credits | Top up credits, lower `max_results`, or set `scrape_results: false` to reduce credit use |
 | Serper search fails | Missing `SERPER_API_KEY` | Set key or remove `paper_search_tool` from config |
 
 ## Runtime Issues

@@ -86,6 +86,7 @@ RUN uv pip install --no-sources --no-deps -e . \
     && uv pip install --no-deps -e ./sources/tavily_web_search \
     && uv pip install --no-deps -e ./sources/exa_web_search \
     && uv pip install --no-deps -e ./sources/nimble_web_search \
+    && uv pip install --no-deps -e ./sources/firecrawl_web_search \
     && uv pip install --no-deps -e "./sources/knowledge_layer[all]" \
     && uv pip install --no-deps -e ./frontends/deep_researcher_api \
     && uv pip install "psycopg[binary]>=3.0.0"

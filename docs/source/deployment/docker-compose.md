@@ -45,6 +45,7 @@ The sections below explain each group of variables.
 | `TAVILY_API_KEY` | Conditional | Web search provider key (required if using `tavily_web_search`). |
 | `EXA_API_KEY` | Conditional | Web search provider key (required if using `exa_web_search`). |
 | `NIMBLE_API_KEY` | Conditional | Web search provider key (required if using `nimble_web_search`). |
+| `FIRECRAWL_API_KEY` | No | Optional Firecrawl key for `firecrawl_web_search`; without one, requests run under daily per-IP limits. |
 | `SERPER_API_KEY` | No | Google Scholar paper search key (optional). |
 
 ### API keys (optional)

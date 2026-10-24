@@ -230,6 +230,7 @@ uv pip install -e ./sources/tavily_web_search
 uv pip install -e ./sources/exa_web_search
 uv pip install -e ./sources/google_scholar_paper_search
 uv pip install -e ./sources/nimble_web_search
+uv pip install -e ./sources/firecrawl_web_search
 uv pip install -e ./sources/you_com
 uv pip install -e "./sources/knowledge_layer[llamaindex,foundational_rag]"
 ```
@@ -243,6 +244,7 @@ uv pip install -e "./sources/knowledge_layer[llamaindex,foundational_rag]"
 | Tavily     | `TAVILY_API_KEY`     | Web search                | No (if not specified, agent continues without web search)   |
 | Exa        | `EXA_API_KEY`        | Web search                | No (required only when Exa search is configured)            |
 | Nimble     | `NIMBLE_API_KEY`     | Configurable web search   | No (required only when Nimble search is configured)         |
+| Firecrawl  | `FIRECRAWL_API_KEY`  | Web search with page Markdown | No (optional; a key raises rate limits)                     |
 | You.com    | `YDC_API_KEY`        | Web, contents, and research APIs | No (required only when You.com tools are configured)   |
 | Paper search | `SERPER_API_KEY`, `SERPAPI_API_KEY`, or `SEARCHAPI_API_KEY` | Academic paper search | No (choose one matching the configured provider) |
 
@@ -265,6 +267,15 @@ uv pip install -e "./sources/knowledge_layer[llamaindex,foundational_rag]"
 3. Add it to `deploy/.env` as `EXA_API_KEY`
 
 Refer to the `exa_web_search` section in the
+[Configuration Reference](docs/source/customization/configuration-reference.md) for workflow usage.
+
+#### Obtain a Firecrawl API Key
+
+1. Sign in to [Firecrawl](https://www.firecrawl.dev/app/api-keys?utm_source=aiq&utm_medium=integration)
+2. Create an API key from the dashboard
+3. Add it to `deploy/.env` as `FIRECRAWL_API_KEY`
+
+Firecrawl search also works without a key for trying it out, under a small daily per-IP budget. Refer to the `firecrawl_web_search` section in the
 [Configuration Reference](docs/source/customization/configuration-reference.md) for workflow usage.
 
 #### Obtain a You.com API Key
