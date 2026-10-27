@@ -88,7 +88,7 @@ export const CitationCard: FC<CitationCardProps> = ({ citation }) => {
                 : 'var(--text-color-subtle)',
             }}
           >
-            {getDomain(citation.url)}
+            {getDomain(citation.url)} {citation.confidence < 0.9 ? "⚠️" : ""}
           </Text>
 
           {}

@@ -266,6 +266,8 @@ export type DeepResearchJobStatus = 'submitted' | 'running' | 'success' | 'failu
 
 /** Citation source from deep research */
 export interface CitationSource {
+  confidence: number
+  matchKind: string
   id: string
   url: string
   content: string
