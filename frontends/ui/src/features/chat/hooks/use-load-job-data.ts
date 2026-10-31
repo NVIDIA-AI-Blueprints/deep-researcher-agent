@@ -32,6 +32,7 @@ import {
   type TodoItem,
 } from '@/adapters/api'
 import { useChatStore } from '../store'
+import type { CitationMatchKind } from '../types'
 import {
   getDeepResearchJobLoadErrorDetails,
   getDeepResearchJobLoadFailureKind,
@@ -373,7 +374,13 @@ export const useLoadJobData = (): UseLoadJobDataReturn => {
             }
           >(),
           todos: null as TodoItem[] | null,
-          citations: [] as Array<{ url: string; content: string; isCited: boolean }>,
+          citations: [] as Array<{
+            url: string
+            content: string
+            isCited: boolean
+            confidence?: number
+            matchKind?: CitationMatchKind
+          }>,
           files: new Map<string, FileArtifactUpdate>(), // filename -> latest event (deduped)
           reportContent: null as string | null,
         }
@@ -478,6 +485,8 @@ export const useLoadJobData = (): UseLoadJobDataReturn => {
             url: c.url,
             content: c.content,
             isCited: c.isCited,
+            confidence: c.confidence,
+            matchKind: c.matchKind,
             timestamp: now,
           }))
 
@@ -578,8 +587,14 @@ export const useLoadJobData = (): UseLoadJobDataReturn => {
               buffer.todos = todos
             },
 
-            onCitationUpdate: (url, content, isCited) => {
-              buffer.citations.push({ url, content, isCited: isCited ?? false })
+            onCitationUpdate: (url, content, isCited, confidence, matchKind) => {
+              buffer.citations.push({
+                url,
+                content,
+                isCited: isCited ?? false,
+                confidence,
+                matchKind,
+              })
             },
 
             onFileUpdate: (file) => {

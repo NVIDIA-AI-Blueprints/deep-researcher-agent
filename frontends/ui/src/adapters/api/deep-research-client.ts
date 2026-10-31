@@ -186,6 +186,9 @@ export interface ArtifactUpdateEvent extends DeepResearchSSEEvent {
       title?: string
       caption?: string
       inline?: boolean
+      // Issue #210: confidence scoring fields (only present on citation_use events)
+      confidence?: number
+      match_kind?: string
     }
     metadata?: {
       workflow?: string
@@ -236,7 +239,13 @@ export interface DeepResearchCallbacks {
   onToolEnd?: (name: string, output?: string, eventId?: string, agentId?: string, isSandbox?: boolean) => void
   /** Called on artifact updates */
   onTodoUpdate?: (todos: TodoItem[], workflow?: string) => void
-  onCitationUpdate?: (url: string, content: string, isCited?: boolean) => void
+  onCitationUpdate?: (
+    url: string,
+    content: string,
+    isCited?: boolean,
+    confidence?: number,
+    matchKind?: CitationMatchKind
+  ) => void
   onFileUpdate?: (file: FileArtifactUpdate) => void
   onOutputUpdate?: (content: string, outputCategory?: string, workflow?: string) => void
   /** Called on job heartbeat (confirms job is alive during long operations) */
@@ -252,6 +261,24 @@ export interface DeepResearchCallbacks {
 // ============================================================
 // Utilities
 // ============================================================
+
+/** Supported citation verification match kinds (Issue #210) */
+export const MATCH_KINDS = [
+  'exact',
+  'truncation',
+  'prefix',
+  'child-path',
+  'query-subset',
+  'host-only',
+  'unmatched',
+] as const
+
+export type CitationMatchKind = (typeof MATCH_KINDS)[number]
+
+export const VALID_MATCH_KINDS: ReadonlySet<string> = new Set(MATCH_KINDS)
+
+export const isCitationMatchKind = (value: unknown): value is CitationMatchKind =>
+  typeof value === 'string' && VALID_MATCH_KINDS.has(value)
 
 /**
  * Normalize tool input from the backend SSE stream.
@@ -532,10 +559,30 @@ export const createDeepResearchClient = (options: DeepResearchStreamOptions): De
             // citation_source = "Referenced" sources (discovered during search)
             callbacks.onCitationUpdate?.(artifactData.url || '', artifactData.content as string, false)
             break
-          case 'citation_use':
+          case 'citation_use': {
             // citation_use = "Cited" sources (actually used in the report)
-            callbacks.onCitationUpdate?.(artifactData.url || '', artifactData.content as string, true)
+            // Issue #210: runtime validation for untyped SSE boundary fields
+            const rawConfidence = artifactData.confidence
+            const rawMatchKind = artifactData.match_kind
+            const validConfidence =
+              typeof rawConfidence === 'number' &&
+              Number.isFinite(rawConfidence) &&
+              rawConfidence >= 0 &&
+              rawConfidence <= 1
+                ? rawConfidence
+                : undefined
+            const validMatchKind: CitationMatchKind | undefined =
+              isCitationMatchKind(rawMatchKind) ? rawMatchKind : undefined
+
+            callbacks.onCitationUpdate?.(
+              artifactData.url || '',
+              artifactData.content as string,
+              true,
+              validConfidence,
+              validMatchKind
+            )
             break
+          }
           case 'file': {
             // Generated artifacts carry durable metadata; legacy text-file events carry content.
             const artifactId = artifactData.artifact_id

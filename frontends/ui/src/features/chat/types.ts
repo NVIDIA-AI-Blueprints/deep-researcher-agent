@@ -7,6 +7,10 @@
  * Type definitions for chat messages, conversations, and state.
  */
 
+import type { CitationMatchKind } from '@/adapters/api'
+
+export type { CitationMatchKind }
+
 /** Message role types */
 export type MessageRole = 'user' | 'assistant' | 'system'
 
@@ -272,6 +276,10 @@ export interface CitationSource {
   timestamp: Date
   /** Whether this source was actually cited in the report (vs just referenced/discovered) */
   isCited?: boolean
+  /** Confidence score from citation verification [0.0, 1.0]. Absent when not verified. */
+  confidence?: number
+  /** Match kind from citation verification. Absent when not verified. */
+  matchKind?: CitationMatchKind
 }
 
 /** Plan message for chat/HITL display and restore flows */
@@ -628,7 +636,13 @@ export interface ChatActions {
    */
   refreshDeepResearchSessionStatuses: () => Promise<void>
   /** Add a citation from deep research (isCited=true for citation_use, false for citation_source) */
-  addDeepResearchCitation: (url: string, content: string, isCited?: boolean) => void
+  addDeepResearchCitation: (
+    url: string,
+    content: string,
+    isCited?: boolean,
+    confidence?: number,
+    matchKind?: CitationMatchKind
+  ) => void
   /** Set the full todo list from deep research (replaces existing) */
   setDeepResearchTodos: (todos: Array<{ content: string; status: string }>) => void
   /** Mark all in-progress and pending todos as stopped (on error) */

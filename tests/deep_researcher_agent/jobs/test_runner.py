@@ -2331,6 +2331,39 @@ class TestDeepResearchEventCallbackAdvanced:
         assert [event["data"]["url"] for event in final_uses] == ["https://verified.example/source"]
 
     @pytest.mark.asyncio
+    async def test_emit_final_report_attaches_citation_metadata(self, tmp_path):
+        """Verify citation_use includes confidence and match_kind when metadata matches, and omits them when absent."""
+        from deep_researcher_api.jobs.event_store import EventStore
+
+        db_url = f"sqlite:///{tmp_path / 'metadata-citations.db'}"
+        job_id = "metadata-citations-job"
+        event_store = EventStore(db_url, job_id)
+        callback = DeepResearchEventCallback(event_store=event_store)
+
+        content = "Report [1] and [2].\n\n## Sources\n[1] https://matched.example/doc\n[2] https://unmatched.example/doc"
+        cited_urls = ["https://matched.example/doc", "https://unmatched.example/doc"]
+        metadata = [
+            {"url": "https://matched.example/doc", "confidence": 0.95, "matchKind": "truncation"}
+        ]
+
+        callback.emit_final_report(content, cited_urls=cited_urls, citation_metadata=metadata)
+
+        events = EventStore.get_events(db_url, job_id)
+        citation_events = [
+            e["data"]
+            for e in events
+            if e["type"] == "artifact.update" and e.get("data", {}).get("type") == "citation_use"
+        ]
+
+        matched = next(c for c in citation_events if c["url"] == "https://matched.example/doc")
+        assert matched["confidence"] == 0.95
+        assert matched["match_kind"] == "truncation"
+
+        unmatched = next(c for c in citation_events if c["url"] == "https://unmatched.example/doc")
+        assert "confidence" not in unmatched
+        assert "match_kind" not in unmatched
+
+    @pytest.mark.asyncio
     async def test_balanced_parenthesis_url_survives_verification_sanitization_and_job_state(self, tmp_path):
         """A balanced URL must remain identical from tool capture through final job metadata."""
         from deep_researcher_agent.common.citation_verification import SourceRegistry

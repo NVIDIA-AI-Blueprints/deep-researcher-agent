@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import logging
 from collections.abc import Callable
 from collections.abc import Sequence
@@ -65,6 +66,17 @@ PARENT_REPORT_CONTEXT_PATH = "/shared/parent_report_context.json"
 
 # Path to this agent's directory (for loading prompts)
 AGENT_DIR = Path(__file__).parent
+
+
+def _accepts_citation_metadata(fn: Callable[..., Any]) -> bool:
+    """Return whether a callback's emit_final_report accepts citation_metadata."""
+    try:
+        params = inspect.signature(fn).parameters
+    except (TypeError, ValueError):
+        return False
+    return "citation_metadata" in params or any(
+        p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()
+    )
 
 
 class WorkflowOutputError(RuntimeError):
@@ -375,6 +387,7 @@ class DeepResearcherAgent:
 
             # Post-process: verify citations against source registry
             citation_registry = None
+            first_pass_citations: list[dict] = []
             if self.enable_citation_verification and self.source_registry_middleware.has_sources():
                 registry = self.source_registry_middleware.active_registry()
                 verification = verify_citations(
@@ -388,6 +401,7 @@ class DeepResearcherAgent:
                         len(verification.removed_citations),
                     )
                 final_message = verification.verified_report
+                first_pass_citations = verification.valid_citations
                 citation_registry = registry
             # Post-process: sanitize report (strip body URLs, shortened URLs, unsafe URLs)
             sanitization = sanitize_report(final_message)
@@ -415,6 +429,7 @@ class DeepResearcherAgent:
                     )
 
             final_cited_urls: list[str] | None = None
+            citation_metadata: list[dict] | None = None
             if citation_registry is not None:
                 final_verification = verify_citations(final_message, citation_registry)
                 if not final_verification.valid_citations:
@@ -425,12 +440,44 @@ class DeepResearcherAgent:
                         citation["url"] for citation in final_verification.valid_citations if citation.get("url")
                     )
                 )
+                # Issue #210: build structured citation metadata for the UI.
+                # Merge initial-pass valid citations with final-pass valid citations by URL,
+                # retaining the lower confidence and original match_kind so that repairing a
+                # truncated/prefix URL to canonical form does not inflate its confidence to 1.0.
+                merged: dict[str, dict] = {}
+                for citation in [*first_pass_citations, *final_verification.valid_citations]:
+                    url = citation.get("url")
+                    if not url:
+                        continue
+                    confidence = citation.get("confidence")
+                    previous = merged.get(url)
+                    if previous is None or (
+                        confidence is not None
+                        and (
+                            previous["confidence"] is None
+                            or confidence < previous["confidence"]
+                        )
+                    ):
+                        merged[url] = {
+                            "url": url,
+                            "confidence": confidence,
+                            "matchKind": citation.get("match_kind"),
+                        }
+                citation_metadata = list(merged.values()) or None
+                if final_verification.diagnostics:
+                    logger.info(
+                        "[CitationVerify] Final report diagnostics: %s",
+                        final_verification.diagnostics,
+                    )
 
             # Re-emit the verified/sanitized report so the frontend overwrites
             # the raw version that on_llm_end auto-emitted during ainvoke().
             for cb in self.callbacks:
                 if hasattr(cb, "emit_final_report"):
-                    cb.emit_final_report(final_message, cited_urls=final_cited_urls)
+                    emit_kwargs: dict[str, Any] = {"cited_urls": final_cited_urls}
+                    if citation_metadata is not None and _accepts_citation_metadata(cb.emit_final_report):
+                        emit_kwargs["citation_metadata"] = citation_metadata
+                    cb.emit_final_report(final_message, **emit_kwargs)
                     break
 
             self._replace_last_message_content(result, final_message)

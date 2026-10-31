@@ -16,7 +16,7 @@
 
 import { type FC } from 'react'
 import { Flex, Text } from '@/adapters/ui'
-import { Link, Check } from '@/adapters/ui/icons'
+import { Link, Check, Warning } from '@/adapters/ui/icons'
 import type { CitationSource } from '@/features/chat/types'
 
 interface CitationCardProps {
@@ -90,6 +90,26 @@ export const CitationCard: FC<CitationCardProps> = ({ citation }) => {
           >
             {getDomain(citation.url)}
           </Text>
+
+          {citation.confidence !== undefined && (
+            <span
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${
+                citation.confidence >= 0.9
+                  ? 'bg-green-500/10 text-green-600 dark:text-green-400'
+                  : citation.confidence >= 0.6
+                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                  : 'bg-red-500/10 text-red-600 dark:text-red-400'
+              }`}
+              title={
+                citation.matchKind
+                  ? `Match: ${citation.matchKind} (${Math.round(citation.confidence * 100)}%)`
+                  : `Confidence: ${Math.round(citation.confidence * 100)}%`
+              }
+            >
+              {citation.confidence < 0.9 && <Warning className="h-2.5 w-2.5" />}
+              {Math.round(citation.confidence * 100)}%
+            </span>
+          )}
 
           {}
           <Text kind="body/regular/xs" className="text-subtle shrink-0">

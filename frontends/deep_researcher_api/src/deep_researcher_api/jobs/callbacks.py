@@ -392,7 +392,14 @@ class AgentEventCallback(BaseCallbackHandler):
         """Return the session-scoped SourceRegistry if set, otherwise None."""
         return get_session_registry()
 
-    def emit_final_report(self, content: str, *, cited_urls: Sequence[str] | None = None) -> None:
+    def emit_final_report(
+        self,
+        content: str,
+        *,
+        cited_urls: Sequence[str] | None = None,
+        citation_metadata: list[dict] | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Emit the post-processed final report as an OUTPUT artifact.
 
         Call this after citation verification and sanitisation so the
@@ -404,14 +411,25 @@ class AgentEventCallback(BaseCallbackHandler):
         verified_visible_urls = self._verified_visible_urls(content, cited_urls) if cited_urls is not None else None
         self._emit(build_final_report_event(content, cited_urls=verified_visible_urls))
         if verified_visible_urls is not None:
+            # Build fast O(1) lookup: url -> metadata record (Issue #210)
+            meta_by_url: dict[str, dict] = {}
+            if citation_metadata:
+                for record in citation_metadata:
+                    url_key = record.get("url")
+                    if url_key:
+                        meta_by_url[url_key] = record
+
             for url in verified_visible_urls:
                 self._cited_urls.add(self._normalize_url(url))
+                meta = meta_by_url.get(url, {})
                 self._emit_artifact(
                     ArtifactType.CITATION_USE,
                     url,
                     name=url,
                     url=url,
                     final_report=True,
+                    confidence=meta.get("confidence"),    # None when not scored
+                    match_kind=meta.get("matchKind"),     # None when not scored
                 )
 
     def _is_search_tool(self, tool_name: str) -> bool:

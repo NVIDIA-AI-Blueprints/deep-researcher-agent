@@ -2462,6 +2462,7 @@ class TestDeepResearcherCitationVerification:
         callback.emit_final_report.assert_called_once_with(
             sanitized_answer,
             cited_urls=["https://docs.nvidia.com/cuda/"],
+            citation_metadata=[{"url": "https://docs.nvidia.com/cuda/", "confidence": None, "matchKind": None}],
         )
         assert result.messages[-1].content == sanitized_answer
 
@@ -2511,7 +2512,11 @@ class TestDeepResearcherCitationVerification:
         assert "Fabricated claim" in published_report
         assert "[2]" not in published_report
         assert valid_url in published_report
-        callback.emit_final_report.assert_called_once_with(published_report, cited_urls=[valid_url])
+        callback.emit_final_report.assert_called_once_with(
+            published_report,
+            cited_urls=[valid_url],
+            citation_metadata=[{"url": valid_url, "confidence": 1.0, "matchKind": "exact"}],
+        )
 
     @pytest.mark.asyncio
     async def test_run_structurally_reverifies_fuzzy_knowledge_citation(self, mock_llm_provider, real_tool):
@@ -2544,3 +2549,102 @@ class TestDeepResearcherCitationVerification:
 
         assert "report.pdf covers page 15" in result.messages[-1].content
         callback.emit_final_report.assert_called_once_with(result.messages[-1].content, cited_urls=[])
+
+    @pytest.mark.asyncio
+    async def test_run_preserves_first_pass_truncation_confidence_in_metadata(self, mock_llm_provider, real_tool):
+        """A writer citation with a truncated URL preserves matchKind='truncation' in emitted citation_metadata."""
+        from deep_researcher_agent.agents.deep_researcher.agent import DeepResearcherAgent
+
+        canonical_url = "https://example.com/research/paper1?id=abc"
+        truncated_url = "https://example.com/research/paper1"
+        writer_report = f"Research finding [1].\n\n## Sources\n[1] Paper: {truncated_url}"
+        deep_result = {
+            "messages": [AIMessage(content="done")],
+            "files": output_markdown_file(writer_report),
+        }
+        mock_agent = MagicMock()
+        mock_agent.with_config = MagicMock(return_value=mock_agent)
+        mock_agent.ainvoke = AsyncMock(return_value=deep_result)
+
+        with (
+            patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=mock_agent),
+            patch(
+                "deep_researcher_agent.agents.deep_researcher.agent.FinalReportCommitTracker",
+                return_value=committed_tracker(writer_report),
+            ),
+        ):
+            callback = MagicMock(spec=AgentEventCallback)
+            agent = DeepResearcherAgent(llm_provider=mock_llm_provider, tools=[real_tool], callbacks=[callback])
+            agent.source_registry_middleware.registry.add(
+                SourceEntry(url=canonical_url, title="Paper", tool_name="web_search")
+            )
+
+            result = await agent.run(DeepResearchAgentState(messages=[HumanMessage(content="Find the paper")]))
+
+        assert callback.emit_final_report.call_count == 1
+        _, call_kwargs = callback.emit_final_report.call_args
+        assert call_kwargs["cited_urls"] == [canonical_url]
+        assert call_kwargs["citation_metadata"] == [
+            {
+                "url": canonical_url,
+                "confidence": 0.95,
+                "matchKind": "truncation",
+            }
+        ]
+
+    def test_accepts_citation_metadata_detection(self):
+        """_accepts_citation_metadata identifies callbacks supporting citation metadata."""
+        from deep_researcher_agent.agents.deep_researcher.agent import _accepts_citation_metadata
+
+        def cb_explicit(content, cited_urls=None, citation_metadata=None):
+            pass
+
+        def cb_varkw(content, **kwargs):
+            pass
+
+        def cb_legacy(content, cited_urls=None):
+            pass
+
+        assert _accepts_citation_metadata(cb_explicit) is True
+        assert _accepts_citation_metadata(cb_varkw) is True
+        assert _accepts_citation_metadata(cb_legacy) is False
+        assert _accepts_citation_metadata("not_a_callable") is False
+
+    @pytest.mark.asyncio
+    async def test_run_legacy_callback_without_citation_metadata_does_not_fail(self, mock_llm_provider, real_tool):
+        """A legacy callback lacking citation_metadata receives only cited_urls without TypeError."""
+        from deep_researcher_agent.agents.deep_researcher.agent import DeepResearcherAgent
+
+        class LegacyCallback:
+            def __init__(self):
+                self.calls = []
+
+            def emit_final_report(self, content: str, *, cited_urls=None):
+                self.calls.append((content, cited_urls))
+
+        canonical_url = "https://docs.nvidia.com/cuda/"
+        report = f"CUDA is documented [1].\n\n## Sources\n[1] CUDA Docs: {canonical_url}"
+        deep_result = {
+            "messages": [AIMessage(content="done")],
+            "files": output_markdown_file(report),
+        }
+        mock_agent = MagicMock()
+        mock_agent.with_config = MagicMock(return_value=mock_agent)
+        mock_agent.ainvoke = AsyncMock(return_value=deep_result)
+
+        with (
+            patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=mock_agent),
+            patch(
+                "deep_researcher_agent.agents.deep_researcher.agent.FinalReportCommitTracker",
+                return_value=committed_tracker(report),
+            ),
+        ):
+            callback = LegacyCallback()
+            agent = DeepResearcherAgent(llm_provider=mock_llm_provider, tools=[real_tool], callbacks=[callback])
+            agent.source_registry_middleware.registry.add(
+                SourceEntry(url=canonical_url, title="CUDA Docs", tool_name="web_search")
+            )
+            result = await agent.run(DeepResearchAgentState(messages=[HumanMessage(content="What is CUDA?")]))
+
+        assert len(callback.calls) == 1
+        assert callback.calls[0][1] == [canonical_url]
