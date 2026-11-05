@@ -26,6 +26,7 @@ import {
   getJobStatus,
   getJobState,
   createDeepResearchClient,
+  type CitationVerification,
   type DeepResearchClient,
   type DeepResearchJobStatus,
   type FileArtifactUpdate,
@@ -373,7 +374,7 @@ export const useLoadJobData = (): UseLoadJobDataReturn => {
             }
           >(),
           todos: null as TodoItem[] | null,
-          citations: [] as Array<{ url: string; content: string; isCited: boolean }>,
+          citations: [] as Array<{ url: string; content: string; isCited: boolean; verification?: CitationVerification }>,
           files: new Map<string, FileArtifactUpdate>(), // filename -> latest event (deduped)
           reportContent: null as string | null,
         }
@@ -478,6 +479,7 @@ export const useLoadJobData = (): UseLoadJobDataReturn => {
             url: c.url,
             content: c.content,
             isCited: c.isCited,
+            ...(c.verification && { verification: c.verification }),
             timestamp: now,
           }))
 
@@ -578,8 +580,8 @@ export const useLoadJobData = (): UseLoadJobDataReturn => {
               buffer.todos = todos
             },
 
-            onCitationUpdate: (url, content, isCited) => {
-              buffer.citations.push({ url, content, isCited: isCited ?? false })
+            onCitationUpdate: (url, content, isCited, verification) => {
+              buffer.citations.push({ url, content, isCited: isCited ?? false, verification })
             },
 
             onFileUpdate: (file) => {

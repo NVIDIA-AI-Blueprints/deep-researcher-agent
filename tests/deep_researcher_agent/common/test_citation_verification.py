@@ -21,18 +21,23 @@ from html import escape
 import pytest
 
 from deep_researcher_agent.common.citation_verification import _PARSER_REGISTRY
+from deep_researcher_agent.common.citation_verification import CitationAction
+from deep_researcher_agent.common.citation_verification import CitationMatchKind
 from deep_researcher_agent.common.citation_verification import EmptySourceRegistryError
 from deep_researcher_agent.common.citation_verification import EmptySourceRegistryReason
 from deep_researcher_agent.common.citation_verification import SourceEntry
 from deep_researcher_agent.common.citation_verification import SourceRegistry
 from deep_researcher_agent.common.citation_verification import _normalize_url
 from deep_researcher_agent.common.citation_verification import _parse_citation_key
+from deep_researcher_agent.common.citation_verification import citation_confidence
 from deep_researcher_agent.common.citation_verification import classify_empty_source_registry_reason
 from deep_researcher_agent.common.citation_verification import clean_extracted_url
 from deep_researcher_agent.common.citation_verification import extract_http_urls
 from deep_researcher_agent.common.citation_verification import extract_sources_from_tool_result
+from deep_researcher_agent.common.citation_verification import register_citation_telemetry_listener
 from deep_researcher_agent.common.citation_verification import register_source_parser
 from deep_researcher_agent.common.citation_verification import sanitize_report
+from deep_researcher_agent.common.citation_verification import unregister_citation_telemetry_listener
 from deep_researcher_agent.common.citation_verification import verify_citations
 
 
@@ -1627,3 +1632,210 @@ class TestSessionRegistry:
         reg2 = get_or_create_session_registry("persist-test")
         assert reg2.has_url("https://example.com/first")
         assert len(reg2.all_sources()) == 1
+
+
+# ---------------------------------------------------------------------------
+# Confidence-scored verification records (issue #210)
+# ---------------------------------------------------------------------------
+
+
+class TestConfidenceScoredCitations:
+    """verify_citations() emits per-citation records with a confidence score and match kind."""
+
+    @staticmethod
+    def _registry(*urls: str) -> SourceRegistry:
+        registry = SourceRegistry()
+        for url in urls:
+            registry.add(SourceEntry(url=url, title="T", source_type="generic", tool_name="web_search"))
+        return registry
+
+    def test_resolve_url_match_kinds(self):
+        """Each matching strategy maps to a stable match kind and confidence."""
+        registry = self._registry(
+            "https://docs.example.com/guide/install?lang=en&v=2",
+            "https://other.example.org/a/b",
+        )
+
+        exact = registry.resolve_url_match("https://docs.example.com/guide/install?lang=en&v=2")
+        assert (exact.kind, exact.confidence, exact.verified) == (CitationMatchKind.EXACT, 1.0, True)
+
+        normalized = registry.resolve_url_match("https://DOCS.example.com/guide/install/?v=2&lang=en#top")
+        assert normalized.kind is CitationMatchKind.NORMALIZED
+        assert normalized.url == "https://docs.example.com/guide/install?lang=en&v=2"
+        assert normalized.confidence == 0.95
+
+        repaired = registry.resolve_url_match("https://docs.example.com/guide/install?lang=en")
+        assert repaired.kind is CitationMatchKind.REPAIRED
+        assert repaired.strategy == "truncation"
+        assert repaired.diagnostics["strategy"] == "truncation"
+        assert repaired.url == "https://docs.example.com/guide/install?lang=en&v=2"
+        assert 0.0 < repaired.confidence < normalized.confidence
+
+        child = registry.resolve_url_match("https://other.example.org/a/b/c")
+        assert (child.kind, child.strategy) == (CitationMatchKind.REPAIRED, "child_path")
+
+        host_only = registry.resolve_url_match("https://www.docs.example.com/hallucinated/page")
+        assert host_only.kind is CitationMatchKind.HOST_ONLY
+        assert host_only.verified is False
+        assert host_only.url is None
+        assert host_only.confidence == 0.3
+        assert host_only.diagnostics == {"host": "docs.example.com", "same_host_sources": 1}
+
+        unmatched = registry.resolve_url_match("https://never-seen.example.net/x")
+        assert (unmatched.kind, unmatched.confidence, unmatched.verified) == (CitationMatchKind.UNMATCHED, 0.0, False)
+
+    def test_resolve_url_wrapper_rejects_host_only(self):
+        """The legacy resolve_url() never returns a URL for an unverified host-only match."""
+        registry = self._registry("https://docs.example.com/guide/install")
+        assert (
+            registry.resolve_url("https://docs.example.com/guide/install/") == "https://docs.example.com/guide/install"
+        )
+        assert registry.resolve_url("https://docs.example.com/other") is None
+
+    def test_ambiguity_is_reported_in_diagnostics(self):
+        """Ambiguous candidates are surfaced instead of silently dropped."""
+        registry = self._registry("https://docs.example.com/page?id=1&x=a", "https://docs.example.com/page?id=1&x=b")
+        match = registry.resolve_url_match("https://docs.example.com/page?id=1")
+        assert match.kind is CitationMatchKind.HOST_ONLY
+        assert match.diagnostics["ambiguous"]["truncation"] == 2
+
+    def test_records_cover_every_source_line(self):
+        """Every parsed source line gets a record, with legacy dicts enriched with confidence."""
+        registry = self._registry("https://a.example.com/one", "https://b.example.com/two")
+        report = (
+            "A [1]. B [2]. C [3]. D [4].\n\n## Sources\n"
+            "[1] One: https://a.example.com/one\n"
+            "[2] Two: https://B.example.com/two/\n"
+            "[3] Fake: https://a.example.com/fabricated\n"
+            "[4] Elsewhere: https://unknown.example.net/x\n"
+        )
+        result = verify_citations(report, registry)
+
+        by_number = {record.number: record for record in result.records}
+        assert by_number[1].match_kind is CitationMatchKind.EXACT
+        assert by_number[1].action is CitationAction.KEPT
+        assert by_number[2].match_kind is CitationMatchKind.NORMALIZED
+        assert by_number[2].url == "https://b.example.com/two"
+        assert by_number[2].cited_url == "https://B.example.com/two/"
+        assert by_number[3].match_kind is CitationMatchKind.HOST_ONLY
+        assert by_number[3].action is CitationAction.REMOVED
+        assert by_number[4].match_kind is CitationMatchKind.UNMATCHED
+
+        assert {c["number"]: c["match_kind"] for c in result.valid_citations} == {1: "exact", 2: "normalized"}
+        assert {c["number"]: c["confidence"] for c in result.removed_citations} == {3: 0.3, 4: 0.0}
+        assert all(c["reason"] == "url_not_in_registry" for c in result.removed_citations)
+        assert result.low_confidence_citations == []
+        assert "[3]" not in result.verified_report
+        assert "fabricated" not in result.verified_report
+
+        record_dict = by_number[3].to_dict()
+        assert record_dict["match_kind"] == "host_only"
+        assert record_dict["action"] == "removed"
+        assert record_dict["verified"] is False
+
+    def test_default_behavior_is_unchanged_without_keep_policy(self):
+        """Without min_keep_confidence, host-only citations are removed exactly as before."""
+        registry = self._registry("https://a.example.com/one")
+        report = (
+            "A [1]. B [2].\n\n## Sources\n[1] One: https://a.example.com/one\n[2] Guess: https://a.example.com/two\n"
+        )
+        result = verify_citations(report, registry)
+        assert result.verified_report == "A [1]. B.\n\n## Sources\n[1] One: https://a.example.com/one\n"
+
+    def test_keep_policy_retains_low_confidence_citations(self):
+        """Opting in keeps host-only citations, flagged, but never counts them as verified."""
+        registry = self._registry("https://a.example.com/one")
+        report = (
+            "A [1]. B [2]. C [3].\n\n## Sources\n"
+            "[1] One: https://a.example.com/one\n"
+            "[2] Guess: https://a.example.com/two\n"
+            "[3] Unknown: https://unknown.example.net/x\n"
+        )
+        result = verify_citations(report, registry, min_keep_confidence=0.3)
+
+        assert "[2] Guess: https://a.example.com/two" in result.verified_report
+        assert "B [2]" in result.verified_report
+        assert "unknown.example.net" not in result.verified_report  # confidence 0.0 is never kept
+        assert [c["number"] for c in result.valid_citations] == [1]
+        assert [c["number"] for c in result.low_confidence_citations] == [2]
+        assert result.low_confidence_citations[0]["action"] == "kept_low_confidence"
+        assert [c["number"] for c in result.removed_citations] == [3]
+        assert result.citation_confidence_by_url() == {
+            "https://a.example.com/one": {"verified": True, "confidence": 1.0, "match_kind": "exact"},
+            "https://a.example.com/two": {"verified": False, "confidence": 0.3, "match_kind": "host_only"},
+        }
+
+    def test_keep_policy_threshold_above_score_removes(self):
+        """A threshold above the host-only score still removes the citation."""
+        registry = self._registry("https://a.example.com/one")
+        report = (
+            "A [1]. B [2].\n\n## Sources\n[1] One: https://a.example.com/one\n[2] Guess: https://a.example.com/two\n"
+        )
+        result = verify_citations(report, registry, min_keep_confidence=0.5)
+        assert result.low_confidence_citations == []
+        assert [c["number"] for c in result.removed_citations] == [2]
+
+    def test_duplicates_are_recorded_as_merged(self):
+        """Duplicate source lines are recorded as merged duplicates and excluded from the URL map."""
+        registry = self._registry("https://a.example.com/one")
+        report = (
+            "A [1]. B [2].\n\n## Sources\n[1] One: https://a.example.com/one\n[2] Again: https://a.example.com/one/\n"
+        )
+        result = verify_citations(report, registry)
+        by_number = {record.number: record for record in result.records}
+        assert by_number[2].action is CitationAction.MERGED_DUPLICATE
+        assert by_number[2].reason == "duplicate_of_citation_1"
+        assert list(result.citation_confidence_by_url()) == ["https://a.example.com/one"]
+
+    def test_knowledge_citation_record(self):
+        """Knowledge-layer citations are scored as citation_key matches."""
+        registry = SourceRegistry()
+        registry.add(SourceEntry(citation_key="report.pdf, p.3", source_type="knowledge_layer", tool_name="knowledge"))
+        result = verify_citations("Fact [1].\n\n## Sources\n[1] report.pdf, p.7\n", registry)
+        assert result.records[0].match_kind is CitationMatchKind.CITATION_KEY
+        assert result.records[0].confidence == 0.9
+        assert result.citation_confidence_by_url() == {}
+
+    def test_telemetry_listener_receives_url_free_summary(self):
+        """Removal/downgrade telemetry is published to listeners without URLs or report text."""
+        registry = self._registry("https://a.example.com/one")
+        received: list[dict] = []
+        register_citation_telemetry_listener(received.append)
+        try:
+            verify_citations(
+                "A [1]. B [2].\n\n## Sources\n[1] One: https://A.example.com/one/\n[2] Guess: https://a.example.com/two\n",
+                registry,
+            )
+        finally:
+            unregister_citation_telemetry_listener(received.append)
+
+        assert len(received) == 1
+        summary = received[0]
+        assert summary["total"] == 2
+        assert summary["removed"] == 1
+        assert summary["downgraded"] == 1  # the normalized (non-exact) match
+        assert summary["by_match_kind"] == {"normalized": 1, "host_only": 1}
+        assert "example.com" not in repr(summary)
+
+    def test_telemetry_listener_failure_does_not_break_verification(self, caplog):
+        """A failing telemetry listener is logged and isolated."""
+
+        def _boom(_summary: dict) -> None:
+            raise RuntimeError("listener down")
+
+        registry = self._registry("https://a.example.com/one")
+        register_citation_telemetry_listener(_boom)
+        try:
+            with caplog.at_level(logging.WARNING):
+                result = verify_citations("A [1].\n\n## Sources\n[1] One: https://a.example.com/one\n", registry)
+        finally:
+            unregister_citation_telemetry_listener(_boom)
+        assert [c["number"] for c in result.valid_citations] == [1]
+        assert "telemetry listener failed" in caplog.text
+
+    def test_confidence_ordering_is_monotonic(self):
+        """Verified match kinds always outrank unverified ones."""
+        verified = [citation_confidence(kind) for kind in CitationMatchKind if kind.is_verified]
+        unverified = [citation_confidence(kind) for kind in CitationMatchKind if not kind.is_verified]
+        assert min(verified) > max(unverified)
+        assert min(citation_confidence(CitationMatchKind.REPAIRED, s) for s in ("child_path", "prefix")) > 0.3

@@ -31,6 +31,7 @@ import type {
   FileUploadStatusType,
   DeepResearchJobStatus,
   CitationSource,
+  CitationVerification,
   PlanMessage,
   DeepResearchLLMStep,
   DeepResearchAgent,
@@ -2102,7 +2103,12 @@ export const useChatStore = create<ChatStore>()(
           )
         },
 
-        addDeepResearchCitation: (url: string, content: string, isCited?: boolean) => {
+        addDeepResearchCitation: (
+          url: string,
+          content: string,
+          isCited?: boolean,
+          verification?: CitationVerification
+        ) => {
           const { deepResearchCitations } = get()
 
           // Check if citation with same URL already exists
@@ -2117,6 +2123,8 @@ export const useChatStore = create<ChatStore>()(
                   content: content || c.content,
                   // Once cited, always cited (citation_use trumps citation_source)
                   isCited: isCited || c.isCited,
+                  // The final-report citation_use carries the authoritative verification
+                  verification: verification ?? c.verification,
                 }
               }
               return c
@@ -2135,6 +2143,7 @@ export const useChatStore = create<ChatStore>()(
               content,
               timestamp: new Date(),
               isCited,
+              ...(verification && { verification }),
             }
 
             set(

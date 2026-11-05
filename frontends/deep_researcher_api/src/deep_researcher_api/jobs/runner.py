@@ -1272,6 +1272,11 @@ def _create_agent_instance(
     if isinstance(fn_config, DeepResearchAgentConfig) and _constructor_accepts_explicit_kwargs(
         agent_cls, _DEEP_RESEARCH_AGENT_KWARGS
     ):
+        # Optional kwargs are forwarded only to constructors that declare them, so
+        # custom agent classes written before the option existed keep working.
+        optional_kwargs: dict[str, Any] = {}
+        if _constructor_accepts_explicit_kwargs(agent_cls, frozenset({"citation_min_keep_confidence"})):
+            optional_kwargs["citation_min_keep_confidence"] = getattr(fn_config, "citation_min_keep_confidence", None)
         return agent_cls(
             llm_provider=llm_provider,
             tools=tools,
@@ -1288,6 +1293,7 @@ def _create_agent_instance(
             max_concurrent_source_tool_calls=fn_config.max_concurrent_source_tool_calls,
             max_source_tool_batch_size=fn_config.max_source_tool_batch_size,
             resource_limits=fn_config.resource_limits,
+            **optional_kwargs,
         )
 
     if _constructor_accepts_explicit_kwargs(agent_cls, _CONFIGURABLE_AGENT_KWARGS):

@@ -39,6 +39,47 @@ export type DeepResearchEventType =
 /** Artifact types in artifact.update events */
 export type ArtifactType = 'todo' | 'citation_source' | 'citation_use' | 'file' | 'output'
 
+/**
+ * How the backend citation verifier matched a cited URL to a captured source.
+ * Mirrors `CitationMatchKind` in `deep_researcher_agent.common.citation_verification`.
+ */
+export type CitationMatchKind =
+  | 'exact'
+  | 'normalized'
+  | 'repaired'
+  | 'citation_key'
+  | 'backfilled'
+  | 'host_only'
+  | 'unmatched'
+
+/** Verification metadata attached to final-report `citation_use` events */
+export interface CitationVerification {
+  /** False when the citation was kept but could not be matched to a captured source */
+  verified?: boolean
+  /** Deterministic match score in [0, 1]; 1 is a byte-identical source URL */
+  confidence?: number
+  /** How the URL was matched */
+  matchKind?: CitationMatchKind | string
+}
+
+/**
+ * Extract citation-verifier fields from a citation_use payload.
+ * Returns undefined when the backend did not attach any (older servers, live citations).
+ */
+export const parseCitationVerification = (data: {
+  verified?: unknown
+  confidence?: unknown
+  match_kind?: unknown
+}): CitationVerification | undefined => {
+  const verification: CitationVerification = {}
+  if (typeof data.verified === 'boolean') verification.verified = data.verified
+  if (typeof data.confidence === 'number' && Number.isFinite(data.confidence)) {
+    verification.confidence = Math.min(1, Math.max(0, data.confidence))
+  }
+  if (typeof data.match_kind === 'string' && data.match_kind) verification.matchKind = data.match_kind
+  return Object.keys(verification).length > 0 ? verification : undefined
+}
+
 /** Base SSE event structure */
 export interface DeepResearchSSEEvent {
   event: DeepResearchEventType
@@ -175,6 +216,10 @@ export interface ArtifactUpdateEvent extends DeepResearchSSEEvent {
       type: ArtifactType
       content?: string | TodoItem[]
       url?: string // For citation_source and citation_use types
+      // citation_use only: backend citation-verifier result for the final report
+      verified?: boolean
+      confidence?: number
+      match_kind?: string
       content_url?: string
       file_path?: string
       artifact_id?: string
@@ -236,7 +281,12 @@ export interface DeepResearchCallbacks {
   onToolEnd?: (name: string, output?: string, eventId?: string, agentId?: string, isSandbox?: boolean) => void
   /** Called on artifact updates */
   onTodoUpdate?: (todos: TodoItem[], workflow?: string) => void
-  onCitationUpdate?: (url: string, content: string, isCited?: boolean) => void
+  onCitationUpdate?: (
+    url: string,
+    content: string,
+    isCited?: boolean,
+    verification?: CitationVerification
+  ) => void
   onFileUpdate?: (file: FileArtifactUpdate) => void
   onOutputUpdate?: (content: string, outputCategory?: string, workflow?: string) => void
   /** Called on job heartbeat (confirms job is alive during long operations) */
@@ -534,7 +584,12 @@ export const createDeepResearchClient = (options: DeepResearchStreamOptions): De
             break
           case 'citation_use':
             // citation_use = "Cited" sources (actually used in the report)
-            callbacks.onCitationUpdate?.(artifactData.url || '', artifactData.content as string, true)
+            callbacks.onCitationUpdate?.(
+              artifactData.url || '',
+              artifactData.content as string,
+              true,
+              parseCitationVerification(artifactData)
+            )
             break
           case 'file': {
             // Generated artifacts carry durable metadata; legacy text-file events carry content.

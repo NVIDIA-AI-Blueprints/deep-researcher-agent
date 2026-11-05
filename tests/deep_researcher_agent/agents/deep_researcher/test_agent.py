@@ -19,6 +19,7 @@ import asyncio
 import json
 import logging
 from types import SimpleNamespace
+from unittest.mock import ANY
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -2462,8 +2463,76 @@ class TestDeepResearcherCitationVerification:
         callback.emit_final_report.assert_called_once_with(
             sanitized_answer,
             cited_urls=["https://docs.nvidia.com/cuda/"],
+            citation_confidence=ANY,
+        )
+        assert (
+            callback.emit_final_report.call_args.kwargs["citation_confidence"]["https://docs.nvidia.com/cuda/"][
+                "verified"
+            ]
+            is True
         )
         assert result.messages[-1].content == sanitized_answer
+
+    @pytest.mark.parametrize(
+        ("min_keep_confidence", "expect_kept"),
+        [(None, False), (0.3, True)],
+    )
+    @pytest.mark.asyncio
+    async def test_run_applies_citation_keep_policy_and_publishes_confidence(
+        self, mock_llm_provider, real_tool, min_keep_confidence, expect_kept
+    ):
+        """Host-only citations are removed by default and kept, flagged unverified, when opted in."""
+        from deep_researcher_agent.agents.deep_researcher.agent import DeepResearcherAgent
+
+        verified_url = "https://docs.nvidia.com/cuda/"
+        host_only_url = "https://docs.nvidia.com/cuda/unseen-page-guess"
+        raw_answer = (
+            "CUDA is a platform [1]. It has a guide [2].\n\n## Sources\n"
+            f"[1] CUDA Docs: {verified_url}\n[2] CUDA Guide: {host_only_url}"
+        )
+        deep_result = {"messages": [AIMessage(content="done")], "files": output_markdown_file(raw_answer)}
+        mock_agent = MagicMock()
+        mock_agent.with_config = MagicMock(return_value=mock_agent)
+        mock_agent.ainvoke = AsyncMock(return_value=deep_result)
+
+        with (
+            patch("deep_researcher_agent.agents.deep_researcher.factory.create_deep_agent", return_value=mock_agent),
+            patch(
+                "deep_researcher_agent.agents.deep_researcher.agent.FinalReportCommitTracker",
+                return_value=committed_tracker(raw_answer),
+            ),
+        ):
+            callback = MagicMock(spec=AgentEventCallback)
+            agent = DeepResearcherAgent(
+                llm_provider=mock_llm_provider,
+                tools=[real_tool],
+                callbacks=[callback],
+                citation_min_keep_confidence=min_keep_confidence,
+            )
+            # Two captured pages on the host so the guessed child path is ambiguous
+            # rather than a unique child-path repair.
+            agent.source_registry_middleware.registry.add(
+                SourceEntry(url=verified_url, title="CUDA Docs", tool_name="web_search")
+            )
+            agent.source_registry_middleware.registry.add(
+                SourceEntry(url="https://docs.nvidia.com/nsight/", title="Nsight", tool_name="web_search")
+            )
+            result = await agent.run(DeepResearchAgentState(messages=[HumanMessage(content="What is CUDA?")]))
+
+        published = result.messages[-1].content
+        kwargs = callback.emit_final_report.call_args.kwargs
+        assert kwargs["citation_confidence"][verified_url]["verified"] is True
+        assert (host_only_url in published) is expect_kept
+        if expect_kept:
+            assert kwargs["cited_urls"] == [verified_url, host_only_url]
+            assert kwargs["citation_confidence"][host_only_url] == {
+                "verified": False,
+                "confidence": 0.3,
+                "match_kind": "host_only",
+            }
+        else:
+            assert kwargs["cited_urls"] == [verified_url]
+            assert host_only_url not in kwargs["citation_confidence"]
 
     @pytest.mark.asyncio
     async def test_run_publishes_report_reverified_after_artifact_post_processing(self, mock_llm_provider, real_tool):
@@ -2511,7 +2580,10 @@ class TestDeepResearcherCitationVerification:
         assert "Fabricated claim" in published_report
         assert "[2]" not in published_report
         assert valid_url in published_report
-        callback.emit_final_report.assert_called_once_with(published_report, cited_urls=[valid_url])
+        callback.emit_final_report.assert_called_once_with(
+            published_report, cited_urls=[valid_url], citation_confidence=ANY
+        )
+        assert callback.emit_final_report.call_args.kwargs["citation_confidence"][valid_url]["verified"] is True
 
     @pytest.mark.asyncio
     async def test_run_structurally_reverifies_fuzzy_knowledge_citation(self, mock_llm_provider, real_tool):
@@ -2543,4 +2615,6 @@ class TestDeepResearcherCitationVerification:
             result = await agent.run(DeepResearchAgentState(messages=[HumanMessage(content="Summarize the report")]))
 
         assert "report.pdf covers page 15" in result.messages[-1].content
-        callback.emit_final_report.assert_called_once_with(result.messages[-1].content, cited_urls=[])
+        callback.emit_final_report.assert_called_once_with(
+            result.messages[-1].content, cited_urls=[], citation_confidence={}
+        )

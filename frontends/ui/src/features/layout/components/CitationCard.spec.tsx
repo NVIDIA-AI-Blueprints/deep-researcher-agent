@@ -3,7 +3,7 @@
 
 import { render, screen } from '@/test-utils'
 import { vi, describe, test, expect, beforeEach } from 'vitest'
-import { CitationCard } from './CitationCard'
+import { CitationCard, getConfidenceBadge } from './CitationCard'
 import type { CitationSource } from '@/features/chat/types'
 
 describe('CitationCard', () => {
@@ -70,6 +70,79 @@ describe('CitationCard', () => {
 
       const domain = screen.getByText('example.com')
       expect(domain).toBeInTheDocument()
+    })
+  })
+
+  describe('confidence badge', () => {
+    test('shows no badge for exact verified citations', () => {
+      render(
+        <CitationCard
+          citation={createCitation({
+            isCited: true,
+            verification: { verified: true, confidence: 1, matchKind: 'exact' },
+          })}
+        />
+      )
+
+      expect(screen.queryByText(/Unverified|Partial match/)).not.toBeInTheDocument()
+    })
+
+    test('shows no badge when the backend sent no verification data', () => {
+      render(<CitationCard citation={createCitation({ isCited: true })} />)
+
+      expect(screen.queryByText(/Unverified|Partial match/)).not.toBeInTheDocument()
+    })
+
+    test('shows an unverified badge for low-confidence citations', () => {
+      render(
+        <CitationCard
+          citation={createCitation({
+            isCited: true,
+            verification: { verified: false, confidence: 0.3, matchKind: 'host_only' },
+          })}
+        />
+      )
+
+      const badge = screen.getByText('Unverified · 30%')
+      expect(badge).toBeInTheDocument()
+      expect(
+        screen.getByLabelText(
+          'Citation could not be verified against research sources (confidence 30%, only the site was found in research results)'
+        )
+      ).toBeInTheDocument()
+    })
+
+    test('shows a partial-match badge for repaired verified citations', () => {
+      render(
+        <CitationCard
+          citation={createCitation({
+            isCited: true,
+            verification: { verified: true, confidence: 0.7, matchKind: 'repaired' },
+          })}
+        />
+      )
+
+      expect(screen.getByText('Partial match · 70%')).toBeInTheDocument()
+    })
+
+    test('does not badge referenced (uncited) sources', () => {
+      render(
+        <CitationCard
+          citation={createCitation({
+            isCited: false,
+            verification: { verified: false, confidence: 0.3, matchKind: 'host_only' },
+          })}
+        />
+      )
+
+      expect(screen.queryByText(/Unverified/)).not.toBeInTheDocument()
+    })
+
+    test('getConfidenceBadge treats normalized matches as confident', () => {
+      expect(getConfidenceBadge({ verified: true, confidence: 0.95, matchKind: 'normalized' })).toBeNull()
+      expect(getConfidenceBadge({ verified: false })).toEqual(
+        expect.objectContaining({ label: 'Unverified', color: 'yellow' })
+      )
     })
   })
 

@@ -17,6 +17,7 @@ import { useShallow } from 'zustand/react/shallow'
 import {
   createDeepResearchClient,
   cancelJob,
+  type CitationVerification,
   type DeepResearchClient,
   type DeepResearchJobStatus,
   type FileArtifactUpdate,
@@ -210,7 +211,7 @@ export const useDeepResearch = (): UseDeepResearchReturn => {
         llmSteps: new Map<string, { name: string; workflow?: string; content: string; thinking?: string; usage?: { input_tokens: number; output_tokens: number } }>(),
         toolCalls: new Map<string, { name: string; input?: Record<string, unknown>; output?: string; workflow?: string; agentId?: string; isSandbox?: boolean }>(),
         todos: null as TodoItem[] | null,
-        citations: [] as Array<{ url: string; content: string; isCited: boolean }>,
+        citations: [] as Array<{ url: string; content: string; isCited: boolean; verification?: CitationVerification }>,
         files: new Map<string, FileArtifactUpdate>(),
         reportContent: null as string | null,
       }
@@ -322,7 +323,7 @@ export const useDeepResearch = (): UseDeepResearchReturn => {
         }))
         const llmSteps = Array.from(buf.llmSteps.entries()).map(([id, s]) => ({ id, name: s.name, workflow: s.workflow, content: s.content, thinking: s.thinking, usage: s.usage, isComplete: true, timestamp: now }))
         const toolCalls = Array.from(buf.toolCalls.entries()).map(([id, t]) => ({ id, name: t.name, input: t.input, output: t.output, workflow: t.workflow, agentId: t.agentId, isSandbox: t.isSandbox, status: 'complete' as const, timestamp: now }))
-        const citations = buf.citations.map((c, i) => ({ id: `citation-${i}`, url: c.url, content: c.content, isCited: c.isCited, timestamp: now }))
+        const citations = buf.citations.map((c, i) => ({ id: `citation-${i}`, url: c.url, content: c.content, isCited: c.isCited, ...(c.verification && { verification: c.verification }), timestamp: now }))
         const files = Array.from(buf.files.values()).map((file, i) => ({ id: `file-${i}`, ...file, timestamp: now }))
         const todos = buf.todos ? normalizeDeepResearchTodos(buf.todos) : undefined
 
@@ -501,10 +502,10 @@ export const useDeepResearch = (): UseDeepResearchReturn => {
 
           },
 
-          onCitationUpdate: (url, content, isCited) => {
-            if (buf.active) { buf.citations.push({ url, content, isCited: isCited ?? false }); return }
+          onCitationUpdate: (url, content, isCited, verification) => {
+            if (buf.active) { buf.citations.push({ url, content, isCited: isCited ?? false, verification }); return }
             if (!isActiveJob()) return
-            resetTimeout(); addDeepResearchCitation(url, content, isCited)
+            resetTimeout(); addDeepResearchCitation(url, content, isCited, verification)
           },
 
           onFileUpdate: (file) => {

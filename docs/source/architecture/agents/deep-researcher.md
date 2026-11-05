@@ -228,6 +228,7 @@ for configuration details.
 | `skills` | `FunctionRef`, inline `deep_research_skills`, or `None` | `None` | Optional built-in skill assignments by agent name |
 | `sandbox` | `FunctionRef`, inline `deep_research_sandbox`, or `None` | `None` | Optional sandbox profile for DeepAgents `execute` support |
 | `enable_citation_verification` | `bool` | `true` | Verify generated citations against captured sources after final report extraction |
+| `citation_min_keep_confidence` | `float` (0-1) or `None` | `None` | Keep unverified citations scoring at least this confidence, flagged as low-confidence, instead of removing them. `0.3` keeps host-only matches; `None` removes every unverified citation |
 | `resource_limits` | `DeepResearchResourceLimits` | hard ceilings | Per-job request, graph-time, plan, report, shared-state, note, todo, query, and source-call budgets; configurable downward only |
 
 **Example YAML:**
@@ -370,6 +371,44 @@ the source registry using five URL matching strategies:
 Unmatched citations are removed and recorded with an audit reason. Knowledge
 layer citations, such as `report.pdf, p.15`, are matched against citation
 keys with lenient page-number comparison.
+
+#### Confidence-Scored Verification Records
+
+Each parsed source line produces a `CitationVerificationRecord` in
+`CitationVerificationResult.records` with a `verified` flag, a deterministic
+`confidence` score, a `match_kind`, the `action` taken (`kept`,
+`kept_low_confidence`, `removed`, or `merged_duplicate`), and diagnostics such
+as the repair strategy or ambiguous candidate counts. Scores are ordinal
+heuristics, not calibrated probabilities:
+
+| `match_kind` | Verified | Confidence | Meaning |
+| :-- | :-- | :-- | :-- |
+| `exact` | yes | 1.0 | Cited URL is byte-identical to a captured URL |
+| `normalized` | yes | 0.95 | Equal after normalization (case, trailing slash, fragment, tracking parameters, query order) |
+| `citation_key` | yes | 0.9 | Knowledge-layer document match |
+| `backfilled` | yes | 0.85 | URL-less source line recovered by unique exact title |
+| `repaired` | yes | 0.7-0.85 | Truncation (0.85), prefix or query-subset (0.8), or child-path (0.7) repair |
+| `host_only` | no | 0.3 | The site was captured, but no captured page on it matches unambiguously |
+| `unmatched` | no | 0.0 | Nothing matched |
+
+`valid_citations` still contains only verified citations and remains the
+authoritative set for citation-integrity checks. By default every unverified
+citation is removed, as before. Setting `citation_min_keep_confidence` keeps
+unverified citations at or above that score in the report and lists them in
+`low_confidence_citations`; `unmatched` citations (confidence 0) are always
+removed.
+
+The final-report `citation_use` SSE events carry `verified`, `confidence`, and
+`match_kind`, and the web UI citation card shows an **Unverified** badge for
+kept low-confidence citations and a **Partial match** badge for verified
+matches below 0.9 confidence.
+
+Every verification run publishes a URL-free telemetry summary (counts by
+action and match kind, plus one entry per removal or downgrade) as a
+structured log record, as a `citation_verification` event on the current
+OpenTelemetry span, and to listeners registered with
+`register_citation_telemetry_listener()`, so false-positive removals can be
+tracked.
 
 #### Report Sanitization
 

@@ -30,6 +30,7 @@ import re
 import threading
 import time
 import uuid
+from collections.abc import Mapping
 from collections.abc import Sequence
 from datetime import UTC
 from datetime import datetime
@@ -79,6 +80,22 @@ class ArtifactType(StrEnum):
     CITATION_SOURCE = "citation_source"
     CITATION_USE = "citation_use"
     TODO = "todo"
+
+
+_CITATION_CONFIDENCE_FIELDS = ("verified", "confidence", "match_kind")
+
+
+def _citation_confidence_fields(
+    citation_confidence: Mapping[str, Mapping[str, Any]] | None,
+    url: str,
+) -> dict[str, Any]:
+    """Return the verification fields for ``url`` to attach to a citation_use event."""
+    if not citation_confidence:
+        return {}
+    entry = citation_confidence.get(url)
+    if entry is None:
+        return {}
+    return {key: entry[key] for key in _CITATION_CONFIDENCE_FIELDS if key in entry}
 
 
 class EventData(BaseModel):
@@ -392,14 +409,24 @@ class AgentEventCallback(BaseCallbackHandler):
         """Return the session-scoped SourceRegistry if set, otherwise None."""
         return get_session_registry()
 
-    def emit_final_report(self, content: str, *, cited_urls: Sequence[str] | None = None) -> None:
+    def emit_final_report(
+        self,
+        content: str,
+        *,
+        cited_urls: Sequence[str] | None = None,
+        citation_confidence: Mapping[str, Mapping[str, Any]] | None = None,
+    ) -> None:
         """Emit the post-processed final report as an OUTPUT artifact.
 
         Call this after citation verification and sanitisation so the
         frontend receives the verified content (overwrites the earlier
         auto-emitted version). ``cited_urls`` must come from citation
         verification; when supplied, it is the authoritative citation set for
-        the published report.
+        the published report. ``citation_confidence`` optionally maps each
+        cited URL to ``{"verified", "confidence", "match_kind"}`` (see
+        ``CitationVerificationResult.citation_confidence_by_url``); those
+        fields are attached to the matching ``citation_use`` events so the UI
+        can badge repaired or low-confidence citations.
         """
         verified_visible_urls = self._verified_visible_urls(content, cited_urls) if cited_urls is not None else None
         self._emit(build_final_report_event(content, cited_urls=verified_visible_urls))
@@ -412,6 +439,7 @@ class AgentEventCallback(BaseCallbackHandler):
                     name=url,
                     url=url,
                     final_report=True,
+                    **_citation_confidence_fields(citation_confidence, url),
                 )
 
     def _is_search_tool(self, tool_name: str) -> bool:

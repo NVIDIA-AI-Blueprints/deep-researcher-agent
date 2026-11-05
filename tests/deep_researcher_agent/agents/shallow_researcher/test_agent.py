@@ -17,6 +17,7 @@
 
 import asyncio
 import re
+from unittest.mock import ANY
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import call
@@ -739,7 +740,9 @@ class TestShallowResearcherSourceRegistryGating:
         assert "[1] report.pdf, p.15" in result.messages[-1].content
         assert bound_llm.ainvoke.await_count == 2
         mock_llm.ainvoke.assert_awaited_once()
-        callback.emit_final_report.assert_called_once_with(result.messages[-1].content, cited_urls=[])
+        callback.emit_final_report.assert_called_once_with(
+            result.messages[-1].content, cited_urls=[], citation_confidence={}
+        )
 
     @pytest.mark.asyncio
     async def test_missing_url_citation_fallback_emits_authoritative_metadata(self, mock_llm_provider, mock_llm):
@@ -774,6 +777,13 @@ class TestShallowResearcherSourceRegistryGating:
         callback.emit_final_report.assert_called_once_with(
             result.messages[-1].content,
             cited_urls=["https://docs.nvidia.com/cuda/"],
+            citation_confidence=ANY,
+        )
+        assert (
+            callback.emit_final_report.call_args.kwargs["citation_confidence"]["https://docs.nvidia.com/cuda/"][
+                "verified"
+            ]
+            is True
         )
 
     @pytest.mark.asyncio
@@ -837,6 +847,13 @@ class TestShallowResearcherSourceRegistryGating:
         callback.emit_final_report.assert_called_once_with(
             result.messages[-1].content,
             cited_urls=["https://docs.nvidia.com/cuda/"],
+            citation_confidence=ANY,
+        )
+        assert (
+            callback.emit_final_report.call_args.kwargs["citation_confidence"]["https://docs.nvidia.com/cuda/"][
+                "verified"
+            ]
+            is True
         )
         assert bound_llm.ainvoke.await_count == 2
         mock_llm.ainvoke.assert_awaited_once()
@@ -895,6 +912,13 @@ class TestShallowResearcherSourceRegistryGating:
         callback.emit_final_report.assert_called_once_with(
             result.messages[-1].content,
             cited_urls=["https://docs.nvidia.com/cuda/"],
+            citation_confidence=ANY,
+        )
+        assert (
+            callback.emit_final_report.call_args.kwargs["citation_confidence"]["https://docs.nvidia.com/cuda/"][
+                "verified"
+            ]
+            is True
         )
 
     @pytest.mark.asyncio
@@ -1092,7 +1116,10 @@ class TestShallowResearcherSourceCaptureIntegration:
             result = await agent.run(ShallowResearchAgentState(messages=[HumanMessage(content="What is CUDA?")]))
 
         assert result.messages[-1].content == expected_report
-        callback.emit_final_report.assert_called_once_with(expected_report, cited_urls=[source_url])
+        callback.emit_final_report.assert_called_once_with(
+            expected_report, cited_urls=[source_url], citation_confidence=ANY
+        )
+        assert callback.emit_final_report.call_args.kwargs["citation_confidence"][source_url]["verified"] is True
 
     @pytest.mark.asyncio
     async def test_finalization_cannot_publish_a_report_after_losing_inline_citations(

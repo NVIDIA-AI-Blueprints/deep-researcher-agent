@@ -7,6 +7,10 @@
  * Type definitions for chat messages, conversations, and state.
  */
 
+import type { CitationVerification } from '@/adapters/api'
+
+export type { CitationMatchKind, CitationVerification } from '@/adapters/api'
+
 /** Message role types */
 export type MessageRole = 'user' | 'assistant' | 'system'
 
@@ -272,6 +276,8 @@ export interface CitationSource {
   timestamp: Date
   /** Whether this source was actually cited in the report (vs just referenced/discovered) */
   isCited?: boolean
+  /** Citation verifier result for cited sources, when the backend provided one */
+  verification?: CitationVerification
 }
 
 /** Plan message for chat/HITL display and restore flows */
@@ -628,7 +634,12 @@ export interface ChatActions {
    */
   refreshDeepResearchSessionStatuses: () => Promise<void>
   /** Add a citation from deep research (isCited=true for citation_use, false for citation_source) */
-  addDeepResearchCitation: (url: string, content: string, isCited?: boolean) => void
+  addDeepResearchCitation: (
+    url: string,
+    content: string,
+    isCited?: boolean,
+    verification?: CitationVerification
+  ) => void
   /** Set the full todo list from deep research (replaces existing) */
   setDeepResearchTodos: (todos: Array<{ content: string; status: string }>) => void
   /** Mark all in-progress and pending todos as stopped (on error) */

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import { createDeepResearchClient, getJobStatus } from './deep-research-client'
+import { createDeepResearchClient, getJobStatus, parseCitationVerification } from './deep-research-client'
 
 class FakeEventSource {
   static latest: FakeEventSource | null = null
@@ -90,6 +90,50 @@ describe('deep research REST client', () => {
       caption: 'Comparison chart',
       inline: true,
     })
+  })
+
+  test('forwards citation verification fields on citation_use events', () => {
+    vi.stubGlobal('EventSource', FakeEventSource)
+    const onCitationUpdate = vi.fn()
+    const client = createDeepResearchClient({ jobId: 'job-1', callbacks: { onCitationUpdate } })
+    client.connect()
+
+    FakeEventSource.latest?.emit('artifact.update', {
+      data: {
+        type: 'citation_use',
+        url: 'https://example.com/guess',
+        content: 'https://example.com/guess',
+        final_report: true,
+        verified: false,
+        confidence: 0.3,
+        match_kind: 'host_only',
+      },
+    })
+    FakeEventSource.latest?.emit('artifact.update', {
+      data: { type: 'citation_use', url: 'https://example.com/a', content: 'https://example.com/a' },
+    })
+
+    expect(onCitationUpdate).toHaveBeenNthCalledWith(
+      1,
+      'https://example.com/guess',
+      'https://example.com/guess',
+      true,
+      { verified: false, confidence: 0.3, matchKind: 'host_only' }
+    )
+    expect(onCitationUpdate).toHaveBeenNthCalledWith(
+      2,
+      'https://example.com/a',
+      'https://example.com/a',
+      true,
+      undefined
+    )
+  })
+
+  test('parseCitationVerification ignores malformed fields and clamps confidence', () => {
+    expect(parseCitationVerification({})).toBeUndefined()
+    expect(parseCitationVerification({ verified: 'yes', confidence: 'high', match_kind: 3 })).toBeUndefined()
+    expect(parseCitationVerification({ confidence: 1.7 })).toEqual({ confidence: 1 })
+    expect(parseCitationVerification({ confidence: Number.NaN, verified: true })).toEqual({ verified: true })
   })
 
   test('preserves legacy text file events', () => {

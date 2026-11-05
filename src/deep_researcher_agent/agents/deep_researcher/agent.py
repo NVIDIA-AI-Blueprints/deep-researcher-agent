@@ -34,6 +34,7 @@ from deep_researcher_agent.common import validate_research_source_configuration
 from deep_researcher_agent.common.citation_verification import CitationIntegrityError
 from deep_researcher_agent.common.citation_verification import EmptySourceRegistryError
 from deep_researcher_agent.common.citation_verification import EmptySourceRegistryReason
+from deep_researcher_agent.common.citation_verification import citation_confidence_by_url
 from deep_researcher_agent.common.citation_verification import sanitize_report
 from deep_researcher_agent.common.citation_verification import source_entries_from_parent_context
 from deep_researcher_agent.common.citation_verification import verify_citations
@@ -85,6 +86,7 @@ class DeepResearcherAgent:
         domain_catalog_path: str | None = None,
         enable_source_router: bool = True,
         enable_citation_verification: bool = True,
+        citation_min_keep_confidence: float | None = None,
         skills: DeepResearchSkillsConfig | None = None,
         sandbox: DeepResearchSandboxConfig | None = None,
         job_id: str | None = None,
@@ -106,6 +108,8 @@ class DeepResearcherAgent:
             domain_catalog_path: Optional YAML/JSON domain catalog path for source-router-agent.
             enable_source_router: Enable the advisory source-router-agent before planning.
             enable_citation_verification: Verify generated citations against the captured source registry.
+            citation_min_keep_confidence: Keep unverified citations scoring at least this confidence (flagged
+                as low-confidence) instead of removing them. ``None`` removes every unverified citation.
             skills: Optional DeepAgents skills config.
             sandbox: Optional DeepAgents sandbox config.
             job_id: Optional async job identifier used to scope sandbox backends.
@@ -127,6 +131,7 @@ class DeepResearcherAgent:
         self.domain_catalog_path = domain_catalog_path
         self.enable_source_router = enable_source_router
         self.enable_citation_verification = enable_citation_verification
+        self.citation_min_keep_confidence = citation_min_keep_confidence
         self.job_id = str(job_id) if job_id is not None else str(uuid4())
 
         self.deepagents_runtime = DeepAgentsRuntime(
@@ -381,6 +386,7 @@ class DeepResearcherAgent:
                     final_message,
                     registry,
                     reference_sources=self.source_registry_middleware.get_source_entries(mode="compact"),
+                    min_keep_confidence=self.citation_min_keep_confidence,
                 )
                 if verification.removed_citations:
                     logger.info(
@@ -415,22 +421,31 @@ class DeepResearcherAgent:
                     )
 
             final_cited_urls: list[str] | None = None
+            final_citation_confidence: dict[str, dict] | None = None
             if citation_registry is not None:
-                final_verification = verify_citations(final_message, citation_registry)
+                final_verification = verify_citations(
+                    final_message,
+                    citation_registry,
+                    min_keep_confidence=self.citation_min_keep_confidence,
+                )
                 if not final_verification.valid_citations:
                     raise CitationIntegrityError()
                 final_message = final_verification.verified_report
-                final_cited_urls = list(
-                    dict.fromkeys(
-                        citation["url"] for citation in final_verification.valid_citations if citation.get("url")
-                    )
-                )
+                final_citation_confidence = citation_confidence_by_url(final_verification)
+                # Verified URLs (source order), then any low-confidence URLs kept by
+                # policy, which are flagged ``verified=False`` in the confidence map.
+                # Without a keep policy this is exactly the verified set.
+                final_cited_urls = list(final_citation_confidence)
 
             # Re-emit the verified/sanitized report so the frontend overwrites
             # the raw version that on_llm_end auto-emitted during ainvoke().
             for cb in self.callbacks:
                 if hasattr(cb, "emit_final_report"):
-                    cb.emit_final_report(final_message, cited_urls=final_cited_urls)
+                    cb.emit_final_report(
+                        final_message,
+                        cited_urls=final_cited_urls,
+                        citation_confidence=final_citation_confidence,
+                    )
                     break
 
             self._replace_last_message_content(result, final_message)
