@@ -15,6 +15,10 @@
 
 """Tests for JSON utility functions."""
 
+import json
+
+import pytest
+
 from deep_researcher_agent.common.json_utils import extract_json
 
 
@@ -68,6 +72,25 @@ That was the JSON."""
         text = """Output: {"outer": {"inner": {"deep": "value"}}}"""
         result = extract_json(text)
         assert result == {"outer": {"inner": {"deep": "value"}}}
+
+    @pytest.mark.parametrize(
+        "expected",
+        [
+            {"intent": "meta", "meta_response": "Use } to close the block."},
+            {"intent": "meta", "meta_response": "Use { to open the block."},
+            {"intent": "meta", "meta_response": 'The literal sequence is \\" }.'},
+            {"intent": "research", "nested": {"query": "What does } mean?"}},
+            {"intent": "research", "items": [{"text": "A closing } is literal."}]},
+        ],
+    )
+    def test_extract_json_embedded_with_unmatched_braces_in_strings(self, expected):
+        """Braces inside JSON strings must not confuse object extraction."""
+        text = f"Result: {json.dumps(expected)} End."
+        assert extract_json(text) == expected
+
+    def test_extract_json_embedded_returns_first_object(self):
+        """Only the first embedded object is returned."""
+        assert extract_json('First: {"a": 1} Second: {"b": 2}') == {"a": 1}
 
     def test_extract_json_empty_string(self):
         """Test that empty string returns None."""
