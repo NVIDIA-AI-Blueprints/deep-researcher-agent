@@ -106,11 +106,20 @@ export type {
 } from './documents-schemas'
 
 // Deep Research Client (SSE Streaming for async jobs)
-export { createDeepResearchClient, getJobStatus, getJobState, getJobReport, cancelJob } from './deep-research-client'
+export {
+  createDeepResearchClient,
+  getJobStatus,
+  getJobState,
+  getJobReport,
+  cancelJob,
+  parseCitationVerification,
+} from './deep-research-client'
 export type {
   DeepResearchJobStatus,
   DeepResearchEventType,
   ArtifactType,
+  CitationMatchKind,
+  CitationVerification,
   DeepResearchSSEEvent,
   StreamStartEvent,
   JobStatusEvent,

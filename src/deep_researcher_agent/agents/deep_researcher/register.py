@@ -91,6 +91,16 @@ class DeepResearchAgentConfig(FunctionBaseConfig, name="deep_research_agent"):
         default=True,
         description="Verify generated citations against sources captured from configured tools.",
     )
+    citation_min_keep_confidence: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Keep unverified citations whose confidence is at least this value (for example 0.3 keeps "
+            "host-only matches) and flag them as low-confidence instead of removing them. "
+            "Leave unset to remove every unverified citation."
+        ),
+    )
     skills: DeepResearchSkillsConfig | FunctionRef | None = Field(
         default=None,
         description="Optional inline skills config or function ref to a deep_research_skills config.",
@@ -247,6 +257,7 @@ async def deep_research_agent(config: DeepResearchAgentConfig, builder: Builder)
         domain_catalog_path=config.domain_catalog_path,
         enable_source_router=config.enable_source_router,
         enable_citation_verification=config.enable_citation_verification,
+        citation_min_keep_confidence=config.citation_min_keep_confidence,
         skills=skills_config,
         sandbox=sandbox_config,
         max_research_concurrency=config.max_research_concurrency,
@@ -284,6 +295,7 @@ async def deep_research_agent(config: DeepResearchAgentConfig, builder: Builder)
                     domain_catalog_path=config.domain_catalog_path,
                     enable_source_router=config.enable_source_router,
                     enable_citation_verification=config.enable_citation_verification,
+                    citation_min_keep_confidence=config.citation_min_keep_confidence,
                     skills=skills_config,
                     sandbox=sandbox_config,
                     job_id=job_id,

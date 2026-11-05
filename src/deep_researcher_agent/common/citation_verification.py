@@ -98,13 +98,170 @@ def source_entries_from_parent_context(parent_context: str) -> list[SourceEntry]
     return entries
 
 
+class CitationMatchKind(StrEnum):
+    """How a cited source line was matched against the source registry.
+
+    ``exact`` / ``normalized`` / ``repaired`` / ``citation_key`` / ``backfilled``
+    are verified matches. ``host_only`` means the cited URL's host was captured
+    but no registry URL on that host could be identified unambiguously, so the
+    citation is *not* verified. ``unmatched`` means nothing matched.
+    """
+
+    EXACT = "exact"
+    NORMALIZED = "normalized"
+    REPAIRED = "repaired"
+    CITATION_KEY = "citation_key"
+    BACKFILLED = "backfilled"
+    HOST_ONLY = "host_only"
+    UNMATCHED = "unmatched"
+
+    @property
+    def is_verified(self) -> bool:
+        """Return whether this match kind proves the citation is a captured source."""
+        return self not in (CitationMatchKind.HOST_ONLY, CitationMatchKind.UNMATCHED)
+
+
+class CitationAction(StrEnum):
+    """What verify_citations() did with a cited source line."""
+
+    KEPT = "kept"
+    KEPT_LOW_CONFIDENCE = "kept_low_confidence"
+    REMOVED = "removed"
+    MERGED_DUPLICATE = "merged_duplicate"
+
+
+# Confidence scores are deterministic, ordinal heuristics, not calibrated
+# probabilities. They let callers and the UI distinguish a byte-identical
+# source URL from a repaired or partially matched one.
+_MATCH_KIND_CONFIDENCE: dict[CitationMatchKind, float] = {
+    CitationMatchKind.EXACT: 1.0,
+    CitationMatchKind.NORMALIZED: 0.95,
+    CitationMatchKind.CITATION_KEY: 0.9,
+    CitationMatchKind.BACKFILLED: 0.85,
+    CitationMatchKind.REPAIRED: 0.8,
+    CitationMatchKind.HOST_ONLY: 0.3,
+    CitationMatchKind.UNMATCHED: 0.0,
+}
+_REPAIR_STRATEGY_CONFIDENCE: dict[str, float] = {
+    "truncation": 0.85,
+    "prefix": 0.8,
+    "query_subset": 0.8,
+    "child_path": 0.7,
+}
+
+
+def citation_confidence(match_kind: CitationMatchKind, strategy: str | None = None) -> float:
+    """Return the deterministic confidence score for a match kind (and repair strategy)."""
+    if match_kind is CitationMatchKind.REPAIRED and strategy in _REPAIR_STRATEGY_CONFIDENCE:
+        return _REPAIR_STRATEGY_CONFIDENCE[strategy]
+    return _MATCH_KIND_CONFIDENCE[match_kind]
+
+
+@dataclass(frozen=True)
+class UrlMatch:
+    """Outcome of matching one cited URL against the registry.
+
+    ``url`` is the registry URL to publish (the tool's URL) for verified
+    matches, and ``None`` for ``host_only`` / ``unmatched``.
+    """
+
+    kind: CitationMatchKind
+    url: str | None = None
+    strategy: str | None = None
+    diagnostics: dict = field(default_factory=dict)
+
+    @property
+    def verified(self) -> bool:
+        """Return whether the URL resolved to a captured source."""
+        return self.kind.is_verified
+
+    @property
+    def confidence(self) -> float:
+        """Return the confidence score for this match."""
+        return citation_confidence(self.kind, self.strategy)
+
+
+@dataclass
+class CitationVerificationRecord:
+    """Per-citation verification outcome emitted by verify_citations()."""
+
+    number: int
+    line: str
+    verified: bool
+    confidence: float
+    match_kind: CitationMatchKind
+    action: CitationAction
+    url: str | None = None
+    cited_url: str | None = None
+    citation_key: str | None = None
+    reason: str | None = None
+    diagnostics: dict = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        """Return a JSON-serializable view of the record."""
+        return {
+            "number": self.number,
+            "line": self.line,
+            "verified": self.verified,
+            "confidence": self.confidence,
+            "match_kind": self.match_kind.value,
+            "action": self.action.value,
+            "url": self.url,
+            "cited_url": self.cited_url,
+            "citation_key": self.citation_key,
+            "reason": self.reason,
+            "diagnostics": dict(self.diagnostics),
+        }
+
+
 @dataclass
 class CitationVerificationResult:
-    """Result of running verify_citations()."""
+    """Result of running verify_citations().
+
+    ``valid_citations`` contains only *verified* citations and remains the
+    authoritative set for citation-integrity checks and ``cited_urls``.
+    ``low_confidence_citations`` contains unverified citations that were kept in
+    the report because the caller opted in via ``min_keep_confidence``.
+    ``records`` holds one :class:`CitationVerificationRecord` per parsed source
+    line, including removed ones.
+    """
 
     verified_report: str
     removed_citations: list[dict] = field(default_factory=list)
     valid_citations: list[dict] = field(default_factory=list)
+    low_confidence_citations: list[dict] = field(default_factory=list)
+    records: list[CitationVerificationRecord] = field(default_factory=list)
+
+    def citation_confidence_by_url(self) -> dict[str, dict]:
+        """Map each published URL to its confidence metadata, for UI/SSE consumers."""
+        return citation_confidence_by_url(self)
+
+
+def citation_confidence_by_url(result: object) -> dict[str, dict]:
+    """Map each URL published by a verification result to ``{verified, confidence, match_kind}``.
+
+    Verified URLs come first (in source order), then low-confidence URLs kept
+    by policy. Only the legacy ``valid_citations`` / ``low_confidence_citations``
+    dicts are read, so any result-shaped object works.
+    """
+    mapping: dict[str, dict] = {}
+    groups = (
+        (True, getattr(result, "valid_citations", None) or []),
+        (False, getattr(result, "low_confidence_citations", None) or []),
+    )
+    for verified, citations in groups:
+        for citation in citations:
+            if not isinstance(citation, dict):
+                continue
+            url = citation.get("url") or citation.get("cited_url")
+            if not url or url in mapping:
+                continue
+            entry: dict = {"verified": verified}
+            for key in ("confidence", "match_kind"):
+                if citation.get(key) is not None:
+                    entry[key] = citation[key]
+            mapping[url] = entry
+    return mapping
 
 
 class CitationIntegrityError(RuntimeError):
@@ -255,6 +412,12 @@ def _normalize_url(url: str) -> str:
     return urlunparse((scheme, netloc, path, "", query_str, ""))
 
 
+def _bare_host(netloc: str) -> str:
+    """Return a lowercase host without port, credentials, or a leading ``www.``."""
+    host = netloc.lower().rsplit("@", 1)[-1].split(":", 1)[0]
+    return host[4:] if host.startswith("www.") else host
+
+
 # ---------------------------------------------------------------------------
 # Knowledge-layer fuzzy matching helpers
 # ---------------------------------------------------------------------------
@@ -352,12 +515,18 @@ class SourceRegistry:
         return _normalize_url(url) in self._urls
 
     @staticmethod
-    def _pick_unique(candidates: list[SourceEntry], strategy: str, url: str) -> str | None:
+    def _pick_unique(
+        candidates: list[SourceEntry],
+        strategy: str,
+        url: str,
+        ambiguous: dict[str, int] | None = None,
+    ) -> str | None:
         """Return the registry URL when exactly one candidate matches.
 
         The source section can only show one URL per citation. If multiple
         registry URLs match (e.g. same path, different query), we cannot know
-        which one the author meant, so we reject.
+        which one the author meant, so we reject. Rejections are recorded in
+        ``ambiguous`` (strategy -> candidate count) for diagnostics.
         """
         if len(candidates) == 1:
             logger.debug("[CitationVerify] Unique %s URL match", strategy)
@@ -368,34 +537,57 @@ class SourceRegistry:
                 strategy,
                 len(candidates),
             )
+            if ambiguous is not None:
+                ambiguous[strategy] = len(candidates)
         return None
 
     def resolve_url(self, url: str) -> str | None:
         """Return the registry URL (full, as returned by the tool) when the report URL matches.
 
+        Thin wrapper over :meth:`resolve_url_match` that returns only verified
+        matches; ``host_only`` and ``unmatched`` return ``None``.
+        """
+        match = self.resolve_url_match(url)
+        return match.url if match.verified else None
+
+    def resolve_url_match(self, url: str) -> UrlMatch:
+        """Match a report URL against the registry and describe how it matched.
+
         Matching strategy (first unambiguous match wins):
-        1. Exact match — raw or normalized
+        1. Exact match — raw URL (``exact``) or normalized URL (``normalized``)
         2. Truncation — report URL is a prefix of exactly one registry URL (raw)
         3. Prefix — report normalized is prefix of registry normalized
         4. Child-path — report path is a subpath of exactly one registry URL
         5. Query-subset — same host+path, report params subset of one registry URL
+        6. Host-only — no path match, but the host was captured (*unverified*)
 
-        Always returns the tool's URL (with query params etc.). If multiple
-        registry URLs match, we reject (ambiguous).
+        Steps 2-5 are ``repaired`` matches. Verified matches always return the
+        tool's URL (with query params etc.). If multiple registry URLs match a
+        step, that step is rejected as ambiguous and recorded in diagnostics.
         """
+        ambiguous: dict[str, int] = {}
+
+        def _repaired(result: str, strategy: str) -> UrlMatch:
+            diagnostics: dict = {"strategy": strategy}
+            if ambiguous:
+                diagnostics["ambiguous"] = dict(ambiguous)
+            return UrlMatch(CitationMatchKind.REPAIRED, url=result, strategy=strategy, diagnostics=diagnostics)
+
         # 1. Exact match — raw or normalized; retain the tool's URL
         if url in self._urls:
-            return self._urls[url].url
+            canonical = self._urls[url].url
+            kind = CitationMatchKind.EXACT if canonical == url else CitationMatchKind.NORMALIZED
+            return UrlMatch(kind, url=canonical, strategy=kind.value)
         normalized = _normalize_url(url)
         if normalized in self._urls:
-            return self._urls[normalized].url
+            return UrlMatch(CitationMatchKind.NORMALIZED, url=self._urls[normalized].url, strategy="normalized")
 
         # 2. Truncation — report URL is a prefix of exactly one registry URL (raw).
         #    Normalized match fails when the report is cut mid-query (param order differs).
         truncation_entries = [e for e in self._urls.values() if e.url and e.url.startswith(url)]
-        result = self._pick_unique(list({e.url: e for e in truncation_entries}.values()), "truncation", url)
+        result = self._pick_unique(list({e.url: e for e in truncation_entries}.values()), "truncation", url, ambiguous)
         if result:
-            return result
+            return _repaired(result, "truncation")
 
         # 3. Prefix match — report normalized is prefix of registry normalized
         #    Deduplicate by url to avoid raw+normalized keys for the same entry
@@ -405,9 +597,10 @@ class SourceRegistry:
             list({e.url: e for e in prefix_entries}.values()),
             "prefix",
             url,
+            ambiguous,
         )
         if result:
-            return result
+            return _repaired(result, "prefix")
 
         parsed = urlparse(normalized)
         host, path = parsed.netloc, parsed.path
@@ -422,11 +615,12 @@ class SourceRegistry:
                 for p in same_host
                 if len(p.path_segments) >= 2 and path != p.path and path.startswith(p.path.rstrip("/") + "/")
             ],
-            "child-path",
+            "child_path",
             url,
+            ambiguous,
         )
         if result:
-            return result
+            return _repaired(result, "child_path")
 
         # 5. Query-subset match — same host+path, report params are a subset of registry params
         report_qs = parse_qs(parsed.query, keep_blank_values=True)
@@ -437,13 +631,26 @@ class SourceRegistry:
                     for p in same_host
                     if p.path == path and p.query and all(p.query.get(k) == v for k, v in report_qs.items())
                 ],
-                "query-subset",
+                "query_subset",
                 url,
+                ambiguous,
             )
             if result:
-                return result
+                return _repaired(result, "query_subset")
 
-        return None
+        diagnostics: dict = {}
+        if ambiguous:
+            diagnostics["ambiguous"] = dict(ambiguous)
+
+        # 6. Host-only — the source host was captured, but this page was not.
+        #    Never verified: the URL could be a hallucinated path on a real site.
+        bare_host = _bare_host(host)
+        host_matches = [p for p in self._parsed_urls.values() if _bare_host(p.host) == bare_host] if bare_host else []
+        if host_matches:
+            diagnostics.update({"host": bare_host, "same_host_sources": len({p.entry.url for p in host_matches})})
+            return UrlMatch(CitationMatchKind.HOST_ONLY, strategy="host_only", diagnostics=diagnostics)
+
+        return UrlMatch(CitationMatchKind.UNMATCHED, strategy="unmatched", diagnostics=diagnostics)
 
     def has_citation_key(self, key: str) -> bool:
         """Lenient match of a citation key against registry entries.
@@ -1077,6 +1284,7 @@ def verify_citations(
     registry: SourceRegistry,
     *,
     reference_sources: Sequence[SourceEntry] | None = None,
+    min_keep_confidence: float | None = None,
 ) -> CitationVerificationResult:
     """Verify cited source identities against the captured source registry.
 
@@ -1088,8 +1296,11 @@ def verify_citations(
     Algorithm:
     1. Find the source section
     2. Parse each [N] source line
-    3. Validate URL or citation_key against registry
-    4. Remove invalid source lines and orphaned inline citations
+    3. Validate URL or citation_key against registry and score the match
+       (see :class:`CitationMatchKind` and :func:`citation_confidence`)
+    4. Remove invalid source lines and orphaned inline citations, unless the
+       caller opted in to keeping low-confidence citations
+    5. Emit removal/downgrade telemetry
 
     Renumbering is NOT done here — it is deferred to sanitize_report()
     which always runs after this function and handles it in a single pass.
@@ -1100,9 +1311,15 @@ def verify_citations(
         reference_sources: Optional writer-facing source list, in the same
             numbering order the writer saw. Used only to synthesize a missing
             source section.
+        min_keep_confidence: When ``None`` (default), every unverified citation
+            is removed, exactly as before. When set, an unverified citation whose
+            confidence is greater than zero and at least this value (today only
+            ``host_only`` matches, scored 0.3) is kept in the report and listed in
+            ``low_confidence_citations`` instead of ``valid_citations``.
 
     Returns:
-        CitationVerificationResult with cleaned report and audit trail.
+        CitationVerificationResult with cleaned report, per-citation records,
+        and audit trail.
     """
     # Normalize citation syntax variants before validation.
     report_text = _normalize_citation_syntax(report_text)
@@ -1165,8 +1382,47 @@ def verify_citations(
     # Parse citation lines in the source section
     valid_citations: list[dict] = []
     removed_citations: list[dict] = []
+    low_confidence_citations: list[dict] = []
+    records: list[CitationVerificationRecord] = []
     url_replacements: dict[str, str] = {}  # garbled_url -> canonical_url
     line_replacements: dict[str, str] = {}  # url-less line -> backfilled canonical line
+
+    def _keep(record: CitationVerificationRecord) -> None:
+        records.append(record)
+        valid_citations.append(
+            {
+                "number": record.number,
+                "url": record.url,
+                "citation_key": record.citation_key,
+                "line": record.line,
+                "confidence": record.confidence,
+                "match_kind": record.match_kind.value,
+            }
+        )
+
+    def _reject(record: CitationVerificationRecord) -> None:
+        """Remove an unverified citation, or keep it flagged when the caller opted in."""
+        if min_keep_confidence is not None and record.confidence > 0.0 and record.confidence >= min_keep_confidence:
+            record.action = CitationAction.KEPT_LOW_CONFIDENCE
+            records.append(record)
+            low_confidence_citations.append(record.to_dict())
+            logger.info(
+                "[CitationVerify]   [%d] DOWNGRADE — %s (confidence=%.2f)",
+                record.number,
+                record.reason,
+                record.confidence,
+            )
+            return
+        records.append(record)
+        removed_citations.append(
+            {
+                "number": record.number,
+                "line": record.line,
+                "reason": record.reason,
+                "confidence": record.confidence,
+                "match_kind": record.match_kind.value,
+            }
+        )
 
     # Exact-title index over the writer-facing source list, so a "[N] Title"
     # line whose ": url" suffix the writer dropped can be repaired from the same
@@ -1181,17 +1437,42 @@ def verify_citations(
         # Try URL match first
         url = _first_http_url(ref_text)
         if url:
-            canonical = registry.resolve_url(url)
-            if canonical:
+            match = registry.resolve_url_match(url)
+            if match.verified:
+                canonical = match.url
                 if canonical != url:
-                    logger.debug("[CitationVerify]   [%d] VALID  — repaired URL", num)
+                    logger.debug("[CitationVerify]   [%d] VALID  — repaired URL (%s)", num, match.strategy)
                     url_replacements[url] = canonical
                 else:
                     logger.debug("[CitationVerify]   [%d] VALID  — URL", num)
-                valid_citations.append({"number": num, "url": canonical, "citation_key": None, "line": full_line})
+                _keep(
+                    CitationVerificationRecord(
+                        number=num,
+                        line=full_line,
+                        verified=True,
+                        confidence=match.confidence,
+                        match_kind=match.kind,
+                        action=CitationAction.KEPT,
+                        url=canonical,
+                        cited_url=url,
+                        diagnostics=dict(match.diagnostics),
+                    )
+                )
             else:
-                logger.info("[CitationVerify]   [%d] REMOVE — url_not_in_registry", num)
-                removed_citations.append({"number": num, "line": full_line, "reason": "url_not_in_registry"})
+                logger.info("[CitationVerify]   [%d] REMOVE — url_not_in_registry (%s)", num, match.kind.value)
+                _reject(
+                    CitationVerificationRecord(
+                        number=num,
+                        line=full_line,
+                        verified=False,
+                        confidence=match.confidence,
+                        match_kind=match.kind,
+                        action=CitationAction.REMOVED,
+                        cited_url=url,
+                        reason="url_not_in_registry",
+                        diagnostics=dict(match.diagnostics),
+                    )
+                )
             continue
 
         # Try knowledge-layer citation key (lenient — passes registry for fuzzy filename match)
@@ -1199,10 +1480,31 @@ def verify_citations(
         if is_kl and citation_key:
             if registry.has_citation_key(citation_key):
                 logger.debug("[CitationVerify]   [%d] VALID  — citation key", num)
-                valid_citations.append({"number": num, "url": None, "citation_key": citation_key, "line": full_line})
+                _keep(
+                    CitationVerificationRecord(
+                        number=num,
+                        line=full_line,
+                        verified=True,
+                        confidence=citation_confidence(CitationMatchKind.CITATION_KEY),
+                        match_kind=CitationMatchKind.CITATION_KEY,
+                        action=CitationAction.KEPT,
+                        citation_key=citation_key,
+                    )
+                )
             else:
                 logger.debug("[CitationVerify]   [%d] REMOVE — citation_key_not_in_registry", num)
-                removed_citations.append({"number": num, "line": full_line, "reason": "citation_key_not_in_registry"})
+                _reject(
+                    CitationVerificationRecord(
+                        number=num,
+                        line=full_line,
+                        verified=False,
+                        confidence=citation_confidence(CitationMatchKind.UNMATCHED),
+                        match_kind=CitationMatchKind.UNMATCHED,
+                        action=CitationAction.REMOVED,
+                        citation_key=citation_key,
+                        reason="citation_key_not_in_registry",
+                    )
+                )
             continue
 
         # Backfill: the writer emitted "[N] Title" but dropped the verified URL.
@@ -1211,19 +1513,41 @@ def verify_citations(
         backfilled = _backfill_reference_target(ref_text, reference_index)
         if backfilled:
             canonical_url, citation_key = backfilled
+            line = full_line
             if canonical_url:
-                rewritten = f"[{num}] {ref_text}: {canonical_url}"
-                line_replacements[full_line] = rewritten
+                line = f"[{num}] {ref_text}: {canonical_url}"
+                line_replacements[full_line] = line
                 logger.info("[CitationVerify]   [%d] BACKFILL — URL", num)
-                valid_citations.append({"number": num, "url": canonical_url, "citation_key": None, "line": rewritten})
             else:
                 logger.info("[CitationVerify]   [%d] BACKFILL — citation key", num)
-                valid_citations.append({"number": num, "url": None, "citation_key": citation_key, "line": full_line})
+            _keep(
+                CitationVerificationRecord(
+                    number=num,
+                    line=line,
+                    verified=True,
+                    confidence=citation_confidence(CitationMatchKind.BACKFILLED),
+                    match_kind=CitationMatchKind.BACKFILLED,
+                    action=CitationAction.KEPT,
+                    url=canonical_url,
+                    citation_key=citation_key,
+                    diagnostics={"strategy": "title_backfill"},
+                )
+            )
             continue
 
         # Neither URL nor recognizable citation key
         logger.debug("[CitationVerify]   [%d] REMOVE — unverifiable", num)
-        removed_citations.append({"number": num, "line": full_line, "reason": "unverifiable"})
+        _reject(
+            CitationVerificationRecord(
+                number=num,
+                line=full_line,
+                verified=False,
+                confidence=citation_confidence(CitationMatchKind.UNMATCHED),
+                match_kind=CitationMatchKind.UNMATCHED,
+                action=CitationAction.REMOVED,
+                reason="unverifiable",
+            )
+        )
 
     # Dedup: collapse multiple [N] source lines that resolve to the same
     # registry source. The model often makes the same tool call twice (e.g.
@@ -1253,8 +1577,15 @@ def verify_citations(
                 "number": c["number"],
                 "line": c["line"],
                 "reason": f"duplicate_of_citation_{canonical_num}",
+                "confidence": c["confidence"],
+                "match_kind": c["match_kind"],
             }
         )
+        for record in records:
+            if record.number == c["number"] and record.action is CitationAction.KEPT:
+                record.action = CitationAction.MERGED_DUPLICATE
+                record.reason = f"duplicate_of_citation_{canonical_num}"
+                break
         logger.debug(
             "[CitationVerify]   [%d] REMOVE — duplicate of [%d]",
             c["number"],
@@ -1290,7 +1621,7 @@ def verify_citations(
     cleaned_body = body
     for old_num, canonical_num in duplicate_rewrites.items():
         cleaned_body = re.sub(rf"\[{old_num}\]", f"[{canonical_num}]", cleaned_body)
-    valid_numbers = {c["number"] for c in valid_citations}
+    valid_numbers = {c["number"] for c in valid_citations} | {c["number"] for c in low_confidence_citations}
     cleaned_body = _strip_inline_citations_not_in(cleaned_body, valid_numbers)
 
     # Note: renumbering is deferred to sanitize_report() which always runs after
@@ -1298,16 +1629,118 @@ def verify_citations(
     verified_report = cleaned_body + cleaned_ref_section
 
     logger.debug(
-        "[CitationVerify] Result: kept %d, removed %d",
+        "[CitationVerify] Result: kept %d, kept low-confidence %d, removed %d",
         len(valid_citations),
+        len(low_confidence_citations),
         len(removed_citations),
     )
+    _emit_verification_telemetry(records)
 
     return CitationVerificationResult(
         verified_report=verified_report,
         removed_citations=removed_citations,
         valid_citations=valid_citations,
+        low_confidence_citations=low_confidence_citations,
+        records=records,
     )
+
+
+# ---------------------------------------------------------------------------
+# Verification telemetry
+# ---------------------------------------------------------------------------
+
+CitationTelemetryListener = Callable[[dict], None]
+_TELEMETRY_LISTENERS: list[CitationTelemetryListener] = []
+
+
+def register_citation_telemetry_listener(listener: CitationTelemetryListener) -> None:
+    """Register a callback that receives a summary dict after every verification run.
+
+    Use this to forward removal/downgrade counts to a metrics backend so false
+    positives can be tracked. Listener errors are logged and never affect
+    verification.
+    """
+    _TELEMETRY_LISTENERS.append(listener)
+
+
+def unregister_citation_telemetry_listener(listener: CitationTelemetryListener) -> None:
+    """Remove a previously registered telemetry listener (no-op when absent)."""
+    try:
+        _TELEMETRY_LISTENERS.remove(listener)
+    except ValueError:
+        pass
+
+
+def _emit_verification_telemetry(records: Sequence[CitationVerificationRecord]) -> dict:
+    """Summarize removals and downgrades and publish them as telemetry.
+
+    The summary deliberately contains no URLs or report text: only counts,
+    citation numbers, match kinds, reasons, and confidence scores. It is
+    published as a structured log record, an OpenTelemetry span event on the
+    current span (when OpenTelemetry is installed), and to registered listeners.
+    """
+    by_action: dict[str, int] = {}
+    by_match_kind: dict[str, int] = {}
+    events: list[dict] = []
+    for record in records:
+        by_action[record.action.value] = by_action.get(record.action.value, 0) + 1
+        by_match_kind[record.match_kind.value] = by_match_kind.get(record.match_kind.value, 0) + 1
+        is_downgrade = record.action is CitationAction.KEPT_LOW_CONFIDENCE or (
+            record.action is CitationAction.KEPT and record.match_kind is not CitationMatchKind.EXACT
+        )
+        if record.action is CitationAction.REMOVED or is_downgrade:
+            events.append(
+                {
+                    "number": record.number,
+                    "action": record.action.value,
+                    "match_kind": record.match_kind.value,
+                    "confidence": record.confidence,
+                    "reason": record.reason,
+                    "strategy": record.diagnostics.get("strategy"),
+                }
+            )
+    summary = {
+        "total": len(records),
+        "by_action": by_action,
+        "by_match_kind": by_match_kind,
+        "removed": by_action.get(CitationAction.REMOVED.value, 0),
+        "downgraded": sum(1 for e in events if e["action"] != CitationAction.REMOVED.value),
+        "events": events,
+    }
+    if not records:
+        return summary
+
+    logger.info(
+        "[CitationVerify] telemetry total=%d removed=%d downgraded=%d by_match_kind=%s",
+        summary["total"],
+        summary["removed"],
+        summary["downgraded"],
+        by_match_kind,
+        extra={"citation_verification": summary},
+    )
+
+    try:
+        from opentelemetry import trace  # noqa: PLC0415 - optional dependency
+
+        span = trace.get_current_span()
+        if span.is_recording():
+            attributes: dict = {
+                "citation.total": summary["total"],
+                "citation.removed": summary["removed"],
+                "citation.downgraded": summary["downgraded"],
+            }
+            for kind, count in by_match_kind.items():
+                attributes[f"citation.match_kind.{kind}"] = count
+            span.add_event("citation_verification", attributes=attributes)
+    except Exception:  # noqa: BLE001 - telemetry must never break verification
+        logger.debug("[CitationVerify] OpenTelemetry span event failed", exc_info=True)
+
+    for listener in list(_TELEMETRY_LISTENERS):
+        try:
+            listener(summary)
+        except Exception:  # noqa: BLE001 - listener failures are isolated
+            logger.warning("[CitationVerify] telemetry listener failed", exc_info=True)
+    return summary
 
 
 # ---------------------------------------------------------------------------

@@ -44,6 +44,7 @@ from deep_researcher_agent.common.citation_verification import CitationIntegrity
 from deep_researcher_agent.common.citation_verification import EmptySourceRegistryError
 from deep_researcher_agent.common.citation_verification import SourceEntry
 from deep_researcher_agent.common.citation_verification import SourceRegistry
+from deep_researcher_agent.common.citation_verification import citation_confidence_by_url
 from deep_researcher_agent.common.citation_verification import extract_sources_from_tool_result
 from deep_researcher_agent.common.citation_verification import get_session_registry
 from deep_researcher_agent.common.citation_verification import sanitize_report
@@ -700,13 +701,18 @@ class ShallowResearcherAgent:
                         citation["url"] for citation in final_verification.valid_citations if citation.get("url")
                     )
                 )
+                final_citation_confidence = citation_confidence_by_url(final_verification)
 
                 # Emit verified/sanitized report so the frontend shows the
                 # cleaned version (overwrites the raw draft auto-emitted
                 # during ainvoke).
                 for cb in self.callbacks:
                     if hasattr(cb, "emit_final_report"):
-                        cb.emit_final_report(content, cited_urls=final_cited_urls)
+                        cb.emit_final_report(
+                            content,
+                            cited_urls=final_cited_urls,
+                            citation_confidence=final_citation_confidence,
+                        )
                         break
 
                 if hasattr(last_msg, "model_copy"):

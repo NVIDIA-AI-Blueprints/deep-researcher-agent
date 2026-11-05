@@ -2330,6 +2330,37 @@ class TestDeepResearchEventCallbackAdvanced:
         ]
         assert [event["data"]["url"] for event in final_uses] == ["https://verified.example/source"]
 
+    def test_final_report_citation_use_events_carry_confidence(self, tmp_path):
+        """citation_use events must carry verification confidence so the UI can badge citations."""
+        from deep_researcher_api.jobs.event_store import EventStore
+
+        db_url = f"sqlite:///{tmp_path / 'citation-confidence.db'}"
+        job_id = "citation-confidence-job"
+        callback = DeepResearchEventCallback(event_store=EventStore(db_url, job_id))
+        verified_url = "https://verified.example/source"
+        host_only_url = "https://verified.example/unseen-page"
+
+        callback.emit_final_report(
+            f"A [1]. B [2].\n\n## Sources\n[1] Verified: {verified_url}\n[2] Unverified: {host_only_url}",
+            cited_urls=[verified_url, host_only_url],
+            citation_confidence={
+                verified_url: {"verified": True, "confidence": 0.95, "match_kind": "normalized"},
+                host_only_url: {"verified": False, "confidence": 0.3, "match_kind": "host_only", "extra": "x"},
+            },
+        )
+
+        final_uses = {
+            event["data"]["url"]: event["data"]
+            for event in EventStore.get_events(db_url, job_id)
+            if event["type"] == "artifact.update" and event.get("data", {}).get("type") == "citation_use"
+        }
+        assert final_uses[verified_url]["verified"] is True
+        assert final_uses[verified_url]["confidence"] == 0.95
+        assert final_uses[verified_url]["match_kind"] == "normalized"
+        assert final_uses[host_only_url]["verified"] is False
+        assert final_uses[host_only_url]["match_kind"] == "host_only"
+        assert "extra" not in final_uses[host_only_url]
+
     @pytest.mark.asyncio
     async def test_balanced_parenthesis_url_survives_verification_sanitization_and_job_state(self, tmp_path):
         """A balanced URL must remain identical from tool capture through final job metadata."""
