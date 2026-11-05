@@ -30,7 +30,7 @@ def extract_json(text: str) -> dict[str, Any] | None:
     Tries multiple strategies to extract JSON:
     1. Parse as raw JSON
     2. Extract from ```json code blocks
-    3. Find first { to last } substring
+    3. Decode the JSON object that starts at the first {
 
     Args:
         text: Text that may contain JSON.
@@ -60,18 +60,13 @@ def extract_json(text: str) -> dict[str, Any] | None:
     # Try finding JSON object in text
     start = text.find("{")
     if start != -1:
-        # Find matching closing brace
-        depth = 0
-        for i, char in enumerate(text[start:]):
-            if char == "{":
-                depth += 1
-            elif char == "}":
-                depth -= 1
-                if depth == 0:
-                    try:
-                        return json.loads(text[start : start + i + 1])
-                    except json.JSONDecodeError:
-                        break
+        # Let the JSON decoder find the end of the object so braces inside
+        # string values are not counted as structural braces.
+        try:
+            value, _ = json.JSONDecoder().raw_decode(text[start:])
+            return value
+        except json.JSONDecodeError:
+            pass
 
     logger.warning("Failed to extract JSON from text")
     return None
