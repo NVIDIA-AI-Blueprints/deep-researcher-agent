@@ -141,8 +141,12 @@ class S3ArtifactBlobStore(ArtifactBlobStore):
         )
 
     def open_bytes(self, artifact: Artifact) -> Iterator[bytes]:
+        """Stream object bytes, distinguishing missing content from provider errors."""
         bucket, key = self._location(artifact.storage_uri)
-        response = self._client.get_object(Bucket=bucket, Key=key)
+        try:
+            response = self._client.get_object(Bucket=bucket, Key=key)
+        except self._client.exceptions.NoSuchKey as exc:
+            raise FileNotFoundError("Artifact content is no longer available") from exc
         body = response["Body"]
         try:
             yield from body.iter_chunks(chunk_size=_READ_CHUNK_BYTES)

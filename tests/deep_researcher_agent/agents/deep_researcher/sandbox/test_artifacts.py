@@ -344,28 +344,41 @@ class _FakeStreamingBody:
 
 
 class _FakeS3Client:
+    class exceptions:
+        class NoSuchKey(Exception):
+            pass
+
     def __init__(self) -> None:
+        """Track stored objects and injectable provider failures."""
         self.objects: dict[tuple[str, str], bytes] = {}
         self.fail_put = False
         self.fail_delete = False
         self.head_bucket_calls: list[str] = []
 
     def put_object(self, **kwargs: Any) -> None:
+        """Store object bytes or simulate an upload failure."""
         if self.fail_put:
             raise RuntimeError("upload failed")
         location = (kwargs["Bucket"], kwargs["Key"])
         self.objects[location] = kwargs["Body"]
 
     def get_object(self, **kwargs: Any) -> dict[str, Any]:
-        return {"Body": _FakeStreamingBody(self.objects[(kwargs["Bucket"], kwargs["Key"])])}
+        """Model S3's missing-key error and streaming response body."""
+        try:
+            data = self.objects[(kwargs["Bucket"], kwargs["Key"])]
+        except KeyError as exc:
+            raise self.exceptions.NoSuchKey("missing object") from exc
+        return {"Body": _FakeStreamingBody(data)}
 
     def delete_object(self, **kwargs: Any) -> None:
+        """Delete stored bytes or simulate a provider failure."""
         if self.fail_delete:
             raise RuntimeError("delete failed")
         location = (kwargs["Bucket"], kwargs["Key"])
         self.objects.pop(location, None)
 
     def head_bucket(self, **kwargs: Any) -> None:
+        """Record bucket validation requests."""
         self.head_bucket_calls.append(kwargs["Bucket"])
 
 
@@ -408,6 +421,34 @@ class TestS3Store:
         assert store.delete_job("job-1") == 1
         assert client.objects == {}
         assert store.get("job-1", stored.artifact_id) is None
+
+    def test_stream_closes_after_consumption(self) -> None:
+        """Opening is lazy: get_object runs on first iteration and the body closes after consumption."""
+        from unittest.mock import MagicMock
+
+        body = _FakeStreamingBody(_PNG)
+        client = MagicMock()
+        client.get_object.return_value = {"Body": body}
+        blob_store = S3ArtifactBlobStore(bucket="aiq-artifacts", client=client)
+        artifact = self._artifact()
+        artifact.storage_uri = blob_store.make_uri(artifact)
+
+        chunks = blob_store.open_bytes(artifact)
+        client.get_object.assert_not_called()
+        assert not body.closed
+        assert b"".join(chunks) == _PNG
+        client.get_object.assert_called_once()
+        assert body.closed
+
+    def test_missing_object_raises_file_not_found(self, tmp_path: Any) -> None:
+        """Missing S3 content must fail before an HTTP response can start."""
+        client = _FakeS3Client()
+        store = self._store(tmp_path, client)
+        stored = store.put(self._artifact(), _PNG)
+        client.objects.clear()
+
+        with pytest.raises(FileNotFoundError, match="no longer available"):
+            next(store.open_bytes("job-1", stored.artifact_id))
 
     def test_validate_checks_configured_bucket(self, tmp_path: Any) -> None:
         client = _FakeS3Client()

@@ -239,3 +239,155 @@ async def test_get_job_status_error(job_report_app):
         "created_at": None,
     }
     job_store.get_job.assert_awaited_once_with("job-1")
+
+
+@pytest.fixture
+async def artifact_download_app(job_report_app, monkeypatch, tmp_path):
+    """Exercise real SQL metadata and S3 streaming through the HTTP route."""
+    from deep_researcher_agent.agents.deep_researcher.sandbox import artifacts
+
+    app, _job, _job_store, _db_url = job_report_app
+    client = MagicMock()
+    client.exceptions.NoSuchKey = type("NoSuchKey", (Exception,), {})
+    body = MagicMock()
+    body.iter_chunks.return_value = iter([b"artifact bytes"])
+    client.get_object.return_value = {"Body": body}
+    blob_store = artifacts.S3ArtifactBlobStore(bucket="test-artifacts", client=client)
+    store = artifacts.SqlArtifactStore(f"sqlite:///{tmp_path / 'artifacts.db'}", blob_store=blob_store)
+    artifact = artifacts.Artifact(
+        artifact_id="art_" + "a" * 32,
+        job_id="job-1",
+        kind=artifacts.ArtifactKind.IMAGE,
+        mime_type="image/png",
+        filename="chart.png",
+        sandbox_path="/tmp/chart.png",
+        storage_uri="",
+        sha256="a" * 64,
+        size_bytes=14,
+    )
+    store.put(artifact, b"artifact bytes")
+    monkeypatch.setattr(artifacts, "build_artifact_store", lambda _url: store)
+    return app, client, body, artifact
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("error", "status"), [("missing", 404), ("denied", 500), ("access_denied", 500), (None, 200)])
+async def test_artifact_download_errors_before_response_start(artifact_download_app, error, status):
+    """The lazy SQL/S3 stack must resolve failures before committing HTTP 200."""
+    import httpx
+    from botocore.exceptions import ClientError
+
+    app, s3, body, artifact = artifact_download_app
+    private_location = "s3://private-bucket/private-key"
+    if error == "missing":
+        s3.get_object.side_effect = s3.exceptions.NoSuchKey(private_location)
+    elif error == "denied":
+        s3.get_object.side_effect = PermissionError(private_location)
+    elif error == "access_denied":
+        s3.get_object.side_effect = ClientError(
+            {"Error": {"Code": "AccessDenied", "Message": private_location}}, "GetObject"
+        )
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app, raise_app_exceptions=False), base_url="http://test"
+    ) as client:
+        response = await client.get(f"/v1/jobs/async/job/job-1/artifacts/{artifact.artifact_id}/content")
+
+    assert response.status_code == status
+    assert "private-bucket" not in response.text
+    assert "private-key" not in response.text
+    if error is None:
+        assert response.content == b"artifact bytes"
+        body.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("chunks", [[], [b"one", b"two"]])
+async def test_artifact_response_preserves_empty_and_chunked_content(chunks):
+    """Prefetch preserves empty artifacts and every chunk without buffering all bytes."""
+    from deep_researcher_api.routes.artifact_response import ArtifactStreamingResponse
+
+    closed = []
+
+    def content():
+        """Record cleanup of the simulated provider stream."""
+        try:
+            yield from chunks
+        finally:
+            closed.append(True)
+
+    sent = []
+
+    async def send(message):
+        """Capture the response status and bytes sent through ASGI."""
+        sent.append(message)
+
+    await ArtifactStreamingResponse(content())({"type": "http", "asgi": {"spec_version": "2.4"}}, AsyncMock(), send)
+    assert sent[0]["status"] == 200
+    assert b"".join(message.get("body", b"") for message in sent) == b"".join(chunks)
+    assert closed == [True]
+
+
+@pytest.mark.asyncio
+async def test_artifact_response_does_not_send_second_status_on_late_error():
+    """A read error after headers closes the iterator without attempting a 404."""
+    from starlette.requests import ClientDisconnect
+
+    from deep_researcher_api.routes.artifact_response import ArtifactStreamingResponse
+
+    closed = []
+
+    def content():
+        """Record cleanup of the simulated provider stream."""
+        try:
+            yield b"first"
+            raise FileNotFoundError("late read failure")
+        finally:
+            closed.append(True)
+
+    sent = []
+
+    async def send(message):
+        """Capture the response status and bytes sent through ASGI."""
+        sent.append(message)
+
+    with pytest.raises(ClientDisconnect):
+        await ArtifactStreamingResponse(content())({"type": "http", "asgi": {"spec_version": "2.4"}}, AsyncMock(), send)
+    assert [message["status"] for message in sent if message["type"] == "http.response.start"] == [200]
+    assert closed == [True]
+
+
+@pytest.mark.asyncio
+async def test_artifact_response_closes_prefetch_when_cancelled():
+    """Cancellation waits for a blocked first read and then closes its resource."""
+    import threading
+
+    import anyio
+
+    from deep_researcher_api.routes.artifact_response import ArtifactStreamingResponse
+
+    started = threading.Event()
+    release = threading.Event()
+    closed = []
+
+    def content():
+        """Record cleanup of the simulated provider stream."""
+        try:
+            started.set()
+            assert release.wait(2)
+            yield b"first"
+        finally:
+            closed.append(True)
+
+    async def run():
+        """Run the response under the task group's cancellation scope."""
+        await ArtifactStreamingResponse(content())(
+            {"type": "http", "asgi": {"spec_version": "2.4"}}, AsyncMock(), AsyncMock()
+        )
+
+    async with anyio.create_task_group() as group:
+        group.start_soon(run)
+        assert await anyio.to_thread.run_sync(started.wait, 2)
+        group.cancel_scope.cancel()
+        release.set()
+    assert closed == [True]

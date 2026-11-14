@@ -1343,7 +1343,9 @@ async def register_job_routes(app: FastAPI, builder: WorkflowBuilder, worker: Fa
         # user opens the content URL directly in a browser.
         inline_safe = artifact.mime_type in {"image/png", "image/jpeg", "image/webp"}
         disposition = "inline" if inline_safe else "attachment"
-        return StreamingResponse(
+        from deep_researcher_api.routes.artifact_response import ArtifactStreamingResponse
+
+        return ArtifactStreamingResponse(
             store.open_bytes(job_id, artifact_id),
             media_type=artifact.mime_type,
             headers={
