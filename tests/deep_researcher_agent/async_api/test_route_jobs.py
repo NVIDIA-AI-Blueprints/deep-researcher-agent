@@ -271,16 +271,22 @@ async def artifact_download_app(job_report_app, monkeypatch, tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(("error", "status"), [("missing", 404), ("denied", 500), (None, 200)])
+@pytest.mark.parametrize(("error", "status"), [("missing", 404), ("denied", 500), ("access_denied", 500), (None, 200)])
 async def test_artifact_download_errors_before_response_start(artifact_download_app, error, status):
     """The lazy SQL/S3 stack must resolve failures before committing HTTP 200."""
     import httpx
+    from botocore.exceptions import ClientError
 
     app, s3, body, artifact = artifact_download_app
+    private_location = "s3://private-bucket/private-key"
     if error == "missing":
-        s3.get_object.side_effect = s3.exceptions.NoSuchKey("private bucket/key")
+        s3.get_object.side_effect = s3.exceptions.NoSuchKey(private_location)
     elif error == "denied":
-        s3.get_object.side_effect = PermissionError("private bucket/key")
+        s3.get_object.side_effect = PermissionError(private_location)
+    elif error == "access_denied":
+        s3.get_object.side_effect = ClientError(
+            {"Error": {"Code": "AccessDenied", "Message": private_location}}, "GetObject"
+        )
 
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app, raise_app_exceptions=False), base_url="http://test"
@@ -288,7 +294,8 @@ async def test_artifact_download_errors_before_response_start(artifact_download_
         response = await client.get(f"/v1/jobs/async/job/job-1/artifacts/{artifact.artifact_id}/content")
 
     assert response.status_code == status
-    assert "private bucket/key" not in response.text
+    assert "private-bucket" not in response.text
+    assert "private-key" not in response.text
     if error is None:
         assert response.content == b"artifact bytes"
         body.close.assert_called_once()
