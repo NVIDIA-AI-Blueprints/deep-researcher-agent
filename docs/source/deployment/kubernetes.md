@@ -277,6 +277,7 @@ For complete examples with NGC-specific flags, refer to `deploy/helm/README.md` 
 |-----|-------------|
 | `EXA_API_KEY` | Exa API key for web search |
 | `NIMBLE_API_KEY` | Nimble API key for web search |
+| `CONTEXT_DEV_API_KEY` | Context.dev API key for web search and paper search |
 | `SERPER_API_KEY` | Serper API key for Google search |
 | `JINA_API_KEY` | Jina API key |
 
@@ -292,6 +293,8 @@ kubectl create secret generic deep-researcher-credentials -n ns-deep-researcher 
 
 kubectl rollout restart deployment -n ns-deep-researcher deep-researcher-backend deep-researcher-frontend
 ```
+
+Recreating the secret drops every key that is not listed. Add a `--from-literal` line for each optional key you use, such as `EXA_API_KEY`, `NIMBLE_API_KEY` or `CONTEXT_DEV_API_KEY`.
 
 ## Upgrade
 

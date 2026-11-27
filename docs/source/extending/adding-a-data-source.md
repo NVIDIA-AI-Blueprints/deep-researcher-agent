@@ -464,6 +464,8 @@ async def search(self, query: str) -> str:
 | Tavily Web Search | `tavily_web_search` | `sources/tavily_web_search` | General web search through Tavily API |
 | Exa Web Search | `exa_web_search` | `sources/exa_web_search` | General web search through Exa API |
 | Nimble Web Search | `nimble_web_search` | `sources/nimble_web_search` | General web search through Nimble API (`langchain-nimble`) |
+| Context.dev Web Search | `context_dev_web_search` | `sources/context_dev_search` | General web search with query-relevant passages through Context.dev API |
+| Context.dev Paper Search | `context_dev_paper_search` | `sources/context_dev_search` | Research papers through Context.dev API |
 | Google Scholar | `paper_search` | `sources/google_scholar_paper_search` | Academic papers through Serper/Google Scholar |
 | Knowledge Layer | `knowledge_retrieval` | `sources/knowledge_layer` | Document retrieval through pluggable backends |
 

@@ -1,0 +1,233 @@
+{
+  "_description": "Recorded Context.dev POST /v1/web/search response for the paper search tool's shipped defaults (no domain filter; the tool keeps scholarly hosts itself)",
+  "_captured": "2026-11-27",
+  "_request_id": "479c3f49-5e7f-442a-b918-0768a500e2c7",
+  "_query": "paper that replaced recurrence with self-attention for machine translation",
+  "_config": {
+    "max_results": 10,
+    "max_content_length": 1500
+  },
+  "_redaction": "only results[].url/title/description/highlights.highlights kept; one passage per result, descriptions and passages shortened to at most 400 chars; no headers, auth, or account metadata",
+  "results": [
+    {
+      "url": "https://economictimes.indiatimes.com/news/international/us/in-2017-google-researchers-published-attention-is-all-you-need-they-were-solving-translation-but-accidentally-laid-the-foundation-for-todays-ai-age/articleshow/134622109.cms",
+      "title": "In 2017, Google researchers published “Attention Is All You Need”; they were solving translation, but accidentally laid the foundation for today’s AI age",
+      "description": "Google Translate once struggled with long sentences because its software processed language one word at a time. This sequential reading approach created severe computational bottlenecks, slowing down translation and causing models to lose context by the time they reached the end of a paragraph.",
+      "highlights": {
+        "highlights": [
+          "[In 2017, Google researchers published “Attention Is All You Need”; they were solving translation, but accidentally laid the foundation for today’s AI age]\n\nComputer scientists solved this limitation by abandoning step-by-step reading entirely. Their Transformer architecture analyzed full blocks of text simultaneously using self-attention."
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://m.economictimes.com/news/international/us/in-2017-google-researchers-published-attention-is-all-you-need-they-were-solving-translation-but-accidentally-laid-the-foundation-for-todays-ai-age/articleshow/134622109.cms",
+      "title": "In 2017, Google researchers published “Attention Is All You Need”; they were solving translation, but accidentally laid the foundation for today’s AI age",
+      "description": "Google Translate once struggled with long sentences because its software processed language one word at a time.",
+      "highlights": {
+        "highlights": [
+          "Self-attention assigns numerical weights to every word pair in a passage.&#x20;"
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://arxiv.org/abs/1706.03762v7",
+      "title": "Attention Is All You Need",
+      "description": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely.",
+      "highlights": {
+        "highlights": [
+          "…\n\n[Attention Is All You Need]\n\nWe propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely.&#x20;\n\nExperiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train.&#x20;"
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://bezen.in/learn/daily/1706.03762",
+      "title": "Transformer replaces recurrence with multi-head self-attention for faster ...",
+      "description": "Transformer replaces recurrence with multi-head self-attention for faster, better translation. Based on the paper Attention Is All You Need by Ashish Vaswani, ...",
+      "highlights": {
+        "highlights": [
+          "The Transformer model uses only attention mechanisms, no recurrence or convolution, achieving state-of-the-art BLEU scores on WMT 2014 English-German (28.4) and English-French (41.8) tasks with significantly less training time and cost."
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7177153",
+      "title": "Attention in Psychology, Neuroscience, and Machine Learning",
+      "description": "In 2017, the influential “Attention is All You Need” paper utilized a very different style of architecture for machine translation (Vaswani et al., 2017). This model doesn't have any recurrence, making it simpler to train.",
+      "highlights": {
+        "highlights": [
+          "…\n\n[Attention in Psychology, Neuroscience, and Machine Learning]\n\nIn 2017, the influential “Attention is All You Need” paper utilized a very different style of architecture for machine translation (Vaswani et al., 2017). This model doesn't have any recurrence, making it simpler to train.&#x20;"
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://www.instagram.com/reel/DGakj4-oEnf/?hl=en",
+      "title": "Transformers killed the RNN star  “Attention Is All You Need” by Vaswani ...",
+      "description": "",
+      "highlights": {
+        "highlights": [
+          "“Attention Is All You Need” by Vaswani et al. (2017) shocked NLP by ditching recurrence in favor of self-attention, allowing parallel processing and faster training!"
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://alibaba-cloud.medium.com/self-attention-mechanisms-in-natural-language-processing-9f28315ff905",
+      "title": "Self-Attention Mechanisms in Natural Language Processing - Medium",
+      "description": "In June 2017, Google's machine translation team published a paper at arXiv entitled “Attention is All You Need,” which attracted the attention ...",
+      "highlights": {
+        "highlights": [
+          "[Self-Attention Mechanisms in Natural Language Processing > Attention Is All You Need]\n\n1. Dissimilarly from popular machine translation techniques in the past, which used an RNN and Seq2Seq model framework, the Attention Mechanism in the essay replaces RNN to construct an entire model framework."
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://arxiv.org/abs/2202.11669v1",
+      "title": "Refining the state-of-the-art in Machine Translation, optimizing NMT for the JA <-> EN language pair by leveraging personal domain expertise",
+      "description": "The only remaining issue is that the inherently sequential nature of recurrent networks limits training speed. This was solved with the introduction of the Transformer architecture (Vaswani et al. 2017).",
+      "highlights": {
+        "highlights": [
+          "…\n\n[Refining the state-of-the-art in Machine Translation, optimizing NMT for the JA <-> EN language pair by leveraging personal domain expertise]\n\nBecause Transformers do not even use RNNs for encoding or decoding, they utilize a new “self-attention” mechanism to do so, inspired by the work of (Cheng, Dong and Lapata, 2016).&#x20;"
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://dev.to/shrsv/self-attention-the-brilliant-idea-that-made-large-language-models-possible-1oj",
+      "title": "Self-Attention: The Brilliant Idea That Made Large Language Models ...",
+      "description": "The paper introduced the Transformer, a new neural network architecture that abandoned recurrent networks entirely in favor of one central ...",
+      "highlights": {
+        "highlights": [
+          "[The Core Idea: Every Word Gets to Read the Entire Sentence]\n\nInstead of processing words one after another, self-attention lets every token consult every other token before deciding what it should represent."
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://arxiv.org/abs/1805.00631v3",
+      "title": "Accelerating Neural Transformer via an Average Attention Network",
+      "description": "Convolutional sequence to sequence learning. Proc. of ICML. Non-autoregressive neural machine translation. Proc. of ICLR.",
+      "highlights": {
+        "highlights": [
+          "…\n\n[Accelerating Neural Transformer via an Average Attention Network]\n\nNeural machine translation with supervised attention. In Proc. of COLING 2016, pages 3093–3102, Osaka, Japan.&#x20;"
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://www.researchgate.net/publication/353250028_Re-Transformer_A_Self-Attention_Based_Model_for_Machine_Translation",
+      "title": "Re-Transformer: A Self-Attention Based Model for Machine Translation",
+      "description": "This paper proposes a self-attention based model for machine ... attention mechanisms, dispensing with recurrence and convolutions entirely.",
+      "highlights": {
+        "highlights": [
+          "…\n\n[Re-Transformer: A Self-Attention Based Model for Machine Translation > Abstract]\n\nThe experiment results show that Re-Transformer improves around 4 and 17 points of BLEU metric against the Transformer over the WMT 2014 English-German&#x20;"
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://nature.com/articles/s41586-026-11338-1",
+      "title": "De novo design of high-potency dual-target therapeutic peptides with ORIDTP - Nature",
+      "description": "Peptides capable of modulating two therapeutic targets offer opportunities for treating complex diseases.",
+      "highlights": {
+        "highlights": [
+          "53. Vaswani, A. et al. Attention is all you need. In *Advances in Neural Information Processing Systems*, Vol. 30 (eds Guyon, I. et al.) 6000–6010 (Curran Associates, 2017)."
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://arxiv.org/abs/2210.11807v1",
+      "title": "Is Encoder-Decoder Redundant for Neural Machine Translation?",
+      "description": "Self-attention with relative position representations. In Proceedings of the 2018 Conference of the North American Chapter of the Association for Computational Linguistics.",
+      "highlights": {
+        "highlights": [
+          "…\n\n[Is Encoder-Decoder Redundant for Neural Machine Translation?]\n\nAshish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Ł ukasz Kaiser, and Illia Polosukhin. 2017. Attention is all you need.&#x20;"
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://medium.com/edge-analytics/replacing-recurrence-with-attention-improving-large-language-models-with-self-attention-6baa95b5e649",
+      "title": "Improving Large Language Models with Self-Attention",
+      "description": "In 2017, Viswani et al presented a a new approach to machine translation that didn't use RNNs at all — the Transformer.",
+      "highlights": {
+        "highlights": [
+          "Crucially, the decoder could use the entire sequence of embeddings while it is decoding!&#x20;"
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://arxiv.org/abs/1711.02132v1",
+      "title": "Weighted Transformer Network for Machine Translation",
+      "description": "Vaswani et al. (2017) propose a new architecture that avoids recurrence and convolution completely. Instead, it uses only self-attention and feed-forward layers.",
+      "highlights": {
+        "highlights": [
+          "…\n\n[Weighted Transformer Network for Machine Translation]\n\nVaswani et al. (2017) propose a new architecture that avoids recurrence and con- volution completely. Instead, it uses only self-attention and feed-forward layers.&#x20;"
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://arxiv.org/abs/2604.11969v1",
+      "title": "Narrative-Driven Paper-to-Slide Generation via ArcDeck",
+      "description": "Self-attention-only architectures (Transformers) replace recurrence and convolution for sequence transduction, enabling superior quality with greater parallelism and faster training.",
+      "highlights": {
+        "highlights": [
+          "[Narrative-Driven Paper-to-Slide Generation via ArcDeck]\n\n- Thesis (1 sentence): - Self-attention-only architectures (Transformers) replace recurrence and convolution for sequence transduction, enabling superior quality with greater parallelism and faster training.&#x20;"
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://arxiv.org/abs/2410.22335v2",
+      "title": "Efficient Machine Translation with a BiLSTM-Attention Approach",
+      "description": "Effective approaches to attention-based neural machine translation. Recurrent neural network based language model.",
+      "highlights": {
+        "highlights": [
+          "…\n\nAttention is all you need. arXiv preprint arXiv:1706.03762. Felix Wu, Angela Fan, Alexei Baevski, Yann N Dauphin, and Michael Auli. 2019. Pay less attention with lightweight and dynamic convolutions.&#x20;"
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://arxiv.org/abs/2103.03108v1",
+      "title": "An empirical analysis of phrase-based and neural machine translation",
+      "description": "Attention is the only mechanism that gathers all information from the source sentence as well as the prefix of the target sequence in the transformer architecture.",
+      "highlights": {
+        "highlights": [
+          "…\n\n[An empirical analysis of phrase-based and neural machine translation]\n\nThis is in contrast to the usage of recurrence and attention in recurrent neural models.&#x20;"
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://arxiv.org/abs/2111.11707v5",
+      "title": "Deps-SAN: Neural Machine Translation with Dependency-Scaled Self-Attention Network",
+      "description": "Neural machine translation with attention based on a new syntactic branch distance.",
+      "highlights": {
+        "highlights": [
+          "…\n\nVaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A.N., Kaiser, L., Polosukhin, I.: Attention is all you need. In: Neurips. pp. 5998–6008 (2017) 33.&#x20;"
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://arxiv.org/abs/2004.13310v4",
+      "title": "Self-Attention with Cross-Lingual Position Representation",
+      "description": "Modeling recurrence for transformer. In NAACL.",
+      "highlights": {
+        "highlights": [
+          "[Self-Attention with Cross-Lingual Position Representation]\n\nAssessing the ability of self-attention networks to learn word order. In ACL.&#x20;"
+        ],
+        "code": "SUCCESS"
+      }
+    }
+  ]
+}

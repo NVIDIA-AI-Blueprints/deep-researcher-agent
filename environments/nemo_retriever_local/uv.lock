@@ -248,6 +248,7 @@ dev = [
     { name = "deep-researcher-debug", editable = "../../frontends/debug" },
     { name = "deep-researcher-gsf", editable = "../../sources/gsf" },
     { name = "deep-researcher-research-cli", editable = "../../frontends/cli" },
+    { name = "context-dev-search", editable = "../../sources/context_dev_search" },
     { name = "dask", extras = ["distributed"], specifier = ">=2024.1.0" },
     { name = "duckduckgo-news-search", editable = "../../sources/duckduckgo_news_search" },
     { name = "exa-web-search", editable = "../../sources/exa_web_search" },
