@@ -250,6 +250,63 @@ functions:
 
 `focus` is a workflow-config setting, not an agent-chosen parameter -- the model only passes a query, so general research queries cannot silently switch to `news`. Answer generation (`include_answer`) is **not exposed** in this initial integration.
 
+### `context_dev_web_search`
+
+Web search powered by the [Context.dev Search API](https://docs.context.dev/search/overview). Each result's body is
+the set of passages on the page that are relevant to the query
+([Highlights](https://docs.context.dev/scrape/highlights)), falling back to the search snippet. Keep the existing
+function names, as below, so the `data_source_registry` entries that list them keep working.
+
+```yaml
+functions:
+  web_search_tool:
+    _type: context_dev_web_search
+    max_results: 5
+
+  advanced_web_search_tool:
+    _type: context_dev_web_search
+    max_results: 10
+    max_content_length: 8000
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `max_results` | `int` | `5` | Maximum number of search results to return (1-100). |
+| `api_key` | `str` | `None` | Context.dev API key. Falls back to `CONTEXT_DEV_API_KEY` environment variable. |
+| `max_content_length` | `int` | `4000` | Max characters of passages (or snippet) per result (100-20000). Enforced by the API and locally. |
+| `include_highlights` | `bool` | `true` | Return query-relevant passages. When `false`, each result carries only the search snippet. |
+| `include_domains` | `list[str]` | `None` | Only return results from these domains (up to 100). Entries are normalized to host names and match subdomains. |
+| `exclude_domains` | `list[str]` | `None` | Drop results from these domains (up to 100). |
+| `country` | `str` | `None` | ISO 3166-1 alpha-2 country code used to localize results (e.g. `us`, `gb`). |
+| `freshness` | `str` | `None` | Only return content published within `last_24_hours`, `last_week`, `last_month`, or `last_year`. |
+| `zero_data_retention` | `bool` | `false` | Ask Context.dev not to retain the request or results. Requires an organization with zero data retention enabled. |
+| `max_retries` | `int` | `3` | Total attempts for transient failures (network errors, 408, 429, 5xx), 1-10. |
+| `timeout` | `float` | `30.0` | Timeout for each request, end to end, in seconds (2-300). |
+| `api_base_url` | `str` | `https://api.context.dev/v1` | API base URL, for example a proxy. Must use https (http only for localhost). |
+
+### `context_dev_paper_search`
+
+Research paper search over the same [Context.dev Search API](https://docs.context.dev/search/overview), which
+includes the Context.dev Research Index of research papers. Results use the numbered layout of `paper_search`, so it
+is a drop-in replacement for `paper_search_tool`. It accepts every `context_dev_web_search` parameter above (with
+`max_results` defaulting to `10` and `max_content_length` to `1500`), plus:
+
+```yaml
+functions:
+  paper_search_tool:
+    _type: context_dev_paper_search
+    max_results: 10
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `scholarly_sources_only` | `bool` | `true` | Keep only results hosted by publishers, preprint servers, proceedings, DOI links, and scholarly indexes, dropping news and blog coverage of papers. The tool requests three times `max_results` (at most 100) and filters locally; if no result is on a scholarly host, the unfiltered results are returned. Ignored when `include_domains` is non-empty. |
+
+The API leaves its indexed research papers out of domain-filtered requests, so paper search applies
+`include_domains` (which replaces the scholarly list) and `exclude_domains` to the results itself instead of sending
+them. Filtering locally fetches up to three times `max_results`; set `scholarly_sources_only: false` to avoid that. The Search API has no publication-year filter,
+so this tool does not take the `year` argument that `paper_search` accepts. Use `freshness` for recency.
+
 ### `paper_search`
 
 Academic paper search through Google Scholar using [Serper](https://serper.dev/),

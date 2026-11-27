@@ -1,0 +1,71 @@
+{
+  "_description": "Recorded Context.dev POST /v1/web/search response for the web search tool's shipped defaults",
+  "_captured": "2026-11-27",
+  "_request_id": "c02fcfe9-3921-4bdb-a4fa-d919f13f2c94",
+  "_query": "NVIDIA CUDA Toolkit documentation",
+  "_config": {
+    "max_results": 5,
+    "max_content_length": 4000
+  },
+  "_redaction": "only results[].url/title/description/highlights.highlights kept; at most 2 passages per result, each truncated to 800 chars; no headers, auth, or account metadata",
+  "results": [
+    {
+      "url": "https://docs.nvidia.com/cuda/landing/cub/index.html",
+      "title": "CUB — Cuda Toolkit 13.5 documentation",
+      "description": "Cuda Toolkit 13.5 documentation Logo Release Notes CUDA Features Archive EULA Installation Guides Quick Start Guide Installation Guide Windows Installation ...",
+      "highlights": {
+        "highlights": [
+          "Cuda Toolkit 13.5 documentation Logo Release Notes CUDA Features Archive EULA Installation Guides Quick Start Guide Installation Guide Windows Installation ..."
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://developer.download.nvidia.com/compute/cuda/11.6.0/docs/sidebar/CUDA_Installation_Guide_Windows.pdf",
+      "title": "NVIDIA CUDA Installation Guide for Microsoft Windows",
+      "description": "PDF documentation files including the CUDA C++ Programming Guide, CUDA C++ Best Practices Guide, CUDA library documentation, etc. To begin using CUDA to ...",
+      "highlights": {
+        "highlights": [
+          "[DU-05349-001_v11.6 | January 2022 > Table of Contents > 1.1. System Requirements]\n\nTo use CUDA on your system, you will need the following installed: ‣ A CUDA-capable GPU ‣ A supported version of Microsoft Windows ‣ A supported version of Microsoft Visual Studio ‣ The NVIDIA CUDA Toolkit (available at  The next two tables list the currently supported Windows operating systems and compilers.",
+          "…\n\n[DU-05349-001_v11.6 | January 2022 > 2. Run: > 2.2. Download the NVIDIA CUDA Toolkit]\n\nThe CUDA Toolkit installs the CUDA driver and tools needed to create, build and run a CUDA application as well as libraries, header files, CUDA samples source code, and other resources."
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://developer.download.nvidia.com/compute/cuda/6_5/rel/docs/CUDA_Toolkit_Release_Notes.pdf?ref=transang.me",
+      "title": "NVIDIA CUDA Toolkit v6.5",
+      "description": "Documentation, including Getting Started Guides, Programming Guides, API References, and Tools Guides, can be found in PDF form in the doc/pdf/ directory,",
+      "highlights": {
+        "highlights": [
+          "[NVIDIA CUDA TOOLKIT V6.5 > TABLE OF CONTENTS > 7.4. CUDA Libraries > 7.4.3. CUDA Samples]\n\nDocumentation, including Getting Started Guides, Programming Guides, API References, and Tools Guides, can be found in PDF form in the doc/pdf/ directory, or in HTML form at doc/html/index.html and online at  cuda/index.html.",
+          "…\n\n[NVIDIA CUDA TOOLKIT V6.5 > TABLE OF CONTENTS > 6.1. General CUDA]\n\n‣ The device memory heap size, set using cudaDeviceSetLimit(cudaLimitMallocHeapSize, \\*) or cuCtxSetLimit(CU\\_LIMIT\\_MALLOC\\_HEAP\\_SIZE, \\*), is no longer limited to a size of 4,294,967,296 (4 GB)."
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://cseweb.ucsd.edu/classes/wi15/cse262-a/static/cuda-5.5-doc/html/cuda-toolkit-release-notes/index.html",
+      "title": "Release Notes :: CUDA Toolkit Documentation",
+      "description": "The HTML documentation is now fully available from a single entry page available both locally in the CUDA Toolkit installation folder under doc/ ...",
+      "highlights": {
+        "highlights": [
+          "[Release Notes :: CUDA Toolkit Documentation > 1. NVIDIA CUDA Toolkit v5.5 Release Notes > 1.1. Documentation]\n\n- The HTML documentation is now fully available from a single entry page available both locally in the CUDA Toolkit installation folder under doc/html/index.html and online at&#x20;\n- The license information for the toolkit portion of this release can be found at doc/EULA.txt.\n- The CUDA Occupancy Calculator spreadsheet can be found at tools/CUDA\\_Occupancy\\_Calculator.xls.\n- The CHM documentation has been removed."
+        ],
+        "code": "SUCCESS"
+      }
+    },
+    {
+      "url": "https://developer.download.nvidia.com/compute/cuda/12.0.1/docs/sidebar/CUDA_Toolkit_Release_Notes.pdf",
+      "title": "NVIDIA CUDA Toolkit 12.0.148",
+      "description": "Each release of the CUDA Toolkit requires a minimum version of the CUDA driver. More information on compatibility can be found at https://docs.nvidia.com/cuda/ ...",
+      "highlights": {
+        "highlights": [
+          "Each release of the CUDA Toolkit requires a minimum version of the CUDA driver. The\nCUDA driver is backward compatible, meaning that applications compiled against a\nparticular version of the CUDA will continue to work on subsequent (later) driver releases.",
+          "…\n\n[RN-06722-001 _v12.0 | January 2023 > 1 Only available on select Linux distros > 1.6. Known Issues > 1.6.1. CUDA Tools]\n\nCUDA Libraries\nNVIDIA CUDA Toolkit 12.0.148 RN-06722-001 \\_v12.0 | 9\n‣ cublasLtMatmul for gemv-like cases (that is, m or n equals 1) might ignore bias with\nthe CUBLASLT\\_EPILOGUE\\_RELU\\_BIAS and CUBLASLT\\_EPILOGUE\\_BIAS epilogues."
+        ],
+        "code": "SUCCESS"
+      }
+    }
+  ]
+}

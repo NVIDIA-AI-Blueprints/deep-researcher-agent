@@ -58,7 +58,7 @@ The script performs the following steps:
 3. Installs the core package with dev dependencies
 4. Installs all frontends (CLI, debug console, API server)
 5. Installs benchmark packages (freshqa, deepsearch_qa)
-6. Installs the data source plugins (Tavily, Exa, Nimble, You.com, Google Scholar) and the LlamaIndex and Foundational RAG knowledge extras
+6. Installs the data source plugins (Tavily, Exa, Nimble, You.com, Context.dev, Google Scholar) and the LlamaIndex and Foundational RAG knowledge extras
 7. Sets up pre-commit hooks
 8. Copies `deploy/.env.example` to `deploy/.env` if no `.env` file exists
 9. Installs UI npm dependencies (if Node.js is available)
@@ -105,6 +105,7 @@ uv pip install -e ./sources/tavily_web_search
 uv pip install -e ./sources/exa_web_search
 uv pip install -e ./sources/nimble_web_search
 uv pip install -e ./sources/you_com
+uv pip install -e ./sources/context_dev_search
 uv pip install -e ./sources/duckduckgo_news_search
 uv pip install -e ./sources/polymarket_prediction_market
 uv pip install -e ./sources/google_scholar_paper_search
@@ -146,6 +147,7 @@ Then edit `deploy/.env` and fill in your keys.
 | `TAVILY_API_KEY` | [Tavily](https://tavily.com/) | Web search (Tavily provider) |
 | `EXA_API_KEY` | [Exa](https://exa.ai/) | Web search (Exa provider) |
 | `NIMBLE_API_KEY` | [Nimble](https://nimbleway.com/) | Web search (Nimble provider) |
+| `CONTEXT_DEV_API_KEY` | [Context.dev](https://context.dev/) | Web search and paper search (Context.dev provider) |
 | `SERPER_API_KEY` | [Serper](https://serper.dev/) | Google Scholar paper search with `provider: serper` (the default) |
 | `SERPAPI_API_KEY` | [SerpAPI](https://serpapi.com/) | Google Scholar paper search with `provider: serpapi` |
 | `SEARCHAPI_API_KEY` | [SearchAPI](https://www.searchapi.io/) | Google Scholar paper search with `provider: searchapi` |

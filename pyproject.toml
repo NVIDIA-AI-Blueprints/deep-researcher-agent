@@ -230,6 +230,7 @@ dev = [
     "exa-web-search",
     "nimble-web-search",
     "you-com",
+    "context-dev-search",
     "duckduckgo-news-search",
     "polymarket-prediction-market",
     "knowledge-layer[all]",
@@ -280,6 +281,7 @@ tavily-web-search = { workspace = true }
 exa-web-search = { workspace = true }
 nimble-web-search = { workspace = true }
 you-com = { workspace = true }
+context-dev-search = { workspace = true }
 duckduckgo-news-search = { workspace = true }
 polymarket-prediction-market = { workspace = true }
 knowledge-layer = { workspace = true }

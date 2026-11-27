@@ -28,6 +28,9 @@ Common issues and solutions for the Deep Researcher Agent blueprint.
 | Exa search returns empty or 401 | Invalid or missing `EXA_API_KEY` | Verify key at [exa.ai](https://exa.ai) |
 | Nimble search returns empty or 401 | Invalid or missing `NIMBLE_API_KEY` | Verify the key through [Nimble](https://nimbleway.com/) |
 | Nimble search returns 403 with "enterprise" | `search_depth: fast` requires an Enterprise plan | Switch to `search_depth: lite` (default) or `deep`, or upgrade your Nimble plan |
+| Context.dev search returns 401 | Invalid or missing `CONTEXT_DEV_API_KEY` | Verify the key at [context.dev](https://context.dev) |
+| Context.dev search returns 402 `USAGE_EXCEEDED` | The Context.dev account is out of credits | Add credits or upgrade the plan at [context.dev](https://context.dev) |
+| Context.dev search returns 403 `ZDR_NOT_ENABLED` | `zero_data_retention: true` without zero data retention enabled for the organization | Set `zero_data_retention: false` or ask Context.dev to enable it |
 | Serper search fails | Missing `SERPER_API_KEY` | Set key or remove `paper_search_tool` from config |
 
 ## Runtime Issues

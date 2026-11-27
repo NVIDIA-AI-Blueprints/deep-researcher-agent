@@ -466,6 +466,8 @@ trusted tags, or creating additional document elements.
 | Tavily Web Search | `tavily_web_search` | `sources/tavily_web_search` | `TAVILY_API_KEY` |
 | Exa Web Search | `exa_web_search` | `sources/exa_web_search` | `EXA_API_KEY` |
 | Nimble Web Search | `nimble_web_search` | `sources/nimble_web_search` | `NIMBLE_API_KEY` |
+| Context.dev Web Search | `context_dev_web_search` | `sources/context_dev_search` | `CONTEXT_DEV_API_KEY` |
+| Context.dev Paper Search | `context_dev_paper_search` | `sources/context_dev_search` | `CONTEXT_DEV_API_KEY` |
 | Google Scholar | `paper_search` | `sources/google_scholar_paper_search` | `SERPER_API_KEY` |
 | Knowledge Layer | `knowledge_retrieval` | `sources/knowledge_layer` | (varies by backend) |
 

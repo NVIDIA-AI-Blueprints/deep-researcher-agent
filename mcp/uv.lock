@@ -1085,6 +1085,7 @@ provides-extras = ["pii", "s3", "sandboxed-python-test", "dev", "docs", "viz"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "context-dev-search", editable = "../sources/context_dev_search" },
     { name = "dask", extras = ["distributed"], specifier = ">=2024.1.0" },
     { name = "deep-researcher-api", editable = "../frontends/deep_researcher_api" },
     { name = "deep-researcher-debug", editable = "../frontends/debug" },
