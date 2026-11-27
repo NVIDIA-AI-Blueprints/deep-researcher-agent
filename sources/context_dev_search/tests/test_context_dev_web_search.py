@@ -361,6 +361,36 @@ class TestLifecycle:
             assert not created[0].is_closed
         assert created[0].is_closed
 
+    @pytest.mark.parametrize("url", ["http://localhost:8080/v1", "http://127.0.0.1/v1", "http://[::1]:9000/v1"])
+    async def test_loopback_http_bypasses_environment_proxy(self, monkeypatch, url):
+        monkeypatch.setenv("HTTP_PROXY", "http://proxy.invalid:3128")
+        monkeypatch.setenv("HTTPS_PROXY", "http://proxy.invalid:3128")
+        monkeypatch.delenv("NO_PROXY", raising=False)
+        monkeypatch.delenv("no_proxy", raising=False)
+        async with register_module._new_http_client() as client:
+            assert client._transport_for_url(httpx.URL(url)) is client._transport
+
+    @pytest.mark.parametrize("url", ["https://api.context.dev/v1", "https://localhost/v1", "http://example.com/v1"])
+    async def test_other_urls_keep_environment_proxy(self, monkeypatch, url):
+        monkeypatch.setenv("HTTP_PROXY", "http://proxy.invalid:3128")
+        monkeypatch.setenv("HTTPS_PROXY", "http://proxy.invalid:3128")
+        monkeypatch.delenv("NO_PROXY", raising=False)
+        monkeypatch.delenv("no_proxy", raising=False)
+        async with register_module._new_http_client() as client:
+            assert client._transport_for_url(httpx.URL(url)) is not client._transport
+
+    def test_client_module_imports_without_nat(self):
+        import subprocess
+        import sys
+
+        code = (
+            "import sys; sys.modules['nat'] = None; "
+            "import context_dev_search.client; "
+            "import context_dev_search; "
+            "assert 'context_dev_search.register' not in sys.modules"
+        )
+        subprocess.run([sys.executable, "-c", code], check=True)
+
     async def test_tool_description_comes_from_docstring(self, api_key_env, mock_api):
         async with context_dev_web_search(ContextDevWebSearchToolConfig(), MagicMock()) as info:
             assert info.description.startswith("Search the web with Context.dev")

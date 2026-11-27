@@ -13,12 +13,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Context.dev web search and research paper search tools for NAT."""
+"""Context.dev web search and research paper search tools for NAT.
 
-from .register import context_dev_paper_search  # noqa: F401
-from .register import context_dev_web_search  # noqa: F401
+The NAT functions are defined in ``register`` (the plugin entry point) and
+loaded on first access, so ``context_dev_search.client`` imports without NAT.
+"""
 
 __all__ = [
     "context_dev_paper_search",
     "context_dev_web_search",
 ]
+
+
+def __getattr__(name: str):
+    if name in __all__:
+        from . import register
+
+        return getattr(register, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

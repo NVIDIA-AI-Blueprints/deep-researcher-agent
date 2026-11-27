@@ -294,6 +294,8 @@ kubectl create secret generic deep-researcher-credentials -n ns-deep-researcher 
 kubectl rollout restart deployment -n ns-deep-researcher deep-researcher-backend deep-researcher-frontend
 ```
 
+Recreating the secret drops every key that is not listed. Add a `--from-literal` line for each optional key you use, such as `EXA_API_KEY`, `NIMBLE_API_KEY` or `CONTEXT_DEV_API_KEY`.
+
 ## Upgrade
 
 For NGC Helm chart releases, pull the new chart archive (same NGC URL pattern with the new version) if needed, then run:

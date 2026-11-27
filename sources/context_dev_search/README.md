@@ -14,10 +14,16 @@ the query, so the researcher reads evidence instead of whole pages.
 ## Setup
 
 1. Get an API key at [context.dev](https://context.dev/signup).
-2. Set it in `deploy/.env` (or your environment):
+2. Set it in `deploy/.env`:
 
    ```bash
    CONTEXT_DEV_API_KEY=your-key
+   ```
+
+   Or export it in the shell that runs the agent:
+
+   ```bash
+   export CONTEXT_DEV_API_KEY=your-key
    ```
 
 3. Select the tools in a workflow config. They are drop-in replacements for the existing web and

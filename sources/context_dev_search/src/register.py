@@ -135,12 +135,20 @@ _WHITESPACE = re.compile(r"\s+")
 _WHITESPACE_ENTITY = re.compile(r"&(?:#x0*(?:20|a0)|#0*(?:32|160)|nbsp);", re.IGNORECASE)
 
 
-def _new_http_client() -> httpx.AsyncClient:
-    """Create the HTTP client one registered tool reuses for all of its calls."""
-    return httpx.AsyncClient()
-
-
 _LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
+
+
+def _new_http_client() -> httpx.AsyncClient:
+    """Create the HTTP client one registered tool reuses for all of its calls.
+
+    Environment proxies stay in effect, except for plain-http loopback
+    endpoints (local test servers): those connect directly, so the key is never
+    handed to a proxy in cleartext.
+    """
+    direct = {f"http://[{host}]" if ":" in host else f"http://{host}": None for host in _LOOPBACK_HOSTS}
+    return httpx.AsyncClient(mounts=direct)
+
+
 _DOMAIN_CHARACTERS = re.compile(r"[a-z0-9.-]+")
 
 
